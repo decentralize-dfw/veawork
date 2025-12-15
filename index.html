@@ -1,0 +1,1238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>HOME</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Meshopt Decoder (Global) -->
+    <script src="https://unpkg.com/meshoptimizer@0.19.0/meshopt_decoder.js"></script>
+    <!-- Google Model Viewer for Modal -->
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+
+    <!-- FONTS -->
+     <style>
+        @font-face {
+            font-family: 'Telegrama Raw';
+            src: url('https://raw.githubusercontent.com/decentralize-dfw/font/main/vea.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'Telegrama Render';
+            src: url('https://raw.githubusercontent.com/decentralize-dfw/font/main/vea.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'GAU Private';
+            src: url('https://raw.githubusercontent.com/decentralize-dfw/font/main/vea.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'Robot';
+            src: url('https://raw.githubusercontent.com/decentralize-dfw/font/main/vea.ttf') format('truetype');
+        }
+
+        :root {
+            --ui-color: black; 
+            --bg-color: white;
+            --modal-bg: darkgray;
+            
+            /* Font Mapping */
+            --font-headers: 'Telegrama Raw', sans-serif;
+            --font-body: 'Telegrama Render', sans-serif;
+            --font-display: 'GAU Private', cursive;
+        }
+
+        html, body {
+            font-family: 'Telegrama Render', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--ui-color);
+            margin: 0;
+            overflow: hidden; /* Prevent scrolling on main body */
+            width: 100vw;
+            height: 100vh;
+            touch-action: none; /* Critical for mobile 3D interaction */
+        }
+
+        /* --- 3D SCENE STYLES --- */
+        #scene-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+            touch-action: none;
+        }
+
+        .scene-html-element {
+            pointer-events: auto;
+            user-select: none;
+            backface-visibility: hidden;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid var(--ui-color);
+        }
+        
+        .scene-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color); z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.5s ease-out;
+            pointer-events: none;
+        }
+        .loader-text {
+            font-family: 'Telegrama Raw', sans-serif;
+            font-size: 2rem; color: var(--ui-color);
+            animation: pulse 1s infinite;
+            text-align: center;
+            padding: 20px;
+        }
+        @keyframes pulse { 0% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* --- MODAL STYLES (UPDATED) --- */
+        
+        /* Vertical Scrollbars for Media Container */
+        #modal-media-container::-webkit-scrollbar { display: block; width: 6px; }
+        #modal-media-container::-webkit-scrollbar-track { background: transparent; }
+        #modal-media-container::-webkit-scrollbar-thumb { background: var(--ui-color); border-radius: 3px; opacity: 0.5; border: none; }
+        
+        /* Info Container Scrollbar */
+        #modal-info-container::-webkit-scrollbar { display: block; width: 4px; }
+        #modal-info-container::-webkit-scrollbar-thumb { background: var(--ui-color); border-radius: 2px; border: none; }
+
+        /* Modal Typography - Small Sizes */
+        .modal-label { 
+            font-family: var(--font-headers); 
+            font-weight: 500; 
+            font-size: 0.5rem; 
+            line-height: 1.1;
+            opacity: 0.7;
+        } 
+        .modal-value { 
+            font-family: var(--font-body); 
+            font-weight: 400; 
+            font-size: 0.65rem; 
+            line-height: 1.2;
+        }
+        .modal-desc { 
+            font-family: var(--font-body); 
+            font-weight: 400; 
+            font-size: 0.7rem; 
+            line-height: 1.4; 
+        }
+
+        /* Desktop Overrides */
+        @media (min-width: 768px) {
+            .modal-label { font-size: 0.6rem; }
+            .modal-value { font-size: 0.8rem; }
+            .modal-desc { font-size: 0.9rem; }
+        }
+
+        .ui-text { color: var(--ui-color); }
+        .ui-border { border-color: var(--ui-color); }
+
+        /* Modal Container & Backdrop */
+        #modal-container {
+            opacity: 0; visibility: hidden; transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+            pointer-events: none; /* Initially allow click-through to scene */
+        }
+        #modal-container.open { opacity: 1; visibility: visible; pointer-events: auto; /* Catch clicks when open */ }
+        
+        #modal-backdrop {
+            opacity: 0; visibility: hidden; transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+            background-color: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(8px);
+        }
+        #modal-backdrop.open { opacity: 1; visibility: visible; }
+
+        #modal-content {
+            background-color: var(--modal-bg);
+            color: var(--ui-color);
+            border: 1px solid var(--ui-color);
+            box-shadow: 0 20px 50px rgba(255, 0, 106, 0.2);
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- LOADING SCREEN -->
+    <div id="loader">
+        <div class="loader-text">INITIALIZING...</div>
+    </div>
+
+    <!-- 3D SCENE -->
+    <div id="scene-container"></div>
+
+    <!-- MODAL (POP UP) -->
+    <div id="modal-container" tabindex="-1" class="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-12 outline-none">
+        <div id="modal-backdrop" class="fixed inset-0 z-40"></div>
+        
+        <!-- Modal Content Box -->
+        <!-- Desktop: 80vw x 80vh. Mobile: Full screen -->
+        <div id="modal-content" class="relative z-50 w-full h-full md:w-[80vw] md:h-[80vh] rounded-none md:rounded-lg shadow-xl flex flex-col md:flex-row overflow-hidden">
+            
+            <button id="modal-close-btn" class="absolute top-4 right-4 z-[60] text-xs md:text-sm font-medium px-3 py-1 rounded-md border ui-border ui-text bg-black/60 hover:bg-black/80 transition-colors text-white cursor-pointer" style="font-family: var(--font-headers);">
+                CLOSE
+            </button>
+            
+            <!-- Media Section (Scrollable Area) -->
+            <!-- Desktop: Left 75%, Vertical Scroll. Mobile: Top part, Vertical Scroll, Padding bottom for fixed footer -->
+            <div id="modal-media-container" class="w-full md:w-[75%] h-full overflow-y-auto p-4 md:p-8 bg-black/5 pb-[25vh] md:pb-8 order-1">
+                <!-- Media items injected here vertically -->
+            </div>
+            
+            <!-- Info Section (Right Col on Desktop, Fixed Bottom on Mobile) -->
+            <!-- Desktop: Right 25%, Full Height. Mobile: Fixed Bottom 20%, Full Width -->
+            <div id="modal-info-container" class="md:w-[25%] md:h-full md:border-l ui-border md:static fixed bottom-0 left-0 w-full h-[20vh] bg-[var(--modal-bg)] border-t border-[var(--ui-color)] md:border-t-0 p-4 overflow-y-auto z-50 flex flex-col gap-4 order-2 shadow-[0_-5px_15px_rgba(0,0,0,0.1)] md:shadow-none">
+                <!-- Title, Cats, Desc injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- THREE.JS IMPORTS -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { DragControls } from 'three/addons/controls/DragControls.js';
+        import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+        import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+
+        // --- 1. DATA & SCENE CONFIG ---
+        
+        const sceneObjects = [
+           {
+                type: 'image',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg',
+                width: 2100,
+                position: { x: -2200, y: -410, z: -1900 },
+                rotation: { x: 0, y: 45, z: 0 },
+                scale: 1000,
+                clickable: false, // Background is not interactive
+                modalContent: {
+                    name: "Atmosphere",
+                    categories: { sub1: "2024", sub2: "Environment" },
+                    description: "Void environment.",
+                    media: [{ type: "image", src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg" }]
+                }
+            },
+            // --- VIDEO (CENTER) ---
+            {
+                type: 'video',
+                id: 'main-vid',
+                src: 'https://github.com/decentralize-dfw/decentralize/blob/main/decentralize.mp4',
+                poster: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/thumb-home.png', 
+                width: 1200,
+                height: 675,
+                position: { x: 0, y: 0, z: -500 },
+                rotation: { x: 0, y: 0, z: 0 },
+                scale: 2
+            },
+            
+            // --- SOUND OBJECTS ---
+            {
+                type: 'sound',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize-archives/main/artist-info.mp3',
+                label: 'artist-info 1min',
+                fontFamily: 'Robot',
+                color: '#FF006A',
+                position: { x: -1500, y: -100, z: 0 },
+                rotation: { x: 0, y: 15, z: 0 },
+                scale: 1.4 
+            },
+             {
+                type: 'sound',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize-archives/main/wawbbisabbi.mp3',
+                label: 'wabisabi-LOOP',
+                fontFamily: 'Robot',
+                color: '#FF006A',
+                position: { x: -1300, y: -600, z: 200 },
+                rotation: { x: 0, y: 15, z: 0 },
+                scale: 1.2
+            },
+
+            // --- DRAWINGS (Images that open Modal) ---
+            {
+                type: 'image',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/DRAWING4.png',
+                width: 700,
+                position: { x: -1000, y: 500, z: -400 }, 
+                rotation: { x: 0, y: 0, z: 0 },
+                scale: 1.2,
+                modalContent: {
+                    name: "Drawing No. 4",
+                    categories: { sub1: "2023", sub2: "Sketch", sub3: "Ink" },
+                    description: "Raw sketch exploring the boundaries of organic forms.",
+                    media: [{ type: "image", src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/DRAWING4.png" }]
+                }
+            },
+            {
+                type: 'image',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/DRAWING3.png',
+                width: 600,
+                position: { x: -1000, y: 500, z: -100 }, 
+                rotation: { x: 0, y: 15, z: 0 },
+                scale: 1.2,
+                modalContent: {
+                    name: "Drawing No. 3",
+                    categories: { sub1: "2023", sub2: "Sketch", sub3: "Ink" },
+                    description: "A deeper look into the chaotic lines of the metaverse.",
+                    media: [{ type: "image", src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/DRAWING3.png" }]
+                }
+            },
+            {
+                type: 'image',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/DRAWING1.png',
+                 width: 500,
+                position: { x: -1000, y: 500, z:  200 }, 
+                rotation: { x: 0, y: 30, z: 0 },
+                scale: 1.2,
+                modalContent: {
+                    name: "Drawing No. 1",
+                    categories: { sub1: "2023", sub2: "Sketch", sub3: "Ink" },
+                    description: "The inception of the drawn series.",
+                    media: [{ type: "image", src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/DRAWING1.png" }]
+                }
+            },
+            {
+                type: 'image',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/DRAWING0.png',
+                width: 400,
+                position: { x: -1000, y: 500, z: 500 }, 
+                rotation: { x: 0, y: 45, z: 0 },
+                scale: 1.2,
+                modalContent: {
+                    name: "Drawing No. 0",
+                    categories: { sub1: "2023", sub2: "Sketch", sub3: "Ink" },
+                    description: "Zero point.",
+                    media: [{ type: "image", src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/DRAWING0.png" }]
+                }
+            },
+            {
+                type: 'image',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/LOGO1.png',
+                width: 300,
+                position: { x: -1000, y: 500, z: 800 }, 
+                rotation: { x: 0, y: 60, z: 0 },
+                scale: 1.2,
+                clickable: false, // ** CLICKABLE: NULL (False) applied here **
+                modalContent: {
+                    name: "Main Logo",
+                    categories: { sub1: "Identity", sub2: "Brand", sub3: "Icon" },
+                    description: "The decentralized symbol.",
+                    media: [{ type: "image", src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/LOGO1.png" }]
+                }
+            },
+
+            // --- 3D MODELS ---    
+            {
+                type: 'model',
+                src: 'https://github.com/decentralize-dfw/co/blob/main/warhol-basq-opt-v1.glb',
+                position: { x: 1600, y: -700, z: 100 },
+                rotation: { x: 0, y: -45, z: 0 },
+                scale: 580,
+                modalContent: {
+                    name: "Warhol Basquiat Optimization",
+                    categories: { sub1: "2022", sub2: "Sculpture", sub3: "GLB" },
+                    description: "A digital re-imagining of pop art icons in a decentralized space.",
+                    media: [
+                        { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/co/main/warhol-basq-opt-v1.glb" }
+                    ]
+                }
+            },
+
+            {
+                type: 'model',
+                src: 'https://github.com/decentralize-dfw/decentralize-archives/blob/main/decentralize-animation360.glb',
+                position: { x: -1600, y: 500, z: 100 },
+                rotation: { x: 0, y: -45, z: 0 },
+                scale: 300,
+                // ** RICH CONTENT EXAMPLE **
+                modalContent: {
+                    name: "Kendrick Lamar - Duckworth x Kindergarten Jungle Redesign.m4a",
+                    categories: { sub1: "2021", sub2: "Audio", sub3: "Animation" },
+                    description: "djcentralize***",
+                    media: [
+                        { type: "audio", src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize-archives/main/Kendrick%20Lamar%20-%20Duckworth%20x%20Kindergarten%20Jungle%20Redesign.m4a" },
+                        { type: "image", src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize-archives/main/Kendrick%20Lamar%20-%20Duckworth%20x%20Kindergarten%20Jungle%20Redesign.png" },
+                        { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize-archives/main/decentralize-animation360.glb" }
+                    ]
+                }
+            },
+
+             {
+                type: 'model',
+                src: 'https://github.com/decentralize-dfw/decentralize-archives/blob/main/charm.glb',
+                position: { x: -2500, y: -1500, z: -700 },
+                rotation: { x: 0, y: 15, z: 0 },
+                scale: 600,
+                modalContent: {
+                    name: "Charm Object",
+                    categories: { sub1: "2020", sub2: "Object", sub3: "3D" },
+                    description: "A digital charm artifact.",
+                    media: [{ type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize-archives/main/charm.glb" }]
+                }
+            },
+
+            // --- TEXT (WEBGL) ---
+            {
+                type: 'text',
+                content: 'DECENTRALIZE*', 
+                fontSize: 150, 
+                color: '#FF006A',
+                fontFamily: 'GAU Private', 
+                position: { x: -1500, y: -1000, z: -400 },
+                rotation: { x: 0, y: 0, z: 0 },
+                clickable: false, // Text is often better as just visual
+                modalContent: {
+                    name: "About Decentralize",
+                    categories: { sub1: "Info", sub2: "Manifesto" },
+                    description: "Decentralize is an organism evolving from physical mediums to the meta-medium.",
+                    media: [] 
+                }
+            },
+             {
+                type: 'text',
+                content: 'ARCHIVES', 
+                fontSize: 80, 
+                color: '#FF006A',
+                fontFamily: 'GAU Private', 
+                position: { x: -1500, y: -1100, z: -100 },
+                rotation: { x: 0, y: -10, z: 0 },
+                clickable: false
+            },
+            {
+                type: 'text',
+                content: 'DECENTRALIZE IS AN ORGANISM EVOLVING FROM PHYSICAL MEDIUMS TO THE META-MEDIUM.*', 
+                fontSize: 55, 
+                color: '#ff63a4',
+                fontFamily: 'Telegrama Raw', 
+                position: { x: -500, y: -1200, z: -400 },
+                rotation: { x: 0, y: 25, z: 0 },
+                clickable: false
+            },
+            {
+                type: 'text',
+                content: 'More than a scientific term for blockchain, DECENTRALIZE* symbolizes the shift from the "closed-source" dogmas \nof Homo Sapiens to the open-source intelligence of the Information Age.*\ It investigates socio-physics through adventurous, intellectual constructs.\nEqual parts traditional painter and digital architect, DECENTRALIZE* creates weird, organic geometries that explore \nthe intersection of flesh and code. Whether through bold canvas strokes or intricate digital lines, \nthe work is a visual experiment: discovering why mankind strives to evolve and how we define value in our existence.', 
+                fontSize: 35, 
+                color: 'white',
+                fontFamily: 'Telegrama Render', 
+                position: { x: -500, y: -1400, z: -400 },
+                rotation: { x: 0, y: 35, z: 0 },
+                clickable: false
+            },
+            {
+                type: 'text',
+                content: 'Rotate with your mouse', 
+                fontSize: 50, 
+                color: '#ff42b4',
+                fontFamily: 'Telegrama Render', 
+                position: { x: -1500, y: 800, z: -400 },
+                rotation: { x: 0, y: 90, z: 0 },
+                clickable: false
+            },
+            {
+                type: 'text',
+                content: 'searching for rawness \nin the metamorphosis of virtual man. \ndefined by speed, \nchaos, dark emotions, \nviolence, and technology.', 
+                fontSize: 75, 
+                color: '#FF006A',
+                fontFamily: 'Telegrama Raw', 
+                position: { x: 600, y: 900, z: -600 },
+                rotation: { x: 20, y: 0, z: 0 },
+                clickable: false
+            },
+
+            // --- LINKS --- 
+            {
+                type: 'link',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize-archives/main/sendmail.png',
+                link: 'mailto:info@de-centralize.com', 
+                label: 'mail', 
+                fontFamily: 'Telegrama Raw',
+                fontSize: 80,
+                color: '#FFFFFF',
+                width: 250, 
+                position: { x: -1800, y: 1020, z: -300 }, 
+                rotation: { x: 0, y: 40, z: 0 },
+                scale: .6
+            },
+             {
+                type: 'link',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize-archives/main/twt.png', 
+                link: 'https://x.com/decentralize___', 
+                label: 'twitter X', 
+                fontFamily: 'Telegrama Raw',
+                fontSize: 80,
+                color: '#FFFFFF',
+                width: 250, 
+                position: { x: -2200, y: 1000, z: -300 }, 
+                rotation: { x: 0, y: 40, z: 0 },
+                scale: .6
+            }
+        ];
+
+        // --- 2. SETUP ---
+        let camera, scene, rendererGL, rendererCSS, controls, dragControls;
+        let clock;
+        let raycaster, mouse;
+        const clickableObjects = []; 
+        
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        let frustumSize = isMobile ? 5500 : 3000; 
+        
+        let isClickBlocked = false; 
+
+        // Touch handling variables
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        init();
+        animate();
+
+        function init() {
+            clock = new THREE.Clock();
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            const container = document.getElementById('scene-container');
+            const aspect = window.innerWidth / window.innerHeight;
+            
+            // --- ORTHOGRAPHIC CAMERA SETUP ---
+            camera = new THREE.OrthographicCamera(
+                frustumSize * aspect / - 2,
+                frustumSize * aspect / 2,
+                frustumSize / 2,
+                frustumSize / - 2,
+                1,
+                10000
+            );
+            
+            camera.position.set(1500, 200, 1500); 
+            camera.lookAt(0, 0, 0);
+
+            scene = new THREE.Scene();
+
+            // --- RENDERER SETUP ---
+            
+            // 1. CSS3D Renderer (BOTTOM LAYER)
+            rendererCSS = new CSS3DRenderer();
+            rendererCSS.setSize(window.innerWidth, window.innerHeight);
+            rendererCSS.domElement.style.position = 'absolute';
+            rendererCSS.domElement.style.top = '0';
+            rendererCSS.domElement.style.zIndex = '0'; 
+            container.appendChild(rendererCSS.domElement);
+
+            // 2. WebGL Renderer (TOP LAYER)
+            rendererGL = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            rendererGL.setPixelRatio(window.devicePixelRatio);
+            rendererGL.setSize(window.innerWidth, window.innerHeight);
+            rendererGL.domElement.style.position = 'absolute';
+            rendererGL.domElement.style.top = '0';
+            rendererGL.domElement.style.zIndex = '1'; 
+            rendererGL.domElement.style.pointerEvents = 'none'; 
+            rendererGL.toneMapping = THREE.ACESFilmicToneMapping;
+            rendererGL.toneMappingExposure = 1.0;
+            rendererGL.outputColorSpace = THREE.SRGBColorSpace;
+            container.appendChild(rendererGL.domElement);
+
+            // Controls
+            controls = new OrbitControls(camera, document.body);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.enableZoom = true;
+            controls.zoomSpeed = 1.0;
+
+            // --- DRAG CONTROLS (Desktop Only) ---
+            if (!isMobile) {
+                dragControls = new DragControls(clickableObjects, camera, document.body);
+                
+                dragControls.addEventListener('dragstart', function (event) {
+                    controls.enabled = false;
+                    isClickBlocked = false; 
+                });
+
+                dragControls.addEventListener('drag', function (event) {
+                    isClickBlocked = true; 
+                });
+
+                dragControls.addEventListener('dragend', function (event) {
+                    controls.enabled = true;
+                    if (isClickBlocked) {
+                        setTimeout(() => { isClickBlocked = false; }, 100);
+                    }
+                });
+            }
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
+            scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
+            dirLight.position.set(1000, 1000, 1000);
+            scene.add(dirLight);
+
+            const pmremGenerator = new THREE.PMREMGenerator(rendererGL);
+            pmremGenerator.compileEquirectangularShader();
+            new RGBELoader().load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr', (texture) => {
+                const envMap = pmremGenerator.fromEquirectangular(texture).texture;
+                scene.environment = envMap;
+                texture.dispose();
+                pmremGenerator.dispose();
+            });
+
+            document.fonts.ready.then(function () {
+                buildCuratedScene();
+            });
+
+            window.addEventListener('resize', onWindowResize);
+            
+            // --- EVENT LISTENERS FOR INTERACTION ---
+            
+            // 1. Desktop Click
+            window.addEventListener('click', (event) => {
+                if (isClickBlocked) return;
+                handleInteraction(event.clientX, event.clientY);
+            }); 
+            
+            // 2. Mobile Tap (Touch) Detection
+            window.addEventListener('touchstart', (event) => {
+                if(event.touches.length > 0) {
+                    touchStartX = event.touches[0].clientX;
+                    touchStartY = event.touches[0].clientY;
+                }
+            }, {passive: false});
+
+            window.addEventListener('touchend', (event) => {
+                if(event.changedTouches.length > 0) {
+                    const touchEndX = event.changedTouches[0].clientX;
+                    const touchEndY = event.changedTouches[0].clientY;
+                    
+                    const dx = touchEndX - touchStartX;
+                    const dy = touchEndY - touchStartY;
+                    
+                    // If tap
+                    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) {
+                        handleInteraction(touchEndX, touchEndY);
+                    }
+                }
+            }, {passive: false});
+            
+            // Setup Modal Listeners
+            const modalCloseBtn = document.getElementById('modal-close-btn');
+            const modalBackdrop = document.getElementById('modal-backdrop');
+            
+            modalCloseBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // prevent bubling
+                closeModal();
+            });
+            // ** BACKDROP CLICK BLOCKER (CHANGED) **
+            // Clicking backdrop does NOTHING (doesn't close modal, doesn't interact with scene)
+            modalBackdrop.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                // Intentionally empty to block clicks
+            });
+            
+            // ** KEYBOARD LISTENER FOR ESCAPE **
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    const modalContainer = document.getElementById('modal-container');
+                    if (modalContainer.classList.contains('open')) {
+                        closeModal();
+                    }
+                }
+            });
+            
+            setTimeout(() => { document.getElementById('loader').style.opacity = 0; }, 1000);
+            setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 1500);
+        }
+
+        // --- UNIFIED INTERACTION HANDLER ---
+        function handleInteraction(clientX, clientY) {
+            // Check if click is inside modal, if so do nothing
+            if (document.getElementById('modal-container').classList.contains('open')) return;
+
+            mouse.x = (clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(clickableObjects, true); 
+
+            if (intersects.length > 0) {
+                let object = intersects[0].object;
+                
+                // Traverse up to parent group/mesh with userData
+                while(object.parent && !object.userData.isVideo && !object.userData.isSound && !object.userData.isLink && !object.userData.modalContent) {
+                    object = object.parent;
+                    if (!object) break; 
+                }
+                if (!object) object = intersects[0].object; 
+
+                // ** CHECK CLICKABLE PROPERTY **
+                if (object.userData.clickable === false) return;
+
+                // --- VIDEO PLAY/PAUSE ---
+                if (object.userData.isVideo) {
+                    const vid = object.userData.videoEl;
+                    const playBtn = object.userData.playBtn;
+                    
+                    if (vid.paused || vid.ended) {
+                        vid.play(); 
+                        object.material.map = object.userData.videoTex;
+                        object.userData.isPlaying = true;
+                        playBtn.visible = false;
+                        
+                        vid.onended = () => {
+                            object.userData.isPlaying = false;
+                            playBtn.visible = true;
+                        };
+                    } else {
+                        vid.pause();
+                        object.userData.isPlaying = false;
+                        playBtn.visible = true;
+                    }
+                    object.material.needsUpdate = true;
+                    return; 
+                }
+
+                // --- SOUND PLAY/PAUSE ---
+                if (object.userData.isSound) {
+                    const audio = object.userData.audioEl;
+                    if (audio.paused) {
+                        audio.play();
+                        object.userData.isPlaying = true;
+                        new TWEEN.Tween(object.scale).to({x: object.scale.x * 1.1, y: object.scale.y * 1.1}, 100).yoyo(true).repeat(1).start();
+                    } else {
+                        audio.pause();
+                        audio.currentTime = 0; 
+                        object.userData.isPlaying = false;
+                    }
+                    return; 
+                }
+
+                // --- LINK CLICK ---
+                if (object.userData.isLink) {
+                    new TWEEN.Tween(object.scale).to({x: object.scale.x * 0.9, y: object.scale.y * 0.9}, 100).yoyo(true).repeat(1).start();
+                    setTimeout(() => {
+                        window.open(object.userData.url, '_blank');
+                    }, 150);
+                    return; 
+                }
+
+                // --- OPEN MODAL (Image, Model, Text) ---
+                if (object.userData.modalContent) {
+                    openModal(object.userData.modalContent);
+                }
+            }
+        }
+
+        // --- 3. BUILDER ---
+
+        function fixGithubUrl(url) {
+            if (url.includes('github.com') && url.includes('/blob/')) {
+                return url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+            }
+            return url;
+        }
+
+        function degToRad(degrees) {
+            return degrees * (Math.PI / 180);
+        }
+
+        function createTextTexture(text, fontSize, font, color) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            const lines = text.split('\\n').length > 1 ? text.split('\\n') : text.split('\n');
+            const lineHeight = fontSize * 1.1;
+            
+            ctx.font = `${fontSize}px "${font}"`;
+            let maxWidth = 0;
+            lines.forEach(line => {
+                const w = ctx.measureText(line).width;
+                if(w > maxWidth) maxWidth = w;
+            });
+            
+            canvas.width = Math.ceil(maxWidth + 40); 
+            canvas.height = Math.ceil(lines.length * lineHeight + 40);
+            
+            ctx.font = `${fontSize}px "${font}"`;
+            ctx.fillStyle = color;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            const centerX = canvas.width / 2;
+            let startY = (canvas.height - (lines.length - 1) * lineHeight) / 2;
+            
+            lines.forEach((line, i) => {
+                ctx.fillText(line, centerX, startY + (i * lineHeight));
+            });
+            
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            return { texture: tex, width: canvas.width, height: canvas.height };
+        }
+
+        function createPlayButtonTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.beginPath();
+            ctx.moveTo(35, 25);
+            ctx.lineTo(105, 64);
+            ctx.lineTo(35, 103);
+            ctx.closePath();
+            
+            ctx.fillStyle = '#FF006A';
+            ctx.shadowColor = "rgba(0,0,0,0.5)";
+            ctx.shadowBlur = 10;
+            ctx.fill();
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            return tex;
+        }
+
+        function buildCuratedScene() {
+            const gltfLoader = new GLTFLoader();
+            const dracoLoader = new DRACOLoader();
+            dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+            gltfLoader.setDRACOLoader(dracoLoader);
+            gltfLoader.setMeshoptDecoder(MeshoptDecoder);
+            const textureLoader = new THREE.TextureLoader();
+
+            sceneObjects.forEach(item => {
+                const applyTransform = (obj3d) => {
+                    if (item.position) obj3d.position.set(item.position.x, item.position.y, item.position.z);
+                    if (item.rotation) obj3d.rotation.set(degToRad(item.rotation.x), degToRad(item.rotation.y), degToRad(item.rotation.z));
+                    if (item.scale) {
+                        if (typeof item.scale === 'number') obj3d.scale.setScalar(item.scale);
+                        else obj3d.scale.set(item.scale.x, item.scale.y, item.scale.z);
+                    }
+                };
+
+                const safeSrc = item.src ? fixGithubUrl(item.src) : '';
+
+                // --- VIDEO ---
+                if (item.type === 'video') {
+                    const video = document.createElement('video');
+                    video.src = safeSrc;
+                    video.crossOrigin = "anonymous";
+                    video.loop = false;
+                    video.muted = false;
+                    video.playsInline = true;
+                    video.style.display = 'none'; 
+                    document.body.appendChild(video);
+
+                    const thumbUrl = item.poster ? fixGithubUrl(item.poster) : 'https://placehold.co/1024x576/000/FFF?text=PLAY';
+                    const posterTexture = textureLoader.load(thumbUrl);
+                    posterTexture.colorSpace = THREE.SRGBColorSpace;
+
+                    const videoTexture = new THREE.VideoTexture(video);
+                    videoTexture.colorSpace = THREE.SRGBColorSpace;
+
+                    const geometry = new THREE.PlaneGeometry(item.width, item.height);
+                    const material = new THREE.MeshBasicMaterial({ map: posterTexture, side: THREE.DoubleSide, transparent: false });
+                    const mesh = new THREE.Mesh(geometry, material);
+                    
+                    const playTex = createPlayButtonTexture();
+                    const playGeo = new THREE.PlaneGeometry(200, 200); 
+                    const playMat = new THREE.MeshBasicMaterial({ map: playTex, transparent: true, side: THREE.DoubleSide, depthTest: false });
+                    const playMesh = new THREE.Mesh(playGeo, playMat);
+                    playMesh.position.z = 5; 
+                    playMesh.renderOrder = 1; 
+                    
+                    playMesh.name = "PlayButton";
+                    
+                    mesh.add(playMesh); 
+
+                    applyTransform(mesh);
+                    
+                    mesh.userData = { 
+                        isVideo: true, 
+                        videoEl: video, 
+                        videoTex: videoTexture,
+                        posterTex: posterTexture,
+                        isPlaying: false,
+                        playBtn: playMesh,
+                        clickable: item.clickable !== undefined ? item.clickable : true
+                    };
+                    
+                    scene.add(mesh);
+                    clickableObjects.push(mesh);
+                }
+
+                // --- HTML (IFRAME) ---
+                else if (item.type === 'html') {
+                    const div = document.createElement('div');
+                    div.className = 'scene-html-element';
+                    div.style.width = (item.width || 800) + 'px';
+                    div.style.height = (item.height || 600) + 'px';
+                    
+                    const iframe = document.createElement('iframe');
+                    iframe.className = 'scene-iframe';
+                    iframe.src = safeSrc;
+                    div.appendChild(iframe);
+
+                    const cssObj = new CSS3DObject(div);
+                    applyTransform(cssObj);
+                    scene.add(cssObj);
+                }
+
+                // --- SOUND ---
+                else if (item.type === 'sound') {
+                    const audio = new Audio(safeSrc);
+                    const speakerTex = textureLoader.load('https://raw.githubusercontent.com/decentralize-dfw/decentralize-archives/main/speaker.png');
+                    speakerTex.colorSpace = THREE.SRGBColorSpace;
+
+                    const size = 200; 
+                    const geometry = new THREE.PlaneGeometry(size, size);
+                    const material = new THREE.MeshBasicMaterial({ 
+                        map: speakerTex, 
+                        transparent: true, 
+                        side: THREE.DoubleSide 
+                    });
+                    const mesh = new THREE.Mesh(geometry, material);
+                    
+                    applyTransform(mesh);
+
+                    if (item.label) {
+                        const { texture, width, height } = createTextTexture(item.label, 40, item.fontFamily || 'sans-serif', item.color || '#fff');
+                        const labelGeo = new THREE.PlaneGeometry(width, height);
+                        const labelMat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide });
+                        const labelMesh = new THREE.Mesh(labelGeo, labelMat);
+                        labelMesh.position.y = size / 2 + height / 2 + 10; 
+                        mesh.add(labelMesh);
+                    }
+
+                    mesh.userData = {
+                        isSound: true,
+                        audioEl: audio,
+                        isPlaying: false,
+                        clickable: item.clickable !== undefined ? item.clickable : true
+                    };
+
+                    scene.add(mesh);
+                    clickableObjects.push(mesh);
+                }
+
+                // --- IMAGE ---
+                else if (item.type === 'image') {
+                    const texture = textureLoader.load(safeSrc);
+                    texture.colorSpace = THREE.SRGBColorSpace;
+                    
+                    const geometry = new THREE.PlaneGeometry(1, 1); 
+                    const material = new THREE.MeshBasicMaterial({ 
+                        map: texture, 
+                        side: THREE.DoubleSide, 
+                        transparent: true,
+                        alphaTest: 0.5 
+                    });
+                    
+                    const mesh = new THREE.Mesh(geometry, material);
+                    applyTransform(mesh);
+                    
+                    if (item.width) {
+                        mesh.scale.set(item.width, item.width, 1); 
+                        texture.onload = () => {
+                            const aspect = texture.image.width / texture.image.height;
+                            mesh.scale.set(item.width, item.width / aspect, 1);
+                        }
+                    }
+
+                    mesh.userData = { 
+                        modalContent: item.modalContent,
+                        clickable: item.clickable !== undefined ? item.clickable : true
+                    }; 
+                    scene.add(mesh);
+                    clickableObjects.push(mesh); 
+                }
+
+                // --- TEXT (WEBGL) ---
+                else if (item.type === 'text') {
+                    const { texture, width, height } = createTextTexture(item.content, item.fontSize, item.fontFamily, item.color);
+                    
+                    const geometry = new THREE.PlaneGeometry(width, height);
+                    const material = new THREE.MeshBasicMaterial({ 
+                        map: texture, 
+                        transparent: true, 
+                        side: THREE.DoubleSide,
+                        alphaTest: 0.1 
+                    });
+                    
+                    const mesh = new THREE.Mesh(geometry, material);
+                    applyTransform(mesh);
+                    
+                    mesh.userData = { 
+                        modalContent: item.modalContent,
+                        clickable: item.clickable !== undefined ? item.clickable : true
+                    };
+                    scene.add(mesh);
+                    clickableObjects.push(mesh); 
+                }
+
+                // --- MODEL ---
+                else if (item.type === 'model') {
+                    gltfLoader.load(safeSrc, (gltf) => {
+                        const model = gltf.scene;
+                        applyTransform(model);
+                        model.userData = { 
+                            modalContent: item.modalContent,
+                            clickable: item.clickable !== undefined ? item.clickable : true
+                        }; 
+                        
+                        // Propagate userData to children meshes for raycasting to find it
+                        model.traverse((child) => {
+                            if (child.isMesh) {
+                                child.userData = { parentRoot: model }; // Helper link
+                            }
+                        });
+
+                        scene.add(model);
+                        clickableObjects.push(model); 
+                        
+                        if (gltf.animations && gltf.animations.length > 0) {
+                            const mixer = new THREE.AnimationMixer(model);
+                            gltf.animations.forEach(clip => mixer.clipAction(clip).play());
+                            if (!window.mixers) window.mixers = [];
+                            window.mixers.push(mixer);
+                        }
+                    }, undefined, (err) => console.error(err));
+                }
+
+                // --- LINK OBJECT ---
+                else if (item.type === 'link') {
+                    const group = new THREE.Group();
+                    applyTransform(group);
+                    
+                    const texture = textureLoader.load(safeSrc);
+                    texture.colorSpace = THREE.SRGBColorSpace;
+                    
+                    const imgWidth = item.width || 200;
+                    const imgGeo = new THREE.PlaneGeometry(imgWidth, imgWidth); 
+                    const imgMat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide });
+                    const imgMesh = new THREE.Mesh(imgGeo, imgMat);
+                    
+                    texture.onload = () => {
+                        const aspect = texture.image.width / texture.image.height;
+                        imgMesh.scale.set(1, 1/aspect, 1); 
+                    };
+
+                    group.add(imgMesh);
+
+                    if (item.label) {
+                        const { texture: textTex, width: textW, height: textH } = createTextTexture(
+                            item.label, 
+                            item.fontSize || 40, 
+                            item.fontFamily || 'sans-serif', 
+                            item.color || '#fff'
+                        );
+                        
+                        const labelGeo = new THREE.PlaneGeometry(textW, textH);
+                        const labelMat = new THREE.MeshBasicMaterial({ map: textTex, transparent: true, side: THREE.DoubleSide });
+                        const labelMesh = new THREE.Mesh(labelGeo, labelMat);
+                        
+                        labelMesh.position.y = - (imgWidth / 2 + 50); 
+                        
+                        group.add(labelMesh);
+                    }
+
+                    group.userData = {
+                        isLink: true,
+                        url: item.link,
+                        clickable: item.clickable !== undefined ? item.clickable : true
+                    };
+
+                    scene.add(group);
+                    clickableObjects.push(group); 
+                }
+            });
+        }
+
+        // --- 4. MODAL LOGIC ---
+        function openModal(content) {
+            if (!content) return;
+
+            // ** FREEZE CONTROLS (CRITICAL) **
+            if (controls) controls.enabled = false;
+            if (dragControls) dragControls.enabled = false;
+
+            const mediaContainer = document.getElementById('modal-media-container');
+            const infoContainer = document.getElementById('modal-info-container');
+            const modalContainer = document.getElementById('modal-container');
+            const modalBackdrop = document.getElementById('modal-backdrop');
+
+            mediaContainer.innerHTML = '';
+            infoContainer.innerHTML = '';
+
+            // 1. Populate Media (Vertical Stack)
+            if (content.media && content.media.length > 0) {
+                content.media.forEach(m => {
+                    let mediaEl;
+                    const fixedSrc = fixGithubUrl(m.src);
+                    
+                    // Common classes for vertical layout
+                    const commonClasses = "block w-full h-auto mb-8 object-contain max-h-[80vh] mx-auto";
+
+                    if (m.type === 'image') {
+                        mediaEl = document.createElement('img');
+                        mediaEl.src = fixedSrc;
+                        mediaEl.className = commonClasses;
+                    } 
+                    else if (m.type === 'video') {
+                        mediaEl = document.createElement('video');
+                        mediaEl.src = fixedSrc;
+                        mediaEl.controls = true;
+                        mediaEl.className = commonClasses;
+                    } 
+                    else if (m.type === 'audio') {
+                        mediaEl = document.createElement('audio');
+                        mediaEl.src = fixedSrc;
+                        mediaEl.controls = true;
+                        mediaEl.className = "block w-full md:w-3/4 h-12 mx-auto mb-8 bg-white/10 rounded-full border border-white/20";
+                    } 
+                    else if (m.type === 'model') {
+                        mediaEl = document.createElement('model-viewer');
+                        mediaEl.src = fixedSrc;
+                        mediaEl.className = "block w-full h-[400px] md:h-[500px] mb-8 mx-auto";
+                        mediaEl.setAttribute('ar', '');
+                        mediaEl.setAttribute('camera-controls', '');
+                        mediaEl.setAttribute('shadow-intensity', '1');
+                        mediaEl.style.backgroundColor = "rgba(0,0,0,0.05)"; 
+                    }
+                    else if (m.type === 'html') {
+                        const wrapper = document.createElement('div');
+                        wrapper.className = "block w-full aspect-video mb-8 mx-auto bg-white overflow-hidden relative border border-gray-200 shadow-sm";
+                        
+                        let url = fixedSrc;
+                        if (url.includes('raw.githubusercontent.com') && url.endsWith('.html')) {
+                            url = url.replace('raw.githubusercontent.com', 'raw.githack.com').replace('/refs/heads/', '/');
+                        }
+
+                        const iframe = document.createElement('iframe');
+                        iframe.src = url;
+                        iframe.className = "absolute top-0 left-0 w-full h-full border-none";
+                        iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+                        iframe.allowFullscreen = true;
+                        
+                        wrapper.appendChild(iframe);
+                        mediaContainer.appendChild(wrapper);
+                        return;
+                    }
+
+                    if (mediaEl) mediaContainer.appendChild(mediaEl);
+                });
+            } else {
+                mediaContainer.innerHTML = '<div class="w-full h-full flex items-center justify-center text-sm opacity-50">NO MEDIA</div>';
+            }
+
+            // 2. Populate Info (Title, Subtitles, Description)
+            let infoHtml = '<div class="space-y-4 ui-text">';
+            
+            // Title
+            infoHtml += `<div>
+                            <div class="modal-value font-bold text-lg leading-tight uppercase tracking-wider mb-2">${content.name || 'Untitled'}</div>
+                         </div>`;
+            
+            // Categories (Subtitles) - Stacked vertically as requested "alt alta"
+            if (content.categories) {
+                infoHtml += '<div class="flex flex-col gap-1 border-t border-[var(--ui-color)] pt-2 opacity-80">';
+                
+                const values = Object.values(content.categories).filter(val => val && val !== '-');
+                values.forEach(val => {
+                     infoHtml += `<div class="modal-value text-xs tracking-wider capitalize">${val}</div>`;
+                });
+                
+                infoHtml += '</div>';
+            }
+
+            // Description
+            if (content.description) {
+                infoHtml += `<div class="pt-2 border-t border-[var(--ui-color)]">
+                                <p class="modal-desc leading-relaxed whitespace-pre-line">${content.description}</p>
+                             </div>`;
+            }
+
+            infoHtml += '</div>';
+            infoContainer.innerHTML = infoHtml;
+
+            // Show
+            modalContainer.classList.add('open');
+            modalBackdrop.classList.add('open');
+        }
+
+        function closeModal() {
+            const modalContainer = document.getElementById('modal-container');
+            const modalBackdrop = document.getElementById('modal-backdrop');
+            
+            modalContainer.classList.remove('open');
+            modalBackdrop.classList.remove('open');
+            
+            // ** UNFREEZE CONTROLS (CRITICAL) **
+            if (controls) controls.enabled = true;
+            if (dragControls) dragControls.enabled = true;
+
+            // Clear content after animation
+            setTimeout(() => {
+                document.getElementById('modal-media-container').innerHTML = '';
+            }, 300);
+        }
+
+        // --- RENDER LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+            TWEEN.update();
+            
+            if (clock) {
+                const delta = clock.getDelta();
+                if (window.mixers) {
+                    window.mixers.forEach(mixer => mixer.update(delta));
+                }
+            }
+
+            if (controls) controls.update();
+            
+            rendererGL.render(scene, camera);
+            rendererCSS.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            const aspect = window.innerWidth / window.innerHeight;
+            
+            let currentFrustum = frustumSize;
+            if (isMobile && window.innerWidth < window.innerHeight) {
+                 currentFrustum = 6000;
+            } else if (isMobile) {
+                 currentFrustum = 5500;
+            } else {
+                 currentFrustum = 3000;
+            }
+
+            camera.left = - currentFrustum * aspect / 2;
+            camera.right = currentFrustum * aspect / 2;
+            camera.top = currentFrustum / 2;
+            camera.bottom = - currentFrustum / 2;
+            
+            camera.updateProjectionMatrix();
+            rendererGL.setSize(window.innerWidth, window.innerHeight);
+            rendererCSS.setSize(window.innerWidth, window.innerHeight);
+        }
+
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script> 
+</body>
+</html>
