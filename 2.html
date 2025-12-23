@@ -2,15 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, viewport-fit=cover">
+    <!-- Viewport Fix: viewport-fit=cover eklendi (iPhone Notch için) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>HOME</title>
     
     <!-- Utilities -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Meshopt Decoder -->
     <script src="https://unpkg.com/meshoptimizer@0.19.0/meshopt_decoder.js"></script>
 
-    <!-- FONTS -->
-    <style>
+     <!-- FONTS -->
+      <style>
         @font-face {
             font-family: 'Telegrama Raw';
             src: url('https://raw.githubusercontent.com/decentralize-dfw/font/main/vea.ttf') format('truetype');
@@ -37,19 +39,24 @@
             --font-headers: 'Telegrama Raw', sans-serif;
             --font-body: 'Telegrama Render', sans-serif;
             --font-display: 'GAU Private', cursive;
+
+            /* JS Fallback for browsers that don't support dvh yet */
+            --app-height: 100vh;
         }
 
-
         html, body {
-            height: 100dvh; /* iPhone adres çubuğu fix */
-            width: 100vw;
-            margin: 0;
-            overflow: hidden;
-            position: fixed; /* iOS bounce engelleme */
             font-family: 'Telegrama Render', sans-serif;
             background-color: white;
             color: var(--ui-color);
-            touch-action: none;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; 
+            width: 100vw;
+            /* Mobile Safari Fix: Use dvh if available, else fallback variable */
+            height: 100vh; 
+            height: 100dvh; 
+            height: var(--app-height);
+            touch-action: none; 
         }
 
         /* --- 3D SCENE STYLES --- */
@@ -91,19 +98,20 @@
         }
         @keyframes pulse { 0% { opacity: 0.5; } 100% { opacity: 1; } }
 
-        /* --- MODAL STYLES (GUFRAM INSPIRED) --- */
+        /* --- MODAL STYLES --- */
         
-        /* Modal Container & Backdrop */
         #modal-container {
             opacity: 0; visibility: hidden; transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
             pointer-events: none;
             z-index: 999;
+            /* CRITICAL FIX: Ensure modal container covers full dynamic viewport */
+            height: 100vh;
+            height: 100dvh;
         }
         #modal-container.open { opacity: 1; visibility: visible; pointer-events: auto; }
         
         #modal-backdrop {
             opacity: 0; visibility: hidden; transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
-            /* Updated Backdrop: 0.2 opacity white + 8px blur */
             background-color: rgba(255, 255, 255, 0.2); 
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
@@ -113,10 +121,11 @@
         /* Main Content Wrapper */
         #modal-content {
             background-color: transparent !important;
-            /* Updated Shadow: Glow Style (Centered, blurred) - 0.3 Opacity */
             box-shadow: 0 0 40px rgba(0,0,0,0.3); 
             border: 1px solid black;
             display: flex;
+            /* Ensure content fits within the safe area on mobile */
+            max-height: 100dvh;
         }
 
         /* Typography */
@@ -142,7 +151,7 @@
             line-height: 1.5;
         }
         
-        /* Buttons (SVG from reference) */
+        /* Buttons */
         .g-cta {
             display: inline-flex;
             align-items: center;
@@ -151,23 +160,18 @@
             border-radius: 50%;
             width: 48px;
             height: 48px;
-            background: white; /* Ensure visibility over media */
+            background: white; 
             cursor: pointer;
             transition: all 0.2s ease;
+            /* Ensure buttons are clickable on mobile */
+            touch-action: manipulation; 
         }
         .g-cta:hover {
             background: black;
         }
         .g-cta:hover svg path {
             fill: white;
-            stroke: white; /* For stroke-based icons */
-        }
-        .g-cta.-back {
-            position: absolute;
-            top: 2rem;
-            left: 2rem;
-            z-index: 100;
-            background: white;
+            stroke: white;
         }
         
         /* Close Button Special */
@@ -199,59 +203,64 @@
             height: 40px;
         }
         
-        /* Media Frame Style (Reused for all media types) */
+        /* Media Frame Style */
         .media-frame-style {
             border: 1px solid black;
-            /* Updated Shadow: Glow Style for media - 0.3 Opacity */
             box-shadow: 0 0 25px rgba(0,0,0,0.3);
         }
 
         /* Mobile Nav Scaling */
         .mobile-nav-scale {
-            transform: scale(0.7); /* Scale down by 30% */
-            transform-origin: bottom right; /* Anchor to corner */
+            transform: scale(0.85); 
+            transform-origin: bottom right; 
         }
 
         /* Responsive Overrides */
         @media (max-width: 768px) {
             .g-sidebar__title { font-size: 1.8rem; }
-            #modal-content { flex-direction: column; height: 100dvh; width: 100vw; }
-            /* Mobile Fixed Bottom Info Logic */
+            #modal-content { flex-direction: column; }
+            
+            /* CRITICAL MOBILE LAYOUT FIXES */
+            
+            /* Info Area: Fixed at bottom, specific height */
             .mobile-fixed-info {
-                position: fixed;
-                bottom: 0;
-                left: 0;
+                position: relative; /* Changed from fixed to flow naturally in flex if needed, but we force order */
+                height: 35dvh; /* Dynamic Height */
                 width: 100%;
-                height: 35dvh;
                 background: white;
                 border-top: 1px solid black;
                 overflow-y: auto;
                 z-index: 60;
                 padding: 1.5rem;
-                padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
+                flex-shrink: 0; /* Don't shrink */
             }
+
+            /* Media Area: Takes remaining space */
             .mobile-media-area {
-                height: 65dvh;
+                height: 65dvh; /* Dynamic Height */
                 width: 100%;
-                background-color: rgba(240, 240, 240, 0.4); /* Daha şeffaf bir gri */
+                background-color: rgba(240, 240, 240, 0.4);
                 backdrop-filter: blur(5px);
-                position: relative;
-                overflow: hidden;
+                flex-grow: 1;
+                /* Important for absolute positioning of children inside */
+                position: relative; 
             }
             
-            /* Hide the bottom gallery nav (Set B) on mobile */
             .gallery-nav {
                 display: none; 
-            }
-            
-            /* Butonları her zaman görünür alanda tut (Safe Area Inset) */
-            .mobile-nav-scale {
-                bottom: 1rem !important;
-                right: 1rem !important;
             }
         }
 
     </style>
+    <script>
+        // JS Fallback for 100vh on mobile browsers (just in case dvh isn't supported)
+        const appHeight = () => {
+            const doc = document.documentElement;
+            doc.style.setProperty('--app-height', `${window.innerHeight}px`);
+        }
+        window.addEventListener('resize', appHeight);
+        appHeight();
+    </script>
 </head>
 <body>
 
@@ -264,14 +273,16 @@
     <div id="scene-container"></div>
 
     <!-- MODAL (POP UP) -->
-    <div id="modal-container" tabindex="-1" class="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 outline-none">
+    <!-- h-screen replaced with h-[100dvh] for mobile safe areas -->
+    <div id="modal-container" tabindex="-1" class="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-8 outline-none h-[100dvh] w-full">
         <div id="modal-backdrop" class="fixed inset-0 z-40"></div>
         
         <!-- Modal Content Box -->
+        <!-- Mobile: Full Screen (w-full h-full). Desktop: w-[95vw] h-[90vh] -->
         <div id="modal-content" class="relative z-50 w-full h-full md:w-[95vw] md:h-[90vh] bg-white flex flex-col md:flex-row overflow-hidden">
             
             <!-- CLOSE BUTTON -->
-            <button id="modal-close-btn" class="g-close-btn" style="top:calc(1rem + env(safe-area-inset-top))">
+            <button id="modal-close-btn" class="g-close-btn">
                 Close 
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="black"/>
@@ -279,25 +290,24 @@
             </button>
             
             <!-- LEFT: MEDIA SECTION (Carousel) -->
-            <!-- Desktop: 65-70% width. Mobile: Top 65% height -->
+            <!-- Mobile: Top part (flex-grow). Desktop: Left part (70%) -->
             <div id="modal-media-wrapper" class="mobile-media-area w-full md:w-[70%] h-full bg-[#f4f4f4] relative flex items-center justify-center overflow-hidden">
                 
                 <!-- Active Media -->
-                <!-- PADDING ADJUSTED HERE: p-12 md:p-32 (was p-8 md:p-12) to shrink media -->
+                <!-- PADDING ADJUSTED: Less padding on mobile to maximize view -->
                 <div id="active-media-container" class="w-full h-full flex items-center justify-center p-4 md:p-32 relative">
                     <!-- Dynamic Media Content -->
                 </div>
 
-                <!-- Navigation Arrows (Overlay on Image for Desktop, Hidden/Different for mobile if needed) -->
-                <!-- Added mobile-nav-scale class -->
-                <div class="absolute bottom-4 right-4 flex gap-4 z-20 md:hidden mobile-nav-scale"> 
-                    <!-- Mobile Arrows embedded in media area -->
-                      <button id="prev-media-btn-m" class="g-cta">
+                <!-- Navigation Arrows (Mobile Specific) -->
+                <!-- Absolute positioning relative to Media Area, HIGH Z-INDEX to sit above video/info -->
+                <div class="absolute bottom-4 right-4 flex gap-4 z-[70] md:hidden mobile-nav-scale"> 
+                      <button id="prev-media-btn-m" class="g-cta shadow-lg">
                         <svg width="24" height="24" viewbox="0 0 24 24" fill="none">
                              <path d="M14 7.86989L9.42 12.4599L14 17.0499L11.8829 19.167L5.17579 12.4599L11.8829 5.75278L14 7.86989Z" fill="black"></path>
                         </svg>
                     </button>
-                    <button id="next-media-btn-m" class="g-cta">
+                    <button id="next-media-btn-m" class="g-cta shadow-lg">
                         <svg width="24" height="24" viewbox="0 0 24 24" fill="none">
                             <path d="M9.17579 7.86988L13.7558 12.4599L9.17579 17.0499L11.2929 19.167L18 12.4599L11.2929 5.75278L9.17579 7.86988Z" fill="black"></path>
                         </svg>
@@ -306,7 +316,7 @@
             </div>
             
             <!-- RIGHT: INFO SECTION (Sidebar) -->
-            <!-- Desktop: 30% width. Mobile: Bottom 35% fixed height -->
+            <!-- Mobile: Fixed height at bottom. Desktop: Right part (30%) -->
             <div id="modal-info-container" class="mobile-fixed-info md:w-[30%] md:h-full md:relative bg-white p-6 md:p-12 overflow-y-auto flex flex-col justify-between border-l border-black">
                 
                 <div>
@@ -323,8 +333,7 @@
                     <div class="g-body-text" id="modal-desc"></div>
                 </div>
 
-                <!-- Desktop Navigation Arrows (Bottom of Sidebar) -->
-                <!-- Note: hidden via CSS @media on mobile now too, but keeping HTML intact -->
+                <!-- Desktop Navigation Arrows -->
                 <div class="gallery-nav hidden md:flex">
                     <button id="prev-media-btn" class="g-cta">
                         <svg width="24" height="24" viewbox="0 0 24 24" fill="none">
@@ -816,7 +825,7 @@
   }
 ];
 
-      
+       
 
         // --- 2. SETUP ---
         let camera, scene, rendererGL, rendererCSS, controls, dragControls;
@@ -827,10 +836,13 @@
         
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
-        // Touch handling variables
-        let clickStartX = 0;
-        let clickStartY = 0;
+        let frustumSize = isMobile ? 5500 : 3000; 
+        
         let isClickBlocked = false; 
+
+        // Touch handling variables
+        let touchStartX = 0;
+        let touchStartY = 0;
 
         // ** CAROUSEL STATE **
         let currentModalContent = null;
@@ -842,162 +854,108 @@
         init();
         animate();
 
-        function init() {
-            clock = new THREE.Clock();
-            raycaster = new THREE.Raycaster();
-            mouse = new THREE.Vector2();
+       let clickStartX = 0;
+let clickStartY = 0;
 
-            const container = document.getElementById('scene-container');
-            
-            // Kamera parametrelerini fitCameraToScene fonksiyonu belirleyeceği için basitçe başlatıyoruz
-            camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 50000);
-            
-            scene = new THREE.Scene();
+function init() {
+    clock = new THREE.Clock();
+    raycaster = new THREE.Raycaster();
+    mouse = new THREE.Vector2();
 
-            // --- RENDERER SETUP ---
-            
-            // 1. CSS3D Renderer (BOTTOM LAYER)
-            rendererCSS = new CSS3DRenderer();
-            rendererCSS.setSize(window.innerWidth, window.innerHeight);
-            rendererCSS.domElement.style.position = 'absolute';
-            rendererCSS.domElement.style.top = '0';
-            rendererCSS.domElement.style.zIndex = '0'; 
-            container.appendChild(rendererCSS.domElement);
+    const container = document.getElementById('scene-container');
+    camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 50000);
+    scene = new THREE.Scene();
 
-            // 2. WebGL Renderer (TOP LAYER)
-            rendererGL = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            rendererGL.setPixelRatio(window.devicePixelRatio);
-            rendererGL.setSize(window.innerWidth, window.innerHeight);
-            rendererGL.domElement.style.position = 'absolute';
-            rendererGL.domElement.style.top = '0';
-            rendererGL.domElement.style.zIndex = '1'; 
-            rendererGL.domElement.style.pointerEvents = 'none'; 
-            rendererGL.toneMapping = THREE.ACESFilmicToneMapping;
-            rendererGL.toneMappingExposure = 1.0;
-            rendererGL.outputColorSpace = THREE.SRGBColorSpace;
-            container.appendChild(rendererGL.domElement);
+    // --- RENDERER SETUP ---
+    rendererCSS = new CSS3DRenderer();
+    rendererCSS.setSize(window.innerWidth, window.innerHeight);
+    rendererCSS.domElement.style.position = 'absolute';
+    rendererCSS.domElement.style.top = '0';
+    rendererCSS.domElement.style.zIndex = '0'; 
+    container.appendChild(rendererCSS.domElement);
 
-            // Controls
-            controls = new OrbitControls(camera, document.body);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
+    rendererGL = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    rendererGL.setPixelRatio(window.devicePixelRatio);
+    rendererGL.setSize(window.innerWidth, window.innerHeight);
+    rendererGL.domElement.style.position = 'absolute';
+    rendererGL.domElement.style.top = '0';
+    rendererGL.domElement.style.zIndex = '1'; 
+    rendererGL.domElement.style.pointerEvents = 'none'; 
+    rendererGL.toneMapping = THREE.ACESFilmicToneMapping;
+    rendererGL.toneMappingExposure = 1.0;
+    rendererGL.outputColorSpace = THREE.SRGBColorSpace;
+    container.appendChild(rendererGL.domElement);
 
-            // --- DRAG CONTROLS (Desktop Only) ---
-            if (!isMobile) {
-                dragControls = new DragControls(clickableObjects, camera, document.body);
-                
-                dragControls.addEventListener('dragstart', function (event) {
-                    controls.enabled = false;
-                    isClickBlocked = false; 
-                });
+    // OrbitControls: Kamerayı döndürmek için
+    controls = new OrbitControls(camera, document.body);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
 
-                dragControls.addEventListener('drag', function (event) {
-                    isClickBlocked = true; 
-                });
+    // DragControls: Sadece Desktop'ta objeleri taşımak için
+    if (!isMobile) {
+        dragControls = new DragControls(clickableObjects, camera, document.body);
+        dragControls.addEventListener('dragstart', () => controls.enabled = false);
+        dragControls.addEventListener('dragend', () => controls.enabled = true);
+    }
 
-                dragControls.addEventListener('dragend', function (event) {
-                    controls.enabled = true;
-                    if (isClickBlocked) {
-                        setTimeout(() => { isClickBlocked = false; }, 100);
-                    }
-                });
-            }
+    const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
+    dirLight.position.set(1000, 1000, 1000);
+    scene.add(dirLight);
 
-            const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
-            scene.add(ambientLight);
-            const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
-            dirLight.position.set(1000, 1000, 1000);
-            scene.add(dirLight);
+    const pmremGenerator = new THREE.PMREMGenerator(rendererGL);
+    new RGBELoader().load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr', (texture) => {
+        const envMap = pmremGenerator.fromEquirectangular(texture).texture;
+        scene.environment = envMap;
+        globalEnvMap = envMap;
+        texture.dispose();
+        pmremGenerator.dispose();
+    });
 
-            const pmremGenerator = new THREE.PMREMGenerator(rendererGL);
-            // pmremGenerator.compileEquirectangularShader(); // Optional in newer three.js
-            new RGBELoader().load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr', (texture) => {
-                const envMap = pmremGenerator.fromEquirectangular(texture).texture;
-                scene.environment = envMap;
-                globalEnvMap = envMap; // ** STORE GLOBALLY **
-                texture.dispose();
-                pmremGenerator.dispose();
-            });
+    document.fonts.ready.then(() => buildCuratedScene());
+    window.addEventListener('resize', onWindowResize);
 
-            document.fonts.ready.then(function () {
-                buildCuratedScene();
-            });
+    // --- GELİŞMİŞ TIKLAMA/SÜRÜKLEME AYRIMI ---
 
-            window.addEventListener('resize', onWindowResize);
-            
-            // --- GELİŞMİŞ TIKLAMA/SÜRÜKLEME AYRIMI ---
+    // 1. Mouse/Touch Başlangıcı
+    const onPointerDown = (e) => {
+        clickStartX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+        clickStartY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+    };
 
-            // 1. Mouse/Touch Başlangıcı
-            const onPointerDown = (e) => {
-                clickStartX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
-                clickStartY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
-            };
+    // 2. Mouse/Touch Bitişi
+    const onPointerUp = (e) => {
+        const endX = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
+        const endY = e.clientY || (e.changedTouches ? e.changedTouches[0].clientY : 0);
 
-            // 2. Mouse/Touch Bitişi
-            const onPointerUp = (e) => {
-                const endX = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
-                const endY = e.clientY || (e.changedTouches ? e.changedTouches[0].clientY : 0);
+        // Başlangıç ve bitiş arasındaki mesafeyi hesapla (Piksel cinsinden)
+        const diffX = Math.abs(endX - clickStartX);
+        const diffY = Math.abs(endY - clickStartY);
 
-                // Başlangıç ve bitiş arasındaki mesafeyi hesapla (Piksel cinsinden)
-                const diffX = Math.abs(endX - clickStartX);
-                const diffY = Math.abs(endY - clickStartY);
-
-                // Eğer kullanıcı 7 pikselden fazla hareket ettirdiyse bu bir sürüklemedir, TIKLAMA DEĞİLDİR.
-                if (diffX < 7 && diffY < 7) {
-                    handleInteraction(endX, endY);
-                }
-            };
-            
-            // Desktop Click Listener (Alternative)
-            window.addEventListener('click', (event) => {
-                if (isClickBlocked) return;
-                // handleInteraction(event.clientX, event.clientY); // PointerUp handles this better
-            }); 
-
-            window.addEventListener('mousedown', onPointerDown);
-            window.addEventListener('mouseup', onPointerUp);
-            window.addEventListener('touchstart', onPointerDown, { passive: false });
-            window.addEventListener('touchend', onPointerUp, { passive: false });
-            
-            // Setup Modal Listeners
-            const modalCloseBtn = document.getElementById('modal-close-btn');
-            const modalBackdrop = document.getElementById('modal-backdrop');
-            
-            modalCloseBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // prevent bubling
-                closeModal();
-            });
-            // ** BACKDROP CLICK BLOCKER (CHANGED) **
-            // Clicking backdrop does NOTHING (doesn't close modal, doesn't interact with scene)
-            modalBackdrop.addEventListener('click', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                // Intentionally empty to block clicks
-            });
-            
-            // ** KEYBOARD LISTENER FOR ESCAPE **
-            window.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape') {
-                    const modalContainer = document.getElementById('modal-container');
-                    if (modalContainer.classList.contains('open')) {
-                        closeModal();
-                    }
-                } else if (e.key === 'ArrowRight') {
-                    nextMedia();
-                } else if (e.key === 'ArrowLeft') {
-                    prevMedia();
-                }
-            });
-
-            // Carousel Buttons
-            document.getElementById('prev-media-btn').addEventListener('click', prevMedia);
-            document.getElementById('next-media-btn').addEventListener('click', nextMedia);
-            document.getElementById('prev-media-btn-m').addEventListener('click', prevMedia);
-            document.getElementById('next-media-btn-m').addEventListener('click', nextMedia);
-            
-            setTimeout(() => { document.getElementById('loader').style.opacity = 0; }, 1000);
-            setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 1500);
+        // Eğer kullanıcı 7 pikselden fazla hareket ettirdiyse bu bir sürüklemedir, TIKLAMA DEĞİLDİR.
+        if (diffX < 7 && diffY < 7) {
+            handleInteraction(endX, endY);
         }
+    };
+
+    window.addEventListener('mousedown', onPointerDown);
+    window.addEventListener('mouseup', onPointerUp);
+    window.addEventListener('touchstart', onPointerDown, { passive: false });
+    window.addEventListener('touchend', onPointerUp, { passive: false });
+
+    // Modal Kapatma
+    document.getElementById('modal-close-btn').addEventListener('click', (e) => { e.stopPropagation(); closeModal(); });
+    
+    // Setup Nav Button Listeners
+    document.getElementById('prev-media-btn').addEventListener('click', prevMedia);
+    document.getElementById('next-media-btn').addEventListener('click', nextMedia);
+    document.getElementById('prev-media-btn-m').addEventListener('click', prevMedia);
+    document.getElementById('next-media-btn-m').addEventListener('click', nextMedia);
+
+    setTimeout(() => { document.getElementById('loader').style.opacity = 0; }, 1000);
+    setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 1500);
+}
 
         // --- UNIFIED INTERACTION HANDLER ---
         function handleInteraction(clientX, clientY) {
@@ -1337,33 +1295,33 @@
                 }
 
                 // --- MODEL ---
-                else if (item.type === 'model') {
-                    gltfLoader.load(safeSrc, (gltf) => {
-                        const model = gltf.scene;
-                        applyTransform(model);
-                        model.userData = { 
-                            modalContent: item.modalContent,
-                            clickable: item.clickable !== undefined ? item.clickable : true
-                        }; 
-                        
-                        model.traverse((child) => {
-                            if (child.isMesh) child.userData = { parentRoot: model };
-                        });
+               else if (item.type === 'model') {
+    gltfLoader.load(safeSrc, (gltf) => {
+        const model = gltf.scene;
+        applyTransform(model);
+        model.userData = { 
+            modalContent: item.modalContent,
+            clickable: item.clickable !== undefined ? item.clickable : true
+        }; 
+        
+        model.traverse((child) => {
+            if (child.isMesh) child.userData = { parentRoot: model };
+        });
 
-                        scene.add(model);
-                        clickableObjects.push(model); 
+        scene.add(model);
+        clickableObjects.push(model); 
 
-                        // TÜM OBJELERİN BOYUTU ARTIK BELLİ, KAMERAYI FİTLE
-                        fitCameraToScene(); 
-                        
-                        if (gltf.animations && gltf.animations.length > 0) {
-                            const mixer = new THREE.AnimationMixer(model);
-                            gltf.animations.forEach(clip => mixer.clipAction(clip).play());
-                            if (!window.mixers) window.mixers = [];
-                            window.mixers.push(mixer);
-                        }
-                    }, undefined, (err) => console.error(err));
-                }
+        // TÜM OBJELERİN BOYUTU ARTIK BELLİ, KAMERAYI FİTLE
+        fitCameraToScene(); 
+        
+        if (gltf.animations && gltf.animations.length > 0) {
+            const mixer = new THREE.AnimationMixer(model);
+            gltf.animations.forEach(clip => mixer.clipAction(clip).play());
+            if (!window.mixers) window.mixers = [];
+            window.mixers.push(mixer);
+        }
+    }, undefined, (err) => console.error(err));
+}
 
                 // --- LINK OBJECT ---
                 else if (item.type === 'link') {
@@ -1531,30 +1489,31 @@
                 // 1. Container for video + button
                 // Flex column to stack video and button vertically
                 const container = document.createElement('div');
-                container.className = "flex flex-col items-center justify-center w-full h-full";
+                // Relative to contain absolute buttons if needed
+                container.className = "flex flex-col items-center justify-center w-full h-full relative overflow-hidden";
 
                 // 2. The Video Element
                 mediaEl = document.createElement('video');
                 mediaEl.src = fixedSrc;
                 
-                // CRITICAL FIX:
-                // Removed 'flex-1' so the border hugs the video content.
-                // Changed 'max-h-full' to 'max-h-[calc(100%-60px)]' to reserve space for the button below.
-                mediaEl.className = "max-w-full max-h-[calc(100%-60px)] object-contain media-frame-style"; 
+                // CRITICAL FIX: Ensure video fits perfectly inside container (object-contain) and doesn't overflow
+                mediaEl.className = "w-full h-full object-contain media-frame-style"; 
                 
                 mediaEl.playsInline = true;
                 mediaEl.autoplay = true;
                 mediaEl.loop = true; 
-                mediaEl.controls = false; // CRITICAL: NO NATIVE CONTROLS
-                mediaEl.muted = true; // CRITICAL: Required for autoplay on most browsers
+                mediaEl.controls = false; 
+                mediaEl.muted = true; 
 
                 // 3. The Custom Mute Button
                 const muteBtn = document.createElement('button');
                 
-                // UPDATED CLASSNAME FOR RESPONSIVE POSITIONING & SCALING
-                // Mobile: Absolute position bottom-left, scaled down 30% (scale-0.7), anchored to bottom-left.
-                // Desktop (md:): Static position (in flow below video), normal scale, margin-top for spacing.
-                muteBtn.className="g-cta shadow-md flex-none absolute bottom-4 left-4 z-30 scale-[0.7] origin-bottom-left md:static md:mt-4 md:scale-100 md:origin-center md:transform-none";
+                // UPDATED POSITIONING: 
+                // Absolute positioning relative to the CONTAINER, not the window.
+                // High z-index (50) to ensure visibility above video
+                muteBtn.className = "g-cta shadow-md flex-none z-50 " + 
+                                    "absolute bottom-4 left-4 scale-[0.7] origin-bottom-left " + 
+                                    "md:static md:mt-4 md:scale-100 md:origin-center md:transform-none md:bottom-auto md:left-auto"; 
                 
                 // SVG Icons (Muted vs Unmuted) - Thin strokes
                 const iconMuted = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5.889 16H2C1.448 16 1 15.552 1 15V9C1 8.448 1.448 8 2 8H5.889L10.293 3.596C10.927 2.962 12 3.411 12 4.308V19.692C12 20.59 10.927 21.038 10.293 20.404L5.889 16ZM16 9L20 13M16 13L20 9" stroke="#3d3d3d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
@@ -1629,16 +1588,16 @@
                 wrapper.appendChild(iframe);
                 mediaWrapper.appendChild(wrapper);
             }
-            const descEl = document.getElementById('modal-desc');
-            let baseDescription = currentModalContent.description || '';
+const descEl = document.getElementById('modal-desc');
+let baseDescription = currentModalContent.description || '';
 
-            if (m.linkUrl) { // Burada linkUrl null değilse çalışır
-                descEl.innerHTML = `${baseDescription}<br><br><a href="${m.linkUrl}" target="_blank" class="underline hover:opacity-70 transition-opacity font-bold">
-                    ${m.linkText || 'VIEW LINK'}
-                </a>`;
-            } else {
-                descEl.innerHTML = baseDescription;
-            }
+if (m.linkUrl) { // Burada linkUrl null değilse çalışır
+    descEl.innerHTML = `${baseDescription}<br><br><a href="${m.linkUrl}" target="_blank" class="underline hover:opacity-70 transition-opacity font-bold">
+        ${m.linkText || 'VIEW LINK'}
+    </a>`;
+} else {
+    descEl.innerHTML = baseDescription;
+}
         }
 
         // --- NEW MODAL 3D LOGIC ---
@@ -1673,7 +1632,7 @@
             const dirLight = new THREE.DirectionalLight(0xffffff, 3.0); // Boosted from 2.5
             dirLight.position.set(1000, 1000, 1000); 
             modalScene.add(dirLight);
-              
+             
             // Add Hemisphere Light for better overall illumination (fixes dark areas)
             const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 3.0);
             hemiLight.position.set(0, 20, 0);
@@ -1813,7 +1772,7 @@
         // --- RENDER LOOP ---
         function animate() {
             requestAnimationFrame(animate);
-            if (typeof TWEEN !== 'undefined') TWEEN.update();
+            TWEEN.update();
             
             if (clock) {
                 const delta = clock.getDelta();
@@ -1829,67 +1788,63 @@
         }
 
         function onWindowResize() {
-            rendererGL.setSize(window.innerWidth, window.innerHeight);
-            rendererCSS.setSize(window.innerWidth, window.innerHeight);
-            fitCameraToScene();
-        }
+    rendererGL.setSize(window.innerWidth, window.innerHeight);
+    rendererCSS.setSize(window.innerWidth, window.innerHeight);
+    
+    // Eski sabit kodları sil, sadece yeni fonksiyonu çağır
+    fitCameraToScene();
+}
 
-        function fitCameraToScene() {
-            if (!scene || !camera || clickableObjects.length === 0) return;
 
-            const boundingBox = new THREE.Box3();
-            clickableObjects.forEach(obj => boundingBox.expandByObject(obj));
+function fitCameraToScene() {
+    if (!scene || !camera || clickableObjects.length === 0) return;
 
-            const center = new THREE.Vector3();
-            boundingBox.getCenter(center);
-            
-            const sphere = new THREE.Sphere();
-            boundingBox.getBoundingSphere(sphere);
-            const radius = sphere.radius;
+    const boundingBox = new THREE.Box3();
+    clickableObjects.forEach(obj => boundingBox.expandByObject(obj));
 
-            const aspect = window.innerWidth / window.innerHeight;
+    const center = new THREE.Vector3();
+    boundingBox.getCenter(center);
+    
+    const sphere = new THREE.Sphere();
+    boundingBox.getBoundingSphere(sphere);
+    const radius = sphere.radius;
 
-            // --- TÜM CİHAZLAR İÇİN ORTAK AYARLAR ---
-            const padding = 0.48;    // Yakınlık 
-            const xOffset = -750;   // Sola yatıklık miktarı
-            const yOffset = -75;    // Dikey konum
-            const dist = 15000;     // Geri çekilme mesafesi
+    const aspect = window.innerWidth / window.innerHeight;
 
-            // --- KRİTİK: xOffset'i ekran genişliğine göre dinamik yapıyoruz ---
-            // Eğer aspect < 1 (Mobil Dikey) ise offset 0 olsun (Ortala).
-            // Eğer aspect > 1 (Masaüstü) ise offset -750 olsun (Sola Kaydır).
-            const dynamicXOffset = aspect < 1 ? 0 : xOffset;
+    // --- TÜM CİHAZLAR İÇİN ORTAK AYARLAR ---
+    // Desktop'ta beğendiğin değerleri buraya sabitledim.
+    const padding = 0.48;    // Yakınlık (0.55 çok yakın, her şeyi doldurur)
+    const xOffset = -750;   // Sola yatıklık miktarı
+    const yOffset = -75;    // Dikey konum
+    const dist = 15000;     // Geri çekilme mesafesi (kesilmeyi önler)
 
-            // --- ZOOM (FRUSTUM) HESABI ---
-            if (aspect > 1) {
-                camera.top = radius * padding;
-                camera.bottom = -radius * padding;
-                camera.left = -radius * aspect * padding;
-                camera.right = radius * aspect * padding;
-            } else {
-                // Mobilde padding'i biraz artırarak kenarlardan taşmayı önle
-                const mobilePadding = padding * 2.2; 
-                camera.left = -radius * mobilePadding;
-                camera.right = radius * mobilePadding;
-                camera.top = radius / aspect * mobilePadding;
-                camera.bottom = -radius / aspect * mobilePadding;
-            }
+    // --- ZOOM (FRUSTUM) HESABI ---
+    // Bu kısım ekranın dikey veya yatay olmasına göre sığdırmayı otomatik yapar
+    if (aspect > 1) {
+        camera.top = radius * padding;
+        camera.bottom = -radius * padding;
+        camera.left = -radius * aspect * padding;
+        camera.right = radius * aspect * padding;
+    } else {
+        camera.left = -radius * padding;
+        camera.right = radius * padding;
+        camera.top = radius / aspect * padding;
+        camera.bottom = -radius / aspect * padding;
+    }
 
-            // --- POZİSYON VE AÇI ---
-            // Hem kamera hem hedef (target) aynı offset değerlerini kullandığı için 
-            // ekran oranı ne olursa olsun kadrajın "solunda" kalma oranı bozulmaz.
-            camera.position.set(center.x + dist + dynamicXOffset, center.y + yOffset, center.z + dist);
-            
-            const targetPoint = new THREE.Vector3(center.x + dynamicXOffset, center.y + yOffset, center.z);
-            camera.lookAt(targetPoint);
+    // --- POZİSYON VE AÇI ---
+    // Hem kamera hem hedef (target) aynı offset değerlerini kullandığı için 
+    // ekran oranı ne olursa olsun kadrajın "solunda" kalma oranı bozulmaz.
+    camera.position.set(center.x + dist + xOffset, center.y + yOffset, center.z + dist);
+    const targetPoint = new THREE.Vector3(center.x + xOffset, center.y + yOffset, center.z);
+    camera.lookAt(targetPoint);
 
-            if (controls) {
-                controls.target.copy(targetPoint);
-                controls.update();
-            }
-            camera.updateProjectionMatrix();
-        }
-
+    if (controls) {
+        controls.target.copy(targetPoint);
+        controls.update();
+    }
+    camera.updateProjectionMatrix();
+}
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script> 
 </body>
