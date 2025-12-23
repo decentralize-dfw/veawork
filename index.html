@@ -77,7 +77,7 @@
 
         #loader {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: black; z-index: 9999;
+            background: white; z-index: 9999;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             transition: opacity 0.5s ease-out;
             pointer-events: none;
@@ -112,12 +112,16 @@
 
         /* Main Content Wrapper */
         #modal-content {
-            background-color: var(--modal-bg);
-            color: var(--ui-color);
+            background-color: transparent !important;
+           // color: var(--ui-color);
             /* Updated Shadow: Glow Style (Centered, blurred) - 0.3 Opacity */
             box-shadow: 0 0 40px rgba(0,0,0,0.3); 
             border: 1px solid black;
+            display: flex;
         }
+
+       
+    
 
         /* Typography */
         .g-sidebar__title {
@@ -232,6 +236,9 @@
             .mobile-media-area {
                 height: 65vh;
                 width: 100%;
+                background-color: rgba(240, 240, 240, 0.4); /* Daha şeffaf bir gri */
+    backdrop-filter: blur(5px);
+                
             }
             
             /* Hide the bottom gallery nav (Set B) on mobile */
@@ -397,7 +404,7 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 01",
       media: [
-        { type: "video", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
+        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_0dac59951f9c42efbf6b8a3a77951e00/1080p/mp4/file.mp4" },
         { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspiecesbook-opt-v11.glb" }
       ]
     }
@@ -413,7 +420,7 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 02",
       media: [
-        { type: "video", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
+        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_b443e8c0ed384e30bf532179d14769a8/1080p/mp4/file.mp4" },
         { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/93book-opt-v10.glb" }
       ]
     }
@@ -429,7 +436,7 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 03",
       media: [
-        { type: "video", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
+        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_6230b7e092674b0d8f32b87103b3c920/720p/mp4/file.mp4" },
         { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/booth-opt-v9.glb" }
       ]
     }
@@ -445,7 +452,7 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 04",
       media: [
-        { type: "video", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
+        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_fba3080416b3426783eefde37e081efa/720p/mp4/file.mp4" },
         { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex1-opt-v8.glb" }
       ]
     }
@@ -466,7 +473,7 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 13 (Copy)",
       media: [
-        { type: "video", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
+        { type: "html", src: "https://raw.githubusercontent.com/decentralize-dfw/finder/refs/heads/main/birdsv10.html" },
         { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/93book-opt-v10.glb" }
       ]
     }
@@ -483,7 +490,7 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 06",
       media: [
-        { type: "video", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
+        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_ac3a4bd792a04e6ab5a9009dde170ea8/1080p/mp4/file.mp4" },
         { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspieces1-opt-v6.glb" }
       ]
     }
@@ -499,7 +506,7 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 07",
       media: [
-        { type: "video", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
+        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_a98194f1174b434ea9f7f1ce355d6c81/1080p/mp4/file.mp4" },
         { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/sandalye-opt-v5.glb" }
       ]
     }
@@ -515,7 +522,7 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 08",
       media: [
-        { type: "video", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
+        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_cbec7d394bfd417193d86ba249c93d63/720p/mp4/file.mp4" },
         { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/facade-opt-v4.glb" }
       ]
     }
@@ -533,7 +540,7 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 09",
       media: [
-        { type: "video", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
+        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_0347ca404afa45c7b59394ddad5370d0/720p/mp4/file.mp4" },
         { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/telefon-opt-v3.glb" }
       ]
     }
@@ -549,7 +556,7 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 10",
       media: [
-        { type: "video", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
+        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_9bb1f95695fd4d83aa68eda3da571e47/1080p/mp4/file.mp4" },
         { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/wireframe-opt-v2.glb" }
       ]
     }
@@ -565,7 +572,7 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 11",
       media: [
-        { type: "video", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
+        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_f47ac95a2e74487993200753805e8cee/1080p/mp4/file.mp4" },
         { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/mektup-opt-v1.glb" }
       ]
     }
@@ -584,8 +591,9 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 12 (Copy)",
       media: [
-        { type: "video", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
+        
         { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspiecesbook-opt-v11.glb" }
+        //{ type: "video", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
       ]
     }
   },
@@ -604,7 +612,7 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 05",
       media: [
-        { type: "video", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
+        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_1c655cbc2e58493ea6dd0f8ab6fc46e1/720p/mp4/file.mp4" },
         { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex2-opt-v7.glb" }
       ]
     }
