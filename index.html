@@ -361,39 +361,50 @@
         // --- 1. DATA & SCENE CONFIG ---
         
         const sceneObjects = [
-          
-          {
-                type: 'image',
-                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png',
-                width: 700,
-                position: { x: -700, y: 1300, z: -700 },
-                rotation: { x: 0, y: 45, z: 0 },
-                scale: 1000,
-                
-                modalContent: {
-                    name: "Atmosphere",
-                    categories: { sub1: "2024", sub2: "Environment" },
-                    description: "Void environment.",
-                    media: [{ type: "image", src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg" }]
-                }
-            },
-          {
-                type: 'image',
-                src: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg',
-                width: 3000,
-                position: { x: -1700, y: 0, z: -1500 },
-                rotation: { x: 0, y: 45, z: 0 },
-                scale: 1000,
-                clickable: false, // Background is not interactive
-                modalContent: {
-                    name: "Atmosphere",
-                    categories: { sub1: "2024", sub2: "Environment" },
-                    description: "Void environment.",
-                    media: [{ type: "image", src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg" }]
-                }
-            },
-          
-          {
+  {
+    type: 'image',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png',
+    width: 700,
+    position: { x: -700, y: 1300, z: -700 },
+    rotation: { x: 0, y: 45, z: 0 },
+    scale: 1000,
+    modalContent: {
+      name: "Atmosphere",
+      categories: { sub1: "2024", sub2: "Environment" },
+      description: "Void environment.",
+      media: [
+        { 
+          type: "image", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg",
+          linkText: "OPEN IN A NEW TAB"
+        }
+      ]
+    }
+  },
+  {
+    type: 'image',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg',
+    width: 3000,
+    position: { x: -1700, y: 0, z: -1500 },
+    rotation: { x: 0, y: 45, z: 0 },
+    scale: 1000,
+    clickable: false,
+    modalContent: {
+      name: "Atmosphere",
+      categories: { sub1: "2024", sub2: "Environment" },
+      description: "Void environment.",
+      media: [
+        { 
+          type: "image", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg",
+          linkText: "OPEN IN A NEW TAB"
+        }
+      ]
+    }
+  },
+  {
     type: 'model',
     src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspiecesbook-opt-v11.glb',
     position: { x: -1500, y: 600, z: 100 },
@@ -404,8 +415,18 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 01",
       media: [
-        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_0dac59951f9c42efbf6b8a3a77951e00/1080p/mp4/file.mp4" },
-        { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspiecesbook-opt-v11.glb" }
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_0dac59951f9c42efbf6b8a3a77951e00/1080p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_0dac59951f9c42efbf6b8a3a77951e00/1080p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspiecesbook-opt-v11.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspiecesbook-opt-v11.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
       ]
     }
   },
@@ -420,8 +441,18 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 02",
       media: [
-        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_b443e8c0ed384e30bf532179d14769a8/1080p/mp4/file.mp4" },
-        { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/93book-opt-v10.glb" }
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_b443e8c0ed384e30bf532179d14769a8/1080p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_b443e8c0ed384e30bf532179d14769a8/1080p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/93book-opt-v10.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/93book-opt-v10.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
       ]
     }
   },
@@ -436,8 +467,18 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 03",
       media: [
-        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_6230b7e092674b0d8f32b87103b3c920/720p/mp4/file.mp4" },
-        { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/booth-opt-v9.glb" }
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_6230b7e092674b0d8f32b87103b3c920/720p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_6230b7e092674b0d8f32b87103b3c920/720p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/booth-opt-v9.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/booth-opt-v9.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
       ]
     }
   },
@@ -452,33 +493,48 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 04",
       media: [
-        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_fba3080416b3426783eefde37e081efa/720p/mp4/file.mp4" },
-        { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex1-opt-v8.glb" }
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_fba3080416b3426783eefde37e081efa/720p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_fba3080416b3426783eefde37e081efa/720p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex1-opt-v8.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex1-opt-v8.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
       ]
     }
   },
-
-  // --- SATIR 2 (Y: 0) ---
-
   {
     type: 'image',
     src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/SOUNDS.png',
     width: 500,
     position: { x: -1500, y: 250, z: 100 },
     rotation: { x: 0, y: 45, z: 0 },
-    
     scale: 1000,
     modalContent: {
       name: "93book-copy.glb",
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 13 (Copy)",
       media: [
-        { type: "html", src: "https://raw.githubusercontent.com/decentralize-dfw/finder/refs/heads/main/birdsv10.html" },
-        { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/93book-opt-v10.glb" }
+        { 
+          type: "html", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/finder/refs/heads/main/birdsv10.html",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/finder/refs/heads/main/birdsv10.html",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/93book-opt-v10.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/93book-opt-v10.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
       ]
     }
   },
-  
   {
     type: 'model',
     src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspieces1-opt-v6.glb',
@@ -490,8 +546,18 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 06",
       media: [
-        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_ac3a4bd792a04e6ab5a9009dde170ea8/1080p/mp4/file.mp4" },
-        { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspieces1-opt-v6.glb" }
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_ac3a4bd792a04e6ab5a9009dde170ea8/1080p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_ac3a4bd792a04e6ab5a9009dde170ea8/1080p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspieces1-opt-v6.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspieces1-opt-v6.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
       ]
     }
   },
@@ -506,8 +572,18 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 07",
       media: [
-        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_a98194f1174b434ea9f7f1ce355d6c81/1080p/mp4/file.mp4" },
-        { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/sandalye-opt-v5.glb" }
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_a98194f1174b434ea9f7f1ce355d6c81/1080p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_a98194f1174b434ea9f7f1ce355d6c81/1080p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/sandalye-opt-v5.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/sandalye-opt-v5.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
       ]
     }
   },
@@ -522,13 +598,21 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 08",
       media: [
-        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_cbec7d394bfd417193d86ba249c93d63/720p/mp4/file.mp4" },
-        { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/facade-opt-v4.glb" }
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_cbec7d394bfd417193d86ba249c93d63/720p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_cbec7d394bfd417193d86ba249c93d63/720p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/facade-opt-v4.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/facade-opt-v4.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
       ]
     }
   },
-
-  // --- SATIR 3 (Y: -600) ---
   {
     type: 'model',
     src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/telefon-opt-v3.glb',
@@ -540,8 +624,18 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 09",
       media: [
-        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_0347ca404afa45c7b59394ddad5370d0/720p/mp4/file.mp4" },
-        { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/telefon-opt-v3.glb" }
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_0347ca404afa45c7b59394ddad5370d0/720p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_0347ca404afa45c7b59394ddad5370d0/720p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/telefon-opt-v3.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/telefon-opt-v3.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
       ]
     }
   },
@@ -556,8 +650,18 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 10",
       media: [
-        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_9bb1f95695fd4d83aa68eda3da571e47/1080p/mp4/file.mp4" },
-        { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/wireframe-opt-v2.glb" }
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_9bb1f95695fd4d83aa68eda3da571e47/1080p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_9bb1f95695fd4d83aa68eda3da571e47/1080p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/wireframe-opt-v2.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/wireframe-opt-v2.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
       ]
     }
   },
@@ -572,14 +676,21 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 11",
       media: [
-        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_f47ac95a2e74487993200753805e8cee/1080p/mp4/file.mp4" },
-        { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/mektup-opt-v1.glb" }
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_f47ac95a2e74487993200753805e8cee/1080p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_f47ac95a2e74487993200753805e8cee/1080p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/mektup-opt-v1.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/mektup-opt-v1.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
       ]
     }
   },
-
-  
-
   {
     type: 'model',
     src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/co-chair-opt-v1.glb',
@@ -591,16 +702,15 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 12 (Copy)",
       media: [
-        
-        { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspiecesbook-opt-v11.glb" }
-        //{ type: "video", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspiecesbook-opt-v11.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspiecesbook-opt-v11.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
       ]
     }
   },
-  
-
-  // --- SATIR 4 (Y: -1200) ---
-  //KANKAA
   {
     type: 'model',
     src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex2-opt-v7.glb',
@@ -612,8 +722,18 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 05",
       media: [
-        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_1c655cbc2e58493ea6dd0f8ab6fc46e1/720p/mp4/file.mp4" },
-        { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex2-opt-v7.glb" }
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_1c655cbc2e58493ea6dd0f8ab6fc46e1/720p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_1c655cbc2e58493ea6dd0f8ab6fc46e1/720p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex2-opt-v7.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex2-opt-v7.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
       ]
     }
   },
@@ -628,7 +748,12 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 14 (Copy)",
       media: [
-        { type: "video", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" }
+        { 
+          type: "video", 
+          src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          linkUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        }
       ]
     }
   },
@@ -643,8 +768,18 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 15 (Copy)",
       media: [
-        { type: "video", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
-        { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex1-opt-v8.glb" }
+        { 
+          type: "video", 
+          src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          linkUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex1-opt-v8.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex1-opt-v8.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
       ]
     }
   },
@@ -659,8 +794,19 @@
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
       description: "Item 16 (Copy)",
       media: [
-        { type: "video", src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" },
-        { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex2-opt-v7.glb" }
+        { 
+          type: "video", 
+          src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          linkUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex2-opt-v7.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex2-opt-v7.glb",
+          linkText: "OPEN IN A NEW TAB",
+          
+        }
       ]
     }
   }
@@ -1302,7 +1448,7 @@
             
             document.getElementById('modal-year').textContent = year;
             document.getElementById('modal-cats').textContent = otherCats;
-            document.getElementById('modal-desc').textContent = content.description || '';
+            // Sadece temel açıklamayı buraya yazmıyoruz, renderCurrentMedia içinde yöneteceğiz.
 
             // Render Initial Media
             renderCurrentMedia();
@@ -1496,6 +1642,16 @@
                 wrapper.appendChild(iframe);
                 mediaWrapper.appendChild(wrapper);
             }
+const descEl = document.getElementById('modal-desc');
+let baseDescription = currentModalContent.description || '';
+
+if (m.linkUrl) { // Burada linkUrl null değilse çalışır
+    descEl.innerHTML = `${baseDescription}<br><br><a href="${m.linkUrl}" target="_blank" class="underline hover:opacity-70 transition-opacity font-bold">
+        ${m.linkText || 'VIEW LINK'}
+    </a>`;
+} else {
+    descEl.innerHTML = baseDescription;
+}
         }
 
         // --- NEW MODAL 3D LOGIC ---
