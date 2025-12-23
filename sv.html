@@ -1,0 +1,2448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACOUSTIC ARCHITECTURE SYSTEM, Spectral Point Cloud</title>
+    
+    <!-- Import Map for Three.js -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/"
+        }
+    }
+    </script>
+    
+    <!-- CSS Styles -->
+    <style>
+        /* Font yüklemeleri (Orijinal) */
+        @font-face {
+            font-family: 'FakeReceipt';
+            src: url('https://raw.githubusercontent.com/decentralize-dfw/font/main/Spac3%20halftone.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: '16Segments';
+            src: url('https://raw.githubusercontent.com/decentralize-dfw/font/main/pixelsix00.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'GuyfordBlackletter';
+            src: url('https://raw.githubusercontent.com/decentralize-dfw/font/main/GuyfordBlackletter.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Biological';
+            src: url('https://raw.githubusercontent.com/decentralize-dfw/font/main/pixelsix00.ttf') format('truetype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        /* YENİ: Neumorphic Dark "Invert" Estetiği (Monokrom) */
+        :root {
+            --bg-color: #1a1a1a; /* Koyu zemin (Invert) */
+            /* --panel-bg: rgba(40, 40, 40, 0.75); // Panel arkaplanı artık override edilecek */
+            /* --panel-border: rgba(120, 120, 120, 0.5); // Panel arkaplanı artık override edilecek */
+            --panel-shadow: 
+                0 0 10px rgba(0, 0, 0, 0.5),
+                inset 0 0 5px rgba(0, 0, 0, 0.3);
+            
+            --control-bg: linear-gradient(145deg, #303030, #282828); /* Koyu Kontrol Yüzeyi */
+            --control-border: rgba(80, 80, 90, 0.7);
+            
+            /* Örneklerdeki gibi iç/dış gölgeler (Invert) */
+            --shadow-light: rgba(60, 60, 60, 0.7); /* Açık gölge */
+            --shadow-dark: rgba(10, 10, 10, 0.8);  /* Koyu gölge */
+
+            --text-primary: #e0e0e0;
+            --text-secondary: #999999;
+            
+            --highlight-color: #ffffff; /* Vurgu için Beyaz */
+            --stop-color: #e0e0e0;
+            --stop-color-hover: #ffffff;
+
+            --input-bg: rgba(10, 10, 10, 0.8);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            /* YENİ: Örneklerdeki gibi ana font */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-primary);
+            overflow: hidden;
+            font-synthesis: none;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        #container { width: 100vw; height: 100vh; position: relative; }
+
+        .panel {
+            /* GÜNCELLENDİ: .panel artık sadece pozisyon ve z-index sağlar */
+            position: absolute;
+            z-index: 100;
+            padding: 12px;
+            /* background, border, shadow, backdrop-filter kaldırıldı */
+        }
+
+        #controls {
+            top: 20px;
+            left: 20px;
+            width: 220px; /* YENİ: Küçültüldü */
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            font-family: 'Biological', sans-serif;
+            
+            /* YENİ: Neumorphic Stil (Panel override) */
+            background: var(--control-bg);
+            border: none;
+            box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            border-radius: 12px; /* YENİ: Köşe yuvarlaklığı */
+        }
+        
+        .input-wrapper { position: relative; width: 100%; }
+        
+        /* YENİ: Düğme ve Input Stili (Neumorphic Invert) */
+        input[type="text"], button {
+            width: 100%;
+            padding: 10px 12px;
+            
+            border-radius: 10px; /* Yuvarlak köşeler */
+            border: none;
+            background: var(--control-bg);
+            color: var(--text-primary);
+            font-size: 9px;
+            font-family: inherit;
+            transition: all 0.1s ease;
+            box-shadow: 
+                inset 3px 3px 5px var(--shadow-dark), 
+                inset -3px -3px 5px var(--shadow-light),
+                0 0 5px rgba(0,0,0,0.3);
+        }
+
+        button {
+            cursor: pointer;
+            
+            font-weight: 500;
+            /* Düğmeler dışa dönük */
+            box-shadow: 
+                3px 3px 5px var(--shadow-dark), 
+                -3px -3px 5px var(--shadow-light);
+        }
+        
+        button:hover {
+            color: var(--highlight-color);
+            box-shadow: 
+                3px 3px 5px var(--shadow-dark), 
+                -3px -3px 5px var(--shadow-light),
+                0 0 10px rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0px);
+            /* Aktif olunca içe dönük */
+            box-shadow: 
+                inset 3px 3px 5px var(--shadow-dark), 
+                inset -3px -3px 5px var(--shadow-light);
+        }
+
+        input[type="file"] {
+            width: 100%;
+            padding: 0;
+            border-radius: 10px;
+            border: none;
+            background: var(--control-bg);
+            color: var(--text-secondary);
+            font-size: 9px;
+            font-family: inherit;
+            transition: all 0.2s;
+            line-height: 2.2; /* Dikey hizalama */
+            box-shadow: 0 0 15px rgba(255, 255, 255,0.2);
+            box-shadow: 
+                inset 3px 3px 5px var(--shadow-dark), 
+                inset -3px -3px 5px var(--shadow-light);
+        }
+        input[type="file"]::file-selector-button {
+            padding: 10px 12px;
+            border: none;
+            border-right: 1px solid var(--panel-border);
+            background: rgba(0,0,0,0.1); /* Hafif farklı */
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 9px;
+            font-weight: 500;
+            cursor: pointer;
+            border-top-left-radius: 9px;
+            border-bottom-left-radius: 9px;
+            margin-right: 10px;
+            transition: background 0.2s ease;
+            box-shadow: none;
+        }
+        input[type="file"]::file-selector-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        input[type="text"] {
+            padding-right: 10px;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            box-shadow: 
+                inset 3px 3px 5px var(--shadow-dark), 
+                inset -3px -3px 5px var(--shadow-light),
+                0 0 0 2px var(--highlight-color); /* Fokus Rengi */
+        }
+        
+        #stopBtn { background: var(--stop-color); color: #000; text-shadow: none; }
+        #stopBtn:hover { background: var(--stop-color-hover); }
+        
+        #removeBtn {
+            background: #3a3a44;
+            color: var(--text-secondary);
+            
+        }
+        #removeBtn:hover {
+            background: #4a4a54;
+            color: #FFF;
+        }
+
+        /* Info Paneli Stilleri */
+        #infoBtn {
+          
+            font-family: 'FakeReceipt', sans-serif;
+            font-size: 9px;
+            background: var(--control-bg);
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+        #infoBtn:hover {
+            color: #FFF;
+        }
+
+        .info-modal-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.85);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-family: '16Segments', sans-serif;
+            backdrop-filter: blur(5px);
+        }
+        .info-modal-content {
+            background: var(--panel-bg);
+            border: 1px solid var(--panel-border);
+            border-radius: 12px;
+            padding: 30px 40px;
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+            color: var(--text-secondary);
+            box-shadow: var(--panel-shadow);
+        }
+         .close-info-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            color: var(--text-secondary);
+            background: var(--control-bg);
+            border: 1px solid var(--control-border);
+            cursor: pointer;
+            font-family: sans-serif;
+            font-weight: 300;
+            line-height: 28px;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%; /* Daire */
+            text-align: center;
+            box-shadow: 
+                3px 3px 5px var(--shadow-dark), 
+                -3px -3px 5px var(--shadow-light);
+        }
+        .close-info-btn:hover {
+            color: #FFF;
+            box-shadow: 
+                3px 3px 5px var(--shadow-dark), 
+                -3px -3px 5px var(--shadow-light),
+                0 0 5px var(--highlight-color);
+        }
+        .close-info-btn:active {
+             box-shadow: 
+                inset 3px 3px 5px var(--shadow-dark), 
+                inset -3px -3px 5px var(--shadow-light);
+        }
+        /* ... (Info modal içeriği değişmedi) ... */
+        .info-modal-content h2 {
+            font-family: 'GuyfordBlackletter', sans-serif;
+            color: #FFF;
+            font-size: 28px;
+            margin-bottom: 5px;
+            font-weight: normal;
+            text-shadow: 0 0 5px var(--highlight-color);
+        }
+        .info-modal-content h22 {
+            font-family: 'GuyfordBlackletter', sans-serif;
+            color: #FFF;
+            font-size: 14x;
+            margin-bottom: 5px;
+            font-weight: normal;
+        }
+        .info-modal-content h3 {
+            font-family: 'Biological', sans-serif;
+            color: var(--text-primary);
+            font-size: 16px;
+            margin-bottom: 20px;
+            font-weight: normal;
+        }
+        .info-modal-content h4 {
+            color: #FFF;
+            font-size: 14px;
+            margin-top: 20px;
+            margin-bottom: 8px;
+        }
+        .info-modal-content p {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .info-modal-content ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .info-modal-content li {
+            font-size: 13px;
+            line-height: 1.6;
+            margin-bottom: 10px;
+        }
+        .info-modal-content li strong {
+            color: var(--text-primary);
+            font-weight: normal;
+        }
+        .info-footer {
+            display: block;
+            margin-top: 30px;
+            font-family: 'Biological', sans-serif;
+            font-size: 14px;
+            text-align: right;
+            color: var(--text-secondary);
+        }
+        .info-footer a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        .info-footer a:hover {
+            color: var(--text-primary);
+            text-shadow: 0 0 5px var(--highlight-color);
+        }
+        
+        #status {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: -4px;
+            text-shadow: 0 0 2px var(--bg-color);
+            text-align: center;
+            white-space: nowrap; 
+    overflow: hidden;
+    text-overflow: ellipsis;
+        }
+        #progressBarContainer {
+            margin-bottom: 2px;
+            background: #111;
+            border-radius: 4px;
+            height: 6px;
+            overflow: hidden;
+            box-shadow: 
+                inset 2px 2px 4px var(--shadow-dark), 
+                inset -2px -2px 4px var(--shadow-light);
+        }
+        #progressBar {
+            width: 0%;
+            height: 100%;
+            background: var(--highlight-color);
+            transition: width 0.1s linear;
+            border-radius: 4px;
+        }
+        #infoBox {
+            bottom: 20px;
+            left: 20px;
+            z-index: 99;
+            padding: 10px 12px;
+            font-size: 12px; /* YENİ: Küçültüldü */
+            letter-spacing: -0.3px;
+            color: var(--text-secondary);
+            line-height: 1.5; /* YENİ: Ayarlandı */
+            font-family: 'Biological', sans-serif;
+            width: 220px; /* YENİ: Küçültüldü */
+            
+            /* YENİ: Neumorphic Stil (Panel override) */
+            background: var(--control-bg);
+            border: none;
+            box-shadow: 5px 5px 10px var(--shadow-dark), -5px -5px 10px var(--shadow-light);
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+            border-radius: 12px; /* YENİ: Köşe yuvarlaklığı */
+        }
+        #infoBox strong { color: var(--text-primary); font-weight: 500; }
+        #infoBox span { color: #FFFFFF; font-weight: 500; margin-left: 8px; }
+        
+        /* YENİ: Ayar Paneli Konteyneri (Dikey Sütunlar için) */
+        #settingsContainer {
+            position: absolute;
+            top: 20px;
+            right: -10px;
+            /* display: flex; // .settings-panel'e taşındı */
+            max-height: 800px; /* YENİ: Yükseklik Sınırı */
+            z-index: 100;
+            /* YENİ: Arka plan, border vs kaldırıldı (artık .panel değil) */
+            width: 300px; /* YENİ: 3 * 90px */
+            padding: 0;
+            
+            /* Kaydırma çubuğu için (ihtiyaç olursa) */
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--highlight-color) rgba(0,0,0,0.3);
+        }
+        #settingsContainer::-webkit-scrollbar { width: 8px; }
+        #settingsContainer::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); border-radius: 4px; }
+        #settingsContainer::-webkit-scrollbar-thumb {
+            background-color: var(--highlight-color);
+            border-radius: 4px;
+            border: 1px solid rgba(0,0,0,0.5);
+        }
+        /* KALDIRILDI
+        #settingsContainer:hover {
+        ...
+        */
+        .settings-panel {
+            position: relative;
+            width: 100%; /* Konteynere uysun */
+            display: flex;
+            flex-direction: row; /* Yatayda başla */
+            flex-wrap: wrap; /* Aşağı kaydır */
+            gap: 0; /* YENİ: Boşluk sıfır, 80*3 tam sığsın */
+            align-items: flex-start;
+            justify-content: flex-start; /* YENİ: Soldan başla */
+            max-height: 100%;
+            /* overflow-y: auto; // Ana konteynere taşındı */
+            font-family: '16Segments', sans-serif;
+            padding: 0; /* YENİ: Padding kaldırıldı */
+            /* Scrollbar Stilleri // Ana konteynere taşındı */
+        }
+        /* .settings-panel::-webkit-scrollbar... (Ana konteynere taşındı) */
+
+        /* YENİ: Dairesel Düğme (Knob) Stilleri */
+        .knob-container {
+            width: 90px; /* YENİ: Büyütüldü (3 sütun için) */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 5px;
+            position: relative;
+        }
+        .knob {
+            width: 34px; /* YENİ: %35 Büyütüldü */
+            height: 34px; /* YENİ: %35 Büyütüldü */
+            border-radius: 50%;
+            background: var(--control-bg);
+            box-shadow: 
+                5px 5px 10px var(--shadow-dark), 
+                -5px -5px 10px var(--shadow-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: ns-resize; /* Dikey sürükleme */
+            transition: box-shadow 0.1s ease;
+            position: relative; /* YENİ: Dolgu için eklendi */
+            overflow: hidden; /* YENİ: Dolgu için eklendi */
+        }
+        .knob:active {
+            box-shadow: 
+                inset 5px 5px 10px var(--shadow-dark), 
+                inset -5px -5px 10px var(--shadow-light),
+                inset -5px -5px 10px var(--shadow-light);
+        }
+        .knob-icon {
+            width: 22px; /* YENİ: Büyütüldü */
+            height: 22px; /* YENİ: Büyütüldü */
+            stroke: var(--text-primary);
+            filter: drop-shadow(0 0 3px var(--highlight-color));
+            pointer-events: none;
+            position: relative; /* YENİ: Dolgunun üstünde kalması için */
+            z-index: 2; /* YENİ: Dolgunun üstünde kalması için */
+            /* Dönüş JS ile ayarlanacak - ARTIK DÖNMEYECEK */
+        }
+        .knob-label {
+            font-family: '16Segments', sans-serif;
+            font-size: 9px; /* YENİ: %20 Büyütüldü */
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            cursor: help; /* Bilgi için */
+            text-align: center;
+        }
+        .knob-label:hover {
+            color: #FFF;
+            text-shadow: 0 0 5px var(--highlight-color);
+        }
+        .knob-value {
+            font-family: '16Segments', sans-serif;
+            font-size: 9px; /* YENİ: %20 Büyütüldü */
+            color: var(--text-primary);
+            margin-top: 2px;
+        }
+
+        /* YENİ: Düğme Dolgusu */
+        .knob-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 0%; /* JS ile kontrol edilecek */
+            background: var(--highlight-color);
+            opacity: 0.375;
+            z-index: 1;
+            /* transition: height 0.05s linear; // Sürüklerken takılma yapmaması için kaldırıldı */
+            pointer-events: none;
+        }
+
+        /* Ayırıcı Stili (KALDIRILDI) */
+        /*
+        .settings-divider {
+            height: 1px;
+            width: 100%;
+            background: var(--panel-border);
+            margin: 5px 0;
+            opacity: 0.5;
+        }
+        */
+        
+        /* Checkbox Stilleri */
+        .checkbox-group {
+            /* YENİ: Genişliği 2 knob (180px) yap */
+            width: 180px; 
+            
+            /* ESKİ HALİNE DÖN: Yatay hizala */
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* Etiket sola, switch sağa */
+            
+            /* (Bir önceki adımdaki flex-direction, height vb. stilleri silin) */
+            
+            margin-top: 6px;
+            padding: 3px 8px;
+            margin-bottom: 5px; /* YENİ: Diğerleriyle aynı hizada olsun */
+        }
+        .checkbox-group label {
+            /* font-size: 9px; // Orijinal */
+            font-size: 9px; /* YENİ: %20 Büyütüldü */
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 8px; /* <-- YENİ: Label ile switch arasına boşluk */
+            text-align: center; /* <-- YENİ: Etiket metnini ortala */
+            cursor: help;
+        }
+        .checkbox-group label:hover {
+             color: #FFF;
+            text-shadow: 0 0 5px var(--highlight-color);
+        }
+        
+        input[type="checkbox"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 30px; /* Örnekteki gibi daha geniş */
+            height: 15px;
+            border-radius: 10px;
+            border: none;
+            background: var(--control-bg);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            box-shadow: 
+                inset 3px 3px 5px var(--shadow-dark), 
+                inset -3px -3px 5px var(--shadow-light);
+        }
+        /* Checkbox Düğmesi */
+        input[type="checkbox"]::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #ddd, #aaa);
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+            transition: all 0.2s ease;
+        }
+        
+        input[type="checkbox"]:checked {
+            background: var(--highlight-color);
+            box-shadow: 
+                inset 2px 2px 4px rgba(0,0,0,0.3), 
+                inset -2px -2px 4px rgba(255,255,255,0.2),
+                0 0 10px var(--highlight-color);
+        }
+        input[type="checkbox"]:checked::before {
+            transform: translateX(15px);
+            background: #1a1a1a; /* Koyu tutamaç */
+        }
+        
+        .label {
+            position: absolute;
+            color: #FFF;
+            font-size: 8px;
+            font-family: sans-serif;
+            pointer-events: none;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 2px 4px;
+            border-radius: 3px;
+            white-space: nowrap;
+            border: 1px solid #444;
+            line-height: 1.4;
+            transform: translate(10px, -50%);
+            z-index: 1001; /* Etiketlerin üstünde */
+        }
+        #toggleUiBtn {
+            font-weight: 500;
+            padding: 10px 12px;
+            font-size: 11px;
+            margin-top: 5px;
+        }
+        
+        /* YENİ: Reset Butonu Stili */
+        .button-container {
+            width: 90px; /* 3 sütun için */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 5px;
+            position: relative;
+            padding-top: 10px; /* Knob'larla hizala */
+        }
+        .reset-button {
+            width: 100px; /* Knob'dan biraz daha geniş */
+            height: 15px;
+            border-radius: 8px;
+            border: none;
+            background: var(--control-bg);
+            color: var(--text-secondary);
+            font-family: '16Segments', sans-serif;
+            font-size: 9px; /* YENİ: %20 Büyütüldü */
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 
+                3px 3px 5px var(--shadow-dark), 
+                -3px -3px 5px var(--shadow-light);
+            transition: all 0.1s ease;
+             line-height: 3px;
+        }
+
+
+
+        .reset-button:hover {
+            color: var(--highlight-color);
+            box-shadow: 
+                3px 3px 5px var(--shadow-dark), 
+                -3px -3px 5px var(--shadow-light),
+                0 0 10px rgba(255, 255, 255, 0.2);
+        }
+         .reset-button:active {
+            transform: translateY(0px);
+            box-shadow: 
+                inset 3px 3px 5px var(--shadow-dark), 
+                inset -3px -3px 5px var(--shadow-light);
+        }
+
+        /* YENİ: Boş Sütun Stili */
+        .spacer-container {
+            width: 90px;
+            height: 30px; /* Sadece yer tut */
+            margin-bottom: 5px;
+        }
+
+
+        #gizmoContainer { display: none; }
+
+        /* YENİ: Ayar Bilgisi Tooltip'i */
+        #tooltip {
+            position: absolute;
+            z-index: 1010;
+            background: #000;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            box-shadow: 0 0 15px rgba(255, 255, 255,0.2);
+            padding: 10px 13px;
+            width: 200px;
+            font-family: '16Segments', sans-serif;
+            font-size: 11px; /* YENİ: %20 Büyütüldü */
+            line-height: 1.5;
+            color: var(--text-primary);
+            display: none; /* JS ile gösterilecek */
+            pointer-events: none; /* Tıklamayı engellemesin */
+        }
+        #tooltip p {
+            margin: 0;
+            padding: 0;
+        }
+
+/*
+   YENİ STİLLER: Sol Paneller için "Glassmorphism" (Camsı) Efekti
+*/
+
+/* 1. Ana Panelleri (Sol Üst ve Sol Alt) Camsı Yap */
+#controls,
+#infoBox {
+    /* Koyu arka planı ve gölgeyi değiştiriyoruz */
+    background: rgba(255, 255, 255, 0);  /* Hafif opak beyaz cam */
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    
+    /* Neumorphic gölge yerine daha yumuşak bir gölge */
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    
+    /* Cama ince bir kenarlık */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    
+    /* Köşe yuvarlaklığı zaten 12px, bu harika */
+}
+
+/* 2. Panellerin İÇİNDEKİ Elemanları (Düğmeler, Inputlar) Camsı Yap */
+/* Bu, "hafif opak beyaz parlağımsı" stil. */
+
+#controls button,
+#infoBox button,
+#controls input[type="text"],
+#controls input[type="file"] {
+    /* İstediğiniz "hafif opak beyaz" arka plan */
+    background: rgba(255, 255, 255, 0.2); 
+    
+    /* Neumorphic 'içe/dışa dönük' gölgeyi kaldırıyoruz */
+    box-shadow: none; 
+    
+    /* Kenarlık ekleyelim ki arka plandan ayrılsınlar */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    
+    /* Metin rengi beyaz kalsın (arka plan koyu olabilir) */
+    color: var(--text-primary);
+    text-shadow: 0 1px 1px rgba(0,0,0,0.2); /* Okunabilirlik için */
+}
+
+/* 3. Tıklama (:active) ve Fokus (:focus) Stillerini Güncelle */
+
+#controls button:hover,
+#infoBox button:hover {
+    background: rgba(255, 255, 255, 0.3); /* Hover'da biraz daha parlak */
+    box-shadow: none; /* Gölge olmasın */
+    transform: none;  /* Zıplamasın (veya translateY(-1px) kalabilir) */
+}
+
+#controls button:active,
+#infoBox button:active {
+    /* Tıklayınca biraz daha koyulaşsın/şeffaflaşsın */
+    background: rgba(255, 255, 255, 0.1); 
+    transform: translateY(0px); /* Orijinal active stilini sıfırla */
+    box-shadow: none; /* Orijinal active stilini sıfırla */
+}
+
+#controls input[type="text"]:focus {
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: none; /* Orijinal fokus stilini sıfırla */
+    
+    /* Yeni fokus stili (beyaz çerçeve) */
+    outline: none;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+/* 4. Dosya Seçme Düğmesini Ayarla */
+#controls input[type="file"]::file-selector-button {
+    background: rgba(255, 255, 255, 0.3); /* Biraz daha opak */
+    border: none;
+    border-right: 1px solid rgba(255, 255, 255, 0.3);
+    color: #FFFFFF;
+    box-shadow: none;
+}
+
+#controls input[type="file"]::file-selector-button:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* 5. Özel Düğmeleri (Stop, Remove) Ayarla */
+/* Bu düğmelerin özel renkleri vardı, onları bu yeni stile uyduralım. */
+
+#stopBtn {
+    background: var(--stop-color); /* #e0e0e0 (Bu kalabilir) */
+    color: #000; /* Koyu metin */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+#stopBtn:hover {
+    background: var(--stop-color-hover); /* #ffffff */
+}
+
+#removeBtn {
+    background: rgba(255, 255, 255, 0.1); /* Normal cam rengi */
+    color: var(--text-secondary); /* Gri metin */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+#removeBtn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #FFF;
+}
+
+/* 6. InfoBox içindeki düğmeleri de ayarla */
+#infoBtn,
+#toggleUiBtn {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--text-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+#infoBtn:hover,
+#toggleUiBtn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    color: #FFF;
+}
+
+/*
+   YENİ ÖZEL DOSYA YÜKLEME STİLLERİ
+   (Eski #controls input[type="file"] stillerinin yerine)
+*/
+
+.file-input-custom {
+    position: relative;
+    width: 100%;
+}
+
+/* Tıkladığımız ana camsı etiket (label) */
+.file-input-label {
+    display: flex; /* Düğme ve metni yanyana hizala */
+    align-items: center;
+    width: 100%;
+    height: 38px; /* Diğer düğmeler/inputlarla aynı yükseklik */
+    padding: 0; /* İçerideki span'lar padding'i halledecek */
+    border-radius: 10px;
+    cursor: pointer;
+    
+    /* Camsı görünüm (önceki cevaptan kopyalandı) */
+    background: rgba(255, 255, 255, 0.2); 
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: none; 
+    
+    font-size:9px;
+    font-family: inherit;
+    transition: all 0.2s ease;
+    overflow: hidden; /* Köşelerin düzgün görünmesi için */
+}
+
+.file-input-label:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Sol taraftaki "Browse..." düğmesi */
+.file-button-text {
+    padding: 10px 12px;
+    height: 100%; /* Yüksekliği doldur */
+    display: flex;
+    align-items: center;
+    
+    /* Camsı "Browse..." düğmesi stili (önceki cevaptan) */
+    background: rgba(255, 255, 255, 0.1);
+    border-right: 1px solid rgba(255, 255, 255, 0.3);
+    color: #FFFFFF;
+    font-weight: 500;
+    white-space: nowrap; /* "Browse..." yazısı tek satırda kalsın */
+}
+
+.file-input-label:hover .file-button-text {
+     background: rgba(255, 255, 255, 0.5);
+}
+
+/* "Select Audio File" (yeni metnimiz) alanı */
+.file-name-text {
+    padding: 10px 12px;
+    color: var(--text-secondary); 
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; 
+    
+    /* BURAYI KONTROL EDİN: Upload butonu 70px civarı yer kapladığı için kalan alan 130px */
+    max-width: 130px; 
+    display: inline-block; /* Ellipsis'in çalışması için gerekebilir */
+}
+
+/* JS ile dosya seçildiğinde, metin rengi canlansın */
+.file-input-label.file-chosen .file-name-text {
+    color: var(--text-primary); 
+}
+
+
+    </style>
+</head>
+<body>
+    <div id="container"></div>
+
+    <!-- Info Box (Sol Alt) -->
+    <div id="infoBox" class="panel">
+        <strong>X-Axis:</strong> Frequency <span id="infoFreq">--</span><br>
+        <strong>Y-Axis:</strong> Amplitude <span id="infoAmp">--</span><br>
+        <strong>Z-Axis:</strong> Timbre (Harm) <span id="infoTimbre">--</span>
+        <div class="settings-divider"></div>
+        <button id="toggleUiBtn">Hide UI</button>
+        <button id="infoBtn">[INFO]</button>
+    </div>
+
+    <!-- Kontroller (Sol Üst) -->
+    <div id="controls" class="panel">
+        <div class="input-wrapper file-input-custom">
+    <input type="file" id="fileInput" accept="audio/*" style="display: none;">
+    
+    <label for="fileInput" class="file-input-label">
+        <span class="file-button-text">Upload</span>
+        <span class="file-name-text">an Audio File</span>
+    </label>
+</div>
+        <div class="input-wrapper">
+            <input type="text" id="urlInput" placeholder="Or paste audio URL">
+        </div>
+        <button id="playBtn">Play</button>
+        <button id="pauseResumeButton" style="display:none;">Pause</button>
+        
+        
+        <button id="removeBtn">Remove</button>
+        <div id="progressBarContainer">
+            <div id="progressBar"></div>
+        </div>
+        <div id="status">all is sound frequencies.</div>
+    </div>
+
+    <!-- YENİ: Ayarlar (Sağ Üst) - Dairesel Düğmelerle doldurulacak -->
+    <!-- YENİ: .panel sınıfı kaldırıldı -->
+    <div id="settingsContainer" class="settings-panel">
+        <!-- Düğmeler JS ile buraya eklenecek -->
+        <!-- 
+            HTML'den kaldırıldı:
+            <div id="visualSettings" class="panel settings-panel"></div>
+            <div id="soundSettings" class="panel settings-panel"></div>
+        -->
+    </div>
+
+    <!-- Info Modal (Genel Bilgi) -->
+    <div id="infoModal" class="info-modal-container">
+        <div class="info-modal-content">
+            <button id="closeInfoBtn" class="close-info-btn">&times;</button>
+            
+            <h2>[ Acoustic Architecture System ]</h2>
+            <h3>Spectral Point Cloud Interpretation</h3>
+        <p>Each sound particle is positioned in 3D space according to its properties, mapping complex spectral data to a tangible, volumetric architecture.</p>
+        
+        <h4>1. SPATIAL AXES (X, Y, Z)</h4>
+        <ul>
+            <li>
+                <strong>X-AXIS (Continuous Frequency):</strong> Defines the "tonal space" from low notes (left/bass) to high notes (right/treble). This axis maintains a continuous log-frequency mapping, allowing for three-dimensional spatial distribution.
+            </li>
+            <li>
+                <strong>Y-AXIS (Amplitude):</strong> Defines the "power" or "volume" of the sound. Higher amplitude (loud) sounds move vertically up the Y-axis.
+            </li>
+            <li>
+                <strong>Z-AXIS (Timbre/Harmonics):</strong> Defines the "timbral richness." Pure sounds (low Z) are near the front, while harmonically rich sounds (vocals, distortion, chords) are placed deeper along the Z-axis.
+            </li>
+        </ul>
+        
+        <h4>2. VISUAL PROPERTIES (Kategorik Renklendirme)</h4>
+        <ul>
+            <li>
+                <strong>COLOR (Spectral Band Identity):</strong> Represents the sound's primary spectral range, allowing the viewer to instantly distinguish between core frequency categories regardless of the note's exact pitch:
+                <ul>
+                    <li>**BAS (Red/Magenta):** < 250 Hz (Kicks, Sub-Bass)</li>
+                    <li>**MID (Yellow/Orange):** 250 Hz - 1 kHz (Low instruments, Body)</li>
+                    <li>**VOKAL (Green):** 1 kHz - 4 kHz (Vocals, Clarity, Leads)</li>
+                    <li>**TİZ (Blue/Cyan):** > 4 kHz (Hi-Hats, Air, Sibilance)</li>
+                </ul>
+            </li>
+            <li>
+                <strong>SCALE (Size):</strong> Reflects the instantaneous volume (Amplitude). Louder sounds create larger particles.
+            </li>
+            <li>
+                <strong>BRIGHTNESS (Bloom):</strong> The sound's energy generates a glow effect, controlled via the 'Bloom' settings in the control panel.
+            </li>
+        </ul>
+            
+            <span class="info-footer">
+              <span class="info-footer"><h22>Virtually Ever After,<h22><p>2025, <br>
+                <a href="https://www.virtuallyeverafter.xyz/" target="_blank">🔗website</a><a href="https://www.instagram.com/virtually.ever.after" target="_blank"> 🔗instagram</a>
+              </span>
+        </div>
+    </div>
+
+    <!-- YENİ: Tıklanabilir Ayar Bilgisi Tooltip'i -->
+    <div id="tooltip"></div>
+
+
+    <!-- THREE.JS & UYGULAMA MANTIĞI -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+        // SABİT DEĞERLER
+        const FFT_SIZE = 8192;
+        const BASE_X_WIDTH = 60.0;
+        const BASE_Y_HEIGHT = 40.0;
+        const BASE_Z_DEPTH = 50.0;
+        const NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+        const A4_FREQ = 440.0;
+        
+        // Gerekli fonksiyonu erken tanımla
+        function getNoteName(midi) {
+            const octave = Math.floor(midi / 12) - 1;
+            return NOTE_NAMES[midi % 12] + octave;
+        }
+
+        // YENİ: Global Ayar Değişkenleri (Varsayılan Değerler Güncellendi)
+        window.minFrequency = 20;
+window.maxFrequency = 20000;
+       // Group 1: Scale
+window.xAxisScale = 3.55;  // X-Axis Scale (Log değeri 0.55 civarı)
+window.verticalScale = 3.89; // Y-Axis Scale (Log değeri 0.59 civarı)
+window.zAxisScale = 2.24;  // Z-Axis Scale (Log değeri 0.35 civarı)
+window.pointScale = 4.07;  // Base Point Scale (Log değeri 0.61 civarı)
+
+// Group 2: Sensibility
+window.xAxisSensibility = 1.13;
+window.yAxisSensibility = 2.74;
+window.harmonicSensitivity = 0.39;
+
+// Group 3: Freq/Amp Filters
+// minFrequency ve maxFrequency zaten 20 ve 20000
+window.amplitudeThreshold = 0.43; // Yüzde yerine 0-1 aralığında (43.0 / 100 = 0.43)
+
+// Group 4: Pitch Filters
+window.pitchRangeMin = 21;
+window.pitchRangeMax = 108; // Not: Pitch Range Max görselde 108 (C8) görünüyor.
+
+// Group 5: Point/Sample Logic
+window.sampleRateFps = 62;
+window.pointLifetime = 1;
+window.maxPeaks = 6;
+
+// Group 6: Playback
+window.playbackSpeed = 1.0;
+window.loopAudio = true; // Loop Audio: yes
+window.autoRotateSpeed = 0.30;
+
+// Group 7: Color
+window.hueOffset = -0.0;
+window.saturation = 1.00;
+window.lightness = 0.63;
+
+// Group 8: Bloom & Lines
+window.bloomThreshold = 0.04;
+window.bloomStrength = 1.60;
+window.bloomRadius = 0.70;
+window.connectionDistance = 165;
+window.enableLines = false; // Vertical Lines: açık
+window.enableSimultaneousConnections = true; // Horizontal Peaks: kapalı
+
+// ************************
+// ************************
+
+// Peak tracking (Bu değerler sabit kalmalı)
+let previousPeaks = [];
+const peakTrackingTolerance = 1.0;
+const spectralMaskingHz = 100;
+
+
+        
+
+        // YENİ: Düğme İkonları (SVG)
+        const ICONS = {
+            xAxisScale: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 12h16m-4-4l4 4-4 4m-8-4l-4 4 4 4"/>`,
+            xAxisSensibility: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12c0-4.5 3-8 8-8s8 3.5 8 8-3 8-8 8"/>`,
+            verticalScale: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m-4-4l4 4 4-4m-4-8l-4 4 4 4"/>`,
+            yAxisSensibility: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 21c-4.5 0-8-3-8-8s3.5-8 8-8 8 3 8 8"/>`,
+            zAxisScale: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 12l8-8 8 8-8 8-8-8zm8-8v16"/>`,
+            pointScale: `<circle cx="12" cy="12" r="8" stroke-width="1.5" fill="none"/>`,
+            hueOffset: `<circle cx="12" cy="12" r="8" stroke-width="1.5" fill="none"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v2m0 12v2m8-8h-2M6 12H4m6-6l-1.5-1.5M13.5 13.5l1.5 1.5M10.5 13.5l-1.5 1.5M13.5 10.5l1.5-1.5"/>`,
+            saturation: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 21.5c-5.25 0-9.5-4.25-9.5-9.5S6.75 2.5 12 2.5M12 2.5v19"/>`, // Yarım dolu
+            lightness: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m-6.364-6.364L16.95 5.05m-1.899 13.899L6.364 10.364m0 3.272L16.95 8.322m-1.899 7.35l-8.687-8.686"/>`, // Parlaklık
+            bloomThreshold: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 2v4m0 12v4m-9-9H1m18 0h-2m-6.5-6.5l-3-3m11 11l-3-3m0-8l3-3m-11 11l3-3"/>`, // Kıvılcım
+            bloomStrength: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 2v4m0 12v4m-9-9H1m18 0h-2m-6.5-6.5l-3-3m11 11l-3-3m0-8l3-3m-11 11l3-3m-1 1l-2-2 2 2zM12 8a4 4 0 100 8 4 4 0 000-8z"/>`, // Güçlü Kıvılcım
+            bloomRadius: `<circle cx="12" cy="12" r="3" stroke-width="1.5" fill="none"/><path stroke-width="1.5" d="M12 4.5a7.5 7.5 0 000 15 7.5 7.5 0 000-15z" stroke-opacity="0.5"/><path stroke-width="1.5" d="M12 2a10 10 0 000 20 10 10 0 000-20z" stroke-opacity="0.2"/>`,
+            minFreq: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12h3l3 7 6-14 3 7h3"/>`, // Düşük frekans
+            maxFreq: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12h2l1 4 2-8 2 8 1-4h2"/>`, // Yüksek frekans
+            amplitudeThreshold: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 12h16m-4 4l-4-4-4 4"/>`, // Eşik
+            harmonicSensitivity: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 12h3l2 5 2-10 2 10 2-5h3m-9-3s0-2-2-2m4 0s0 2 2 2"/>`, // Harmonikler
+            pitchRangeMin: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 18v-8m3 8V6m3 12v-5m3 5v-8"/>`, // Düşük nota
+            pitchRangeMax: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 18V6m3 12v-8m3 8v-5m3 5V6"/>`, // Yüksek nota
+            maxPeaks: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 18l6-10 4 6 5-10 3 6"/>`, // Tepeler
+            pointLifetime: `<circle cx="12" cy="12" r="8" stroke-width="1.5" fill="none"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6v6l4 2"/>`, // Saat
+            sampleFps: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4h16v16H4V4zm0 6h16M0 10h4m16 0h4"/>`, // Film şeridi
+            speed: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 18l6-6-6-6m7 12l6-6-6-6"/>`, // İleri sar
+            autoRotateSpeed: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4a8 8 0 106.364 3.636M12 4V0m0 4l4-4"/>`, // Döndürme
+            loop: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h5M4 9a8 8 0 106.364 3.636M20 20v-5h-5M20 15a8 8 0 00-6.364-3.636"/>`, // Loop
+            connectionDistance: `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M6 12h12M7 17l-4-5 4-5M17 17l4-5-4-5"/>` // Bağlantı
+        };
+
+        // YENİ: Düğme Kontrol Konfigürasyonu (TEK LİSTE)
+        const ALL_CONTROLS_CONFIG = [
+    // Group 1: Scale
+    // NOT: Logaritmik değerler (min:-2, max:2) üzerinden hesaplanır. Log değerlerini girdim.
+    { type: 'knob', id: 'xAxisScale', min: -2, max: 2, value: 0, log: true, suffix: 'x', var: 'xAxisScale', label: 'X-Axis Scale', info: 'VISUAL: Stretches or compresses the horizontal (X-Axis) spread of frequencies.' },
+    { type: 'knob', id: 'verticalScale', min: -2, max: 2, value: 0, log: true, suffix: 'x', var: 'verticalScale', label: 'Y-Axis Scale', info: 'VISUAL: Multiplies the effect of volume (Amplitude) on the Y-Axis (height).' },
+    { type: 'knob', id: 'zAxisScale', min: -2, max: 2, value: 0, log: true, suffix: 'x', var: 'zAxisScale', label: 'Z-Axis Scale', info: 'VISUAL: Stretches or compresses the depth (Z-Axis) of the Timbre (Harmonic Richness).' },
+    { type: 'knob', id: 'pointScale', min: -2, max: 2, value: 0, log: true, suffix: 'x', var: 'pointScale', label: 'Base Point Scale', info: 'VISUAL: Sets the base size of the points. Final size is (Base * Amplitude).' },
+    
+    // Group 2: Sensibility
+    { type: 'knob', id: 'xAxisSensibility', min: 0.1, max: 3.0, value: 1, log: false, suffix: '', step: 0.01, var: 'xAxisSensibility', label: 'X-Axis Sensibility', info: 'VISUAL: Controls the logarithmic mapping of frequency. <1 biases low, >1 biases high.' },
+    { type: 'knob', id: 'yAxisSensibility', min: 0.1, max: 3.0, value: 1, log: false, suffix: '', step: 0.01, var: 'yAxisSensibility', label: 'Y-Axis Sensibility', info: 'VISUAL: Controls the power mapping of amplitude. <1 biases low, >1 biases high.' },
+    { type: 'knob', id: 'harmonicSensitivity', min: 0, max: 2, value: 0.39, log: false, suffix: '', step: 0.01, var: 'harmonicSensitivity', label: 'Timbre Sensitivity', info: 'VISUAL: How strongly harmonics (tını) affect the Z-Axis depth.' },
+
+    // Group 3: Freq/Amp Filters
+    { type: 'knob', id: 'minFreq', min: 0, max: 5000, value: 20, log: false, suffix: ' Hz', step: 10, var: 'minFrequency', label: 'Min Frequency', info: 'FILTER: The lowest frequency to visualize (X-Axis left limit).' },
+    { type: 'knob', id: 'maxFreq', min: 100, max: 20000, value: 20000, log: false, suffix: ' Hz', step: 100, var: 'maxFrequency', label: 'Max Frequency', info: 'FILTER: The highest frequency to visualize (X-Axis right limit).' },
+    { type: 'knob', id: 'amplitudeThreshold', min: 0.1, max: 0.5, value: 0.43, log: false, suffix: '%', step: 0.01, var: 'amplitudeThreshold', label: 'Amplitude Threshold', info: 'FILTER: The minimum volume (0-1) required to create a point (Y-Axis bottom limit).' }, // 43.0% -> 0.43
+
+    // Group 4: Pitch Filters
+    { type: 'knob', id: 'pitchRangeMin', min: 21, max: 80, value: 21, log: false, suffix: '', step: 1, var: 'pitchRangeMin', label: 'Min Pitch Filter', info: 'FILTER: The lowest note (MIDI) to display (e.g., 21 = A0).' },
+    { type: 'knob', id: 'pitchRangeMax', min: 81, max: 108, value: 108, log: false, suffix: '', step: 1, var: 'pitchRangeMax', label: 'Max Pitch Filter', info: 'FILTER: The highest note (MIDI) to display (e.g., 96 = C7).' }, // Görselde C8 (108) görünüyor.
+
+    // Group 5: Point/Sample Logic
+    { type: 'knob', id: 'sampleFps', min: 1, max: 120, value: 25, log: false, suffix: ' FPS', step: 1, var: 'sampleRateFps', label: 'Sample Rate', info: 'SPEED: How many times per second to sample the audio and create points.' },
+    { type: 'knob', id: 'pointLifetime', min: .5, max: 60, value: 1, log: false, suffix: ' s', step: 1, var: 'pointLifetime', label: 'Point Lifetime', info: 'VISUAL: How long a point stays on screen before fading out.' },
+    { type: 'knob', id: 'maxPeaks', min: 1, max: 20, value: 4, log: false, suffix: '', step: 1, var: 'maxPeaks', label: 'Max Peaks', info: 'FILTER: The maximum number of points to create per frame. Lower values reduce noise.' },
+
+    // Group 6: Playback
+    { type: 'knob', id: 'speed', min: 0.1, max: 5.0, value: 1.0, log: false, suffix: 'x', step: 0.1, var: 'playbackSpeed', label: 'Playback Speed', info: 'SPEED: The playback speed of the audio (1.0 = normal).' },
+    { type: 'toggleKnob', id: 'loop', var: 'loopAudio', label: 'Loop Audio', info: 'Restarts the audio automatically when it ends.', value: true }, // loop audio: yes
+    { type: 'knob', id: 'autoRotateSpeed', min: -10.0, max: 10.0, value: 0.60, log: false, suffix: '', step: 0.1, var: 'autoRotateSpeed', label: 'Auto-Rotate Speed', info: 'VISUAL: Sets the speed of the auto-rotation. 0 = Off.' },
+
+    // Group 7: Color
+    { type: 'knob', id: 'hueOffset', min: -0.5, max: 0.5, value: 0.02, log: false, suffix: '', step: 0.01, var: 'hueOffset', label: 'Base Hue Offset', info: 'Shifts the entire color wheel. Default 0.' },
+    { type: 'knob', id: 'saturation', min: 0.0, max: 1.0, value: 1.00, log: false, suffix: '', step: 0.01, var: 'saturation', label: 'Base Saturation', info: 'Controls the intensity of the color (0=grey, 1=full color).' },
+    { type: 'knob', id: 'lightness', min: 0.0, max: 1.0, value: 0.63, log: false, suffix: '', step: 0.01, var: 'lightness', label: 'Base Lightness', info: 'Controls the brightness of the color (0=black, 0.5=pure color, 1=white).' },
+
+    // Group 8: Bloom
+    { type: 'knob', id: 'bloomThreshold', min: 0.0, max: 1.0, value: 0.04, log: false, suffix: '', step: 0.01, var: 'bloomThreshold', label: 'Bloom Threshold', info: 'The minimum brightness required for an object to start glowing.' },
+    { type: 'knob', id: 'bloomStrength', min: 0.0, max: 3.0, value: 1.60, log: false, suffix: '', step: 0.1, var: 'bloomStrength', label: 'Bloom Strength', info: 'The intensity and power of the glow.' },
+    { type: 'knob', id: 'bloomRadius', min: 0.0, max: 2.0, value: 0.70, log: false, suffix: '', step: 0.1, var: 'bloomRadius', label: 'Bloom Radius', info: 'How far the glow spreads from the bright object.' },
+    
+    { type: 'knob', id: 'connectionDistance', min: 5, max: 500, value: 165, log: false, suffix: '', step: 1, var: 'connectionDistance', label: 'Connection Distance', info: 'The maximum 3D distance between two simultaneous notes to draw a line.' },
+
+    // Group 9: Lines
+    { type: 'checkbox', id: 'linesToggle', label: 'Vertical Lines____', info: 'Shows the (faint grey) lines that track a single note over time.', var: 'enableLines', value: false }, // Görselde kapalı (false) görünüyor
+    { type: 'checkbox', id: 'simultaneousToggle', label: 'Horizontal Peaks', info: 'Connects different notes that are played at the same time (e.g., chords).', var: 'enableSimultaneousConnections', value: true }, // Görselde açık (true) görünüyor
+
+    // Reset Button
+    { type: 'spacer' },
+    { type: 'button', id: 'resetDefaults', label: 'Reset to Default', info: 'Resets all settings to their original values.' }
+];
+
+        // UI Elemanları
+        const playBtn = document.getElementById('playBtn');
+        const pauseResumeButton = document.getElementById('pauseResumeButton');
+        const removeBtn = document.getElementById('removeBtn');
+        const fileInput = document.getElementById('fileInput');
+        const urlInput = document.getElementById('urlInput');
+       const statusEl = document.getElementById('status');
+        // YENİ EKLENDİ:
+        const fileInputLabel = document.querySelector('.file-input-label');
+        const fileNameText = document.querySelector('.file-name-text');
+        
+        const progressBar = document.getElementById('progressBar');
+        const toggleUiBtn = document.getElementById('toggleUiBtn');
+        const controlsPanel = document.getElementById('controls');
+        const settingsContainer = document.getElementById('settingsContainer');
+        const infoBtn = document.getElementById('infoBtn');
+        const infoModal = document.getElementById('infoModal');
+        const closeInfoBtn = document.getElementById('closeInfoBtn');
+        
+        // YENİ: Tooltip Elemanı
+        const tooltip = document.getElementById('tooltip');
+
+        const infoFreq = document.getElementById('infoFreq');
+        const infoAmp = document.getElementById('infoAmp');
+        const infoTimbre = document.getElementById('infoTimbre');
+
+        // Değişkenler
+        let parametricBox, labelRenderer, bloomPass;
+        let scene, camera, renderer, composer, controls;
+        
+        // Audio State
+        let audioContext, analyser, dataArray, source;
+        let isPlaying = false;
+        let startTime = 0;
+        let lastSampleTime = 0;
+        const points = [];
+        const lines = [];
+
+        // YENİ: Düğme Sürükleme Değişkenleri
+        let isDragging = false;
+        let currentKnob = null;
+        let startY = 0;
+        let startValue = 0;
+
+        // YENİ: Değer formatlama
+        function formatValue(value, config) {
+            let displayValue;
+            if (config.log) {
+                displayValue = Math.pow(10, value);
+            } else {
+                displayValue = value;
+            }
+
+            let text;
+            if (config.id === 'amplitudeThreshold') {
+                text = (displayValue * 100).toFixed(1) + config.suffix;
+            } else if (config.id === 'pitchRangeMin' || config.id === 'pitchRangeMax') {
+                text = `${displayValue} (${getNoteName(displayValue)})`;
+            } else {
+                let decimals = (config.step && config.step < 1) ? 2 : 0;
+                if (config.log) decimals = 2; // Logaritmik ölçekler her zaman 2 ondalık
+                text = displayValue.toFixed(decimals) + config.suffix;
+            }
+            return text;
+        }
+
+        // YENİ: Düğme Güncelleme Fonksiyonu
+        function updateKnob(knobData, value) {
+            const config = knobData.config;
+            const knobEl = knobData.element.querySelector('.knob-icon');
+            const valueEl = knobData.element.querySelector('.knob-value');
+            const knobFillEl = knobData.element.querySelector('.knob-fill'); // YENİ: Dolguyu seç
+
+            // 1. JS Değişkenini Güncelle
+            let actualValue = value;
+            if (config.log) {
+                actualValue = Math.pow(10, value);
+            }
+            window[config.var] = actualValue;
+
+            // 2. Görsel Değeri Güncelle
+            valueEl.textContent = formatValue(value, config);
+
+            // 3. İKON DÖNDÜRME (KALDIRILDI)
+            const percent = (value - config.min) / (config.max - config.min);
+            // const rotation = -135 + (percent * 270); // -135 ile +135 derece arası
+            // knobEl.style.transform = `rotate(${rotation}deg)`; // KALDIRILDI
+
+            // YENİ: Dolgu Yüksekliğini Ayarla
+            if (knobFillEl) knobFillEl.style.height = (percent * 100) + '%';
+
+
+            // 4. İlgili JS Fonksiyonunu Tetikle
+            switch(config.var) {
+                case 'xAxisScale':
+                case 'verticalScale':
+                case 'zAxisScale':
+                case 'minFrequency':
+                case 'maxFrequency':
+                case 'amplitudeThreshold':
+                case 'harmonicSensitivity':
+                case 'xAxisSensibility':
+                case 'yAxisSensibility':
+                    updateAllPositions();
+                    break;
+                case 'pointScale':
+                    updateAllPositions(); // Pozisyonları ve ölçeği günceller
+                    break;
+                case 'hueOffset':
+                case 'saturation':
+                case 'lightness':
+                    updateAllColors();
+                    break;
+                case 'bloomThreshold':
+                    if (bloomPass) bloomPass.threshold = actualValue;
+                    break;
+                case 'bloomStrength':
+                    if (bloomPass) bloomPass.strength = actualValue;
+                    break;
+                case 'bloomRadius':
+                    if (bloomPass) bloomPass.radius = actualValue;
+                    break;
+                case 'playbackSpeed':
+                     if (source) source.playbackRate.setValueAtTime(actualValue, audioContext.currentTime);
+                    break;
+                case 'autoRotateSpeed': // YENİ: Hata düzeltmesi
+                    if (controls) { // Kontrollerin yüklendiğinden emin ol
+                        if (actualValue !== 0) {
+                            controls.autoRotate = true;
+                            controls.autoRotateSpeed = actualValue;
+                        } else {
+                            controls.autoRotate = false;
+                        }
+                    }
+                    break;
+                case 'pointLifetime':
+                    points.forEach(p => { p.lifetime = actualValue; p.initialLifetime = actualValue; });
+                    break;
+                // Diğerleri (maxPeaks, sampleRateFps, vb.) sampleAudio() içinde zaten okunuyor
+            }
+        }
+
+        // YENİ: Düğme Sürükleme Olayları
+        function onKnobMouseDown(e) {
+            if (!e.currentTarget.knobData) return;
+            isDragging = true;
+            currentKnob = e.currentTarget.knobData;
+            startY = e.clientY;
+            startValue = currentKnob.currentValue;
+            document.body.style.cursor = 'ns-resize';
+            e.preventDefault();
+        }
+
+        function onKnobMouseMove(e) {
+            if (!isDragging || !currentKnob) return;
+
+            const deltaY = startY - e.clientY; // Yukarı sürükle = pozitif
+            const config = currentKnob.config;
+            const range = config.max - config.min;
+            const sensitivity = range / 200; // 200px sürükleme = tam aralık
+
+            let newValue = startValue + (deltaY * sensitivity);
+            newValue = Math.max(config.min, Math.min(config.max, newValue)); // Clamp
+            
+            if (config.step) {
+                newValue = Math.round(newValue / config.step) * config.step;
+            }
+
+            if (newValue !== currentKnob.currentValue) {
+                currentKnob.currentValue = newValue;
+                updateKnob(currentKnob, newValue);
+            }
+            e.preventDefault();
+        }
+
+        function onKnobMouseUp(e) {
+            isDragging = false;
+            currentKnob = null;
+            document.body.style.cursor = 'default';
+            e.preventDefault();
+        }
+
+        // YENİ: Tooltip Gösterme/Gizleme
+        function showTooltip(element) {
+            const infoText = element.dataset.info;
+            if (!infoText) return;
+
+            tooltip.textContent = infoText;
+            tooltip.style.display = 'block';
+
+            const rect = element.getBoundingClientRect();
+            // Panelin solunda göster
+            tooltip.style.left = (rect.left - tooltip.offsetWidth - 10) + 'px';
+            tooltip.style.top = (rect.top + (rect.height / 2) - (tooltip.offsetHeight / 2)) + 'px';
+        }
+
+        // YENİ: Tooltip Gizleme Fonksiyonu (EKSİKTİ)
+        function hideTooltip() {
+            if (tooltip) {
+                tooltip.style.display = 'none';
+            }
+        }
+
+        // YENİ: Düğmeleri Dinamik Olarak Oluştur (Tek Panel)
+        function createKnobs() {
+            const panel = document.getElementById('settingsContainer');
+            panel.innerHTML = ''; // Paneli temizle
+
+            ALL_CONTROLS_CONFIG.forEach(config => {
+                if (config.type === 'knob') {
+                    panel.appendChild(createKnobElement(config));
+                } else if (config.type === 'toggleKnob') {
+                    panel.appendChild(createToggleKnobElement(config));
+                } else if (config.type === 'checkbox') {
+                    panel.appendChild(createCheckboxElement(config));
+                } /* else if (config.type === 'divider') { // KALDIRILDI
+                    panel.appendChild(createDividerElement());
+                } */
+                // YENİ: Spacer ve Button Ekle
+                else if (config.type === 'spacer') {
+                    panel.appendChild(createSpacerElement());
+                } else if (config.type === 'button') {
+                    panel.appendChild(createButtonElement(config));
+                }
+            });
+
+            // Olay dinleyicilerini global olarak ayarla
+            document.addEventListener('mousemove', onKnobMouseMove);
+            document.addEventListener('mouseup', onKnobMouseUp);
+        }
+
+        function createKnobElement(config) {
+            const container = document.createElement('div');
+            container.className = 'knob-container';
+
+            const knob = document.createElement('div');
+            knob.className = 'knob';
+            knob.id = config.id; // YENİ: Resetleme için ID eklendi
+            
+            // YENİ: Dolguyu oluştur ve ekle (ikondan önce)
+            const knobFill = document.createElement('div');
+            knobFill.className = 'knob-fill';
+            knob.appendChild(knobFill);
+
+            const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            icon.setAttribute('class', 'knob-icon');
+            icon.setAttribute('viewBox', '0 0 24 24');
+            icon.setAttribute('fill', 'none');
+            icon.innerHTML = ICONS[config.id] || ICONS['pointScale']; // Varsayılan ikon
+            knob.appendChild(icon);
+
+            const label = document.createElement('span');
+            label.className = 'knob-label';
+            label.textContent = config.label;
+            label.dataset.info = config.info;
+            // YENİ: Tooltip event'leri
+            label.addEventListener('mouseover', () => showTooltip(label));
+            label.addEventListener('mouseout', hideTooltip);
+
+
+            const value = document.createElement('span');
+            value.className = 'knob-value';
+            
+            container.appendChild(knob);
+            container.appendChild(label);
+            container.appendChild(value);
+
+            // Veriyi öğeye bağla
+            const knobData = {
+                element: container,
+                config: config,
+                currentValue: config.value
+            };
+            knob.knobData = knobData; // HATA DÜZELTME: Veriyi 'container' yerine 'knob'a bağla
+            
+            // Olay dinleyicisi
+            knob.addEventListener('mousedown', onKnobMouseDown);
+
+            // Başlangıç değerini ayarla
+            updateKnob(knobData, config.value);
+
+            return container;
+        }
+
+        // YENİ: Dairesel Toggle Düğmesi Oluşturucu
+        function createToggleKnobElement(config) {
+            const container = document.createElement('div');
+            container.className = 'knob-container';
+
+            const knob = document.createElement('div');
+            knob.className = 'knob';
+            knob.style.cursor = 'pointer'; // Tıklama imleci
+            knob.id = config.id; // YENİ: Resetleme için ID eklendi
+            
+            const knobFill = document.createElement('div');
+            knobFill.className = 'knob-fill';
+            knob.appendChild(knobFill);
+
+            const icon = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            icon.setAttribute('class', 'knob-icon');
+            icon.setAttribute('viewBox', '0 0 24 24');
+            icon.setAttribute('fill', 'none');
+            icon.innerHTML = ICONS[config.id] || ICONS['loop'];
+            knob.appendChild(icon);
+
+            const label = document.createElement('span');
+            label.className = 'knob-label';
+            label.textContent = config.label;
+            label.dataset.info = config.info;
+            label.addEventListener('mouseover', () => showTooltip(label));
+            label.addEventListener('mouseout', hideTooltip);
+
+            const valueEl = document.createElement('span');
+            valueEl.className = 'knob-value';
+            
+            container.appendChild(knob);
+            container.appendChild(label);
+            container.appendChild(valueEl);
+
+            const knobData = {
+                element: container,
+                config: config,
+                currentValue: config.value
+            };
+            knob.knobData = knobData;
+            
+            // Tıklama olayı (sürükleme değil)
+            knob.addEventListener('click', (e) => {
+                const data = e.currentTarget.knobData;
+                const newValue = !data.currentValue;
+                data.currentValue = newValue;
+                updateToggleKnob(data, newValue);
+            });
+
+            updateToggleKnob(knobData, config.value); // Başlangıç değerini ayarla
+            return container;
+        }
+
+        // YENİ: Dairesel Toggle Güncelleyici
+        function updateToggleKnob(knobData, value) {
+            const config = knobData.config;
+            const valueEl = knobData.element.querySelector('.knob-value');
+            const knobFillEl = knobData.element.querySelector('.knob-fill');
+            
+            window[config.var] = value;
+            valueEl.textContent = value ? 'YES' : 'NO';
+            knobFillEl.style.height = value ? '100%' : '0%';
+
+            if (config.var === 'loopAudio' && source) {
+                source.loop = value;
+            }
+        }
+
+
+        // YENİ: Checkbox Oluşturucu (Refactor)
+        function createCheckboxElement(config) {
+            const container = document.createElement('div');
+            container.className = 'checkbox-group';
+
+            const labelWrapper = document.createElement('div');
+            labelWrapper.className = 'label-wrapper';
+
+            const labelEl = document.createElement('label');
+            labelEl.setAttribute('for', config.id);
+            labelEl.textContent = config.label;
+            labelEl.dataset.info = config.info;
+            labelEl.addEventListener('mouseover', () => showTooltip(labelEl));
+            labelWrapper.addEventListener('mouseout', hideTooltip); // GÜNCELLENDİ: Etiket wrapper'ından çıkınca
+
+            labelWrapper.appendChild(labelEl);
+            container.appendChild(labelWrapper);
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.id = config.id;
+            checkbox.checked = config.value; // Varsayılan değeri config'den al
+            
+            // Genel event listener
+            checkbox.addEventListener('change', () => { 
+                window[config.var] = checkbox.checked; 
+                // YENİ: Checkbox değiştiğinde global ayarı tetikle
+                if (config.id === 'linesToggle') {
+                    // updateLinesVisibility(); // Bu fonksiyon updatePointsAndLines içinde
+                }
+                if (config.id === 'simultaneousToggle') {
+                    // updateLinesVisibility(); // Bu fonksiyon updatePointsAndLines içinde
+                }
+            });
+
+            container.appendChild(checkbox);
+            return container;
+        }
+
+        // YENİ: Spacer Oluşturucu
+        function createSpacerElement() {
+            const div = document.createElement('div');
+            div.className = 'spacer-container';
+            return div;
+        }
+
+        // YENİ: Reset Butonu Oluşturucu
+        function createButtonElement(config) {
+            const container = document.createElement('div');
+            container.className = 'button-container';
+
+            const button = document.createElement('button');
+            button.id = config.id;
+            button.className = 'reset-button';
+            button.textContent = config.label;
+            
+            button.addEventListener('click', resetAllSettings);
+
+            // Tooltip (isterse)
+            button.dataset.info = config.info;
+            button.addEventListener('mouseover', () => showTooltip(button));
+            button.addEventListener('mouseout', hideTooltip);
+
+            container.appendChild(button);
+            return container;
+        }
+
+        // YENİ: Ayarları Resetleme Fonksiyonu
+        function resetAllSettings() {
+            ALL_CONTROLS_CONFIG.forEach(config => {
+                if (config.type === 'knob' || config.type === 'toggleKnob') {
+                    // İlgili knobData'yı bul (element üzerinden)
+                    const el = document.getElementById(config.id);
+                    if (el && el.knobData) {
+                        el.knobData.currentValue = config.value;
+                        if(config.type === 'knob') {
+                            updateKnob(el.knobData, config.value);
+                        } else {
+                            updateToggleKnob(el.knobData, config.value);
+                        }
+                    }
+                } else if (config.type === 'checkbox') {
+                    const el = document.getElementById(config.id);
+                    if (el) {
+                        el.checked = config.value;
+                        window[config.var] = config.value; // Global değişkeni de resetle
+                    }
+                }
+            });
+            // Auto-rotate'i de manuel durdur (eğer açıksa)
+            if (controls) controls.autoRotate = false;
+        }
+
+
+        /* YENİ: Ayırıcı Oluşturucu (KALDIRILDI)
+        function createDividerElement() {
+            const div = document.createElement('div');
+            div.className = 'settings-divider';
+            return div;
+        }
+        */
+
+        
+        // Scene Setup
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); // Alpha true
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000000, 0); // Şeffaf arka plan
+        document.getElementById('container').appendChild(renderer.domElement);
+        
+        camera.position.set(25, 15, 35);
+        camera.lookAt(0, 0, 0);
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.autoRotate = false; // Varsayılan
+        
+        labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0px';
+        labelRenderer.domElement.style.pointerEvents = 'none';
+        document.getElementById('container').appendChild(labelRenderer.domElement);
+
+        // Post-processing (Bloom)
+        composer = new EffectComposer(renderer);
+        composer.addPass(new RenderPass(scene, camera));
+        bloomPass = new UnrealBloomPass(
+            new THREE.Vector2(window.innerWidth, window.innerHeight),
+            window.bloomStrength, window.bloomRadius, window.bloomThreshold
+        );
+        composer.addPass(bloomPass);
+
+        // Başlatma
+        initParametricBox();
+        createKnobs(); // YENİ: Düğmeleri oluştur
+        
+        // Küp (Sadece çizgiler)
+        function initParametricBox() {
+            parametricBox = new THREE.Group();
+            const boxGeom = new THREE.BoxGeometry(BASE_X_WIDTH, BASE_Y_HEIGHT, BASE_Z_DEPTH);
+            const boxEdges = new THREE.EdgesGeometry(boxGeom);
+            const boxMat = new THREE.LineBasicMaterial({
+                color: 0xFFFFFF,
+                transparent: true,
+                opacity: 0.3, 
+                linewidth: 1 // Bu 1 olarak kalmalı
+            });
+            const boxLines = new THREE.LineSegments(boxEdges, boxMat);
+            parametricBox.add(boxLines);
+            scene.add(parametricBox);
+        }
+        
+        // Küp Grubunu (3 eksende) ölçekler
+        function updateBoxScale() {
+            if (parametricBox) {
+                parametricBox.scale.set(window.xAxisScale, window.verticalScale, window.zAxisScale);
+            }
+        }
+        
+        // Tüm nokta ve çizgilerin pozisyonunu (3 eksende) günceller
+        function updateAllPositions() {
+            updateBoxScale();
+            
+for (const point of points) {
+    
+    // YENİ DÜZELTME: X EKSENİNİ LOGARİTMİK OLARAK GERİ GETİRİYORUZ
+    const logMinFreq = Math.log10(window.minFrequency > 0 ? window.minFrequency : 1);
+    const logMaxFreq = Math.log10(window.maxFrequency);
+    const logCurrentFreq = Math.log10(point.frequency);
+
+    let logNormalizedFreq = (logCurrentFreq - logMinFreq) / (logMaxFreq - logMinFreq);
+    logNormalizedFreq = Math.min(Math.max(logNormalizedFreq, 0), 1);
+    // xAxisSensibility, X ekseni dağılımını kontrol etmeye devam eder
+    logNormalizedFreq = Math.pow(logNormalizedFreq, window.xAxisSensibility); 
+    point.x_norm = logNormalizedFreq - 0.5; // -0.5 ile +0.5 arasına normalize
+
+    
+    // Y-EKSENİ (AMPLITUDE) KISMI AYNEN KALACAK:
+    const ampRange = 1.0 - window.amplitudeThreshold;
+    let ampNormalized = (point.amplitude - window.amplitudeThreshold) / ampRange;
+    ampNormalized = Math.min(Math.max(ampNormalized, 0), 1);
+    ampNormalized = Math.pow(ampNormalized, window.yAxisSensibility);
+    point.y_norm = ampNormalized - 0.5;
+    
+    // Z-EKSENİ (TIMBRE) KISMI AYNEN KALACAK:
+    let timbreNormalized = point.harmonicRichness * window.harmonicSensitivity;
+    timbreNormalized = Math.min(Math.max(timbreNormalized, 0), 1);
+    point.z_norm = timbreNormalized - 0.5;
+    
+    // POZİSYON HESAPLAMASI (x_norm'u kullanır)
+    point.mesh.position.set(
+        point.x_norm * BASE_X_WIDTH * window.xAxisScale,
+        point.y_norm * BASE_Y_HEIGHT * window.verticalScale,
+        point.z_norm * BASE_Z_DEPTH * window.zAxisScale
+    );
+
+                // const logMinFreq = Math.log10(window.minFrequency > 0 ? window.minFrequency : 1);
+// const logMaxFreq = Math.log10(window.maxFrequency);
+// const logCurrentFreq = Math.log10(point.frequency);
+// let logNormalizedFreq = (logCurrentFreq - logMinFreq) / (logMaxFreq - logMinFreq);
+// logNormalizedFreq = Math.min(Math.max(logNormalizedFreq, 0), 1);
+// logNormalizedFreq = Math.pow(logNormalizedFreq, window.xAxisSensibility); 
+// point.x_norm = logNormalizedFreq - 0.5; // logaritmalı X pozisyonu
+                
+                
+           //     const ampRange = 1.0 - window.amplitudeThreshold;
+           //     let ampNormalized = (point.amplitude - window.amplitudeThreshold) / ampRange;
+            //    ampNormalized = Math.min(Math.max(ampNormalized, 0), 1);
+             //   ampNormalized = Math.pow(ampNormalized, window.yAxisSensibility);
+            //    point.y_norm = ampNormalized - 0.5;
+                
+            //    let timbreNormalized = point.harmonicRichness * window.harmonicSensitivity;
+           //     timbreNormalized = Math.min(Math.max(timbreNormalized, 0), 1);
+            //    point.z_norm = timbreNormalized - 0.5;
+                
+            //    point.mesh.position.set(
+            //        point.x_norm * BASE_X_WIDTH * window.xAxisScale,
+              //      point.y_norm * BASE_Y_HEIGHT * window.verticalScale,
+             //       point.z_norm * BASE_Z_DEPTH * window.zAxisScale
+              //  );
+                
+                // Ölçeği de burada güncelle
+                const opacity = Math.max(0, point.lifetime / point.initialLifetime);
+        const ampScale = 0.2 + (point.amplitude * 0.8);
+        const finalScale = window.pointScale * ampScale * (opacity * 0.5 + 0.5);
+        point.mesh.scale.set(finalScale, finalScale, finalScale);
+    }
+            
+            for (const lineInfo of lines) {
+                if (lineInfo.startPoint && lineInfo.endPoint && points.includes(lineInfo.startPoint) && points.includes(lineInfo.endPoint)) {
+                    const positions = lineInfo.line.geometry.attributes.position;
+                    positions.setXYZ(0, lineInfo.startPoint.mesh.position.x, lineInfo.startPoint.mesh.position.y, lineInfo.startPoint.mesh.position.z);
+                    positions.setXYZ(1, lineInfo.endPoint.mesh.position.x, lineInfo.endPoint.mesh.position.y, lineInfo.endPoint.mesh.position.z);
+                    positions.needsUpdate = true;
+                    lineInfo.line.geometry.computeBoundingSphere();
+                }
+            }
+        }
+
+        // Tüm mevcut noktaların ve çizgilerin renklerini günceller
+      function updateAllColors() {
+    for (const point of points) {
+        // DEĞİŞTİ: getColorByPitchClass(point.pitchClass) yerine yeni fonksiyon çağrıldı
+        const newColor = getColorBySpectralBand(point.frequency);
+        point.color.copy(newColor);
+        point.mesh.material.color.copy(newColor);
+    }
+    // ... (Kalan satırlar aynı kalır)
+    for (const lineInfo of lines) {
+        if (lineInfo.type === 'harmonic' && lineInfo.startPoint) {
+            lineInfo.line.material.color.copy(lineInfo.startPoint.color);
+        }
+    }
+}
+
+        // Renk Hesaplama (Nota Sınıfına + HSL Ayarlarına Göre)
+        function getColorBySpectralBand(frequency) { 
+    // Önceki koddan pitchClass yerine, yeni fonksiyondan hue değerini al
+    const bandInfo = getSpectralBandInfo(frequency);
+    let hue = bandInfo.hue;
+    
+    hue += window.hueOffset; 
+    hue = (hue % 1.0 + 1.0) % 1.0;
+    const color = new THREE.Color();
+    color.setHSL(hue, window.saturation, window.lightness); 
+    return color;
+}
+
+
+function getSpectralBandInfo(frequency) {
+    let band, xPosition, hueValue; // hueValue (0-1 aralığında)
+    
+    // Frekans Aralıkları (Hz)
+    const BAS_LIMIT = 250;
+    const MID_LIMIT = 1000; // 1kHz
+    const VOKAL_LIMIT = 4000; // 4kHz
+
+    if (frequency < BAS_LIMIT) {
+        // BAS (20Hz - 250Hz)
+        band = "BAS";
+        xPosition = -20.0; // Sol Kenar
+        hueValue = 0.85; // Koyu Kırmızı/Magenta
+    } else if (frequency < MID_LIMIT) {
+        // MID (250Hz - 1000Hz)
+        band = "MID";
+        xPosition = -5.0; // Sol Orta
+        hueValue = 0.15; // Sarı/Turuncu
+    } else if (frequency < VOKAL_LIMIT) {
+        // VOKAL (1kHz - 4kHz)
+        band = "VOKAL";
+        xPosition = 10.0; // Sağ Orta
+        hueValue = 0.35; // Yeşil
+    } else {
+        // TİZ (4kHz - 20kHz)
+        band = "TIZ";
+        xPosition = 25.0; // Sağ Kenar
+        hueValue = 0.55; // Mavi/Cyan
+    }
+
+    return {
+        band: band,
+        x: xPosition,
+        hue: hueValue
+    };
+}
+
+        // Tepe Noktalarını ve Harmonik Zenginliği Bulma
+        function getAllActivePeaks() {
+            if (!analyser || !isPlaying) return [];
+            
+            analyser.getByteFrequencyData(dataArray);
+            
+            const sampleRate = audioContext.sampleRate;
+            const binCount = analyser.frequencyBinCount;
+            const binFrequency = sampleRate / FFT_SIZE;
+            const harmonicSearchWidth = 3;
+            
+            const candidatePeaks = [];
+            for (let i = 5; i < binCount - 5; i++) {
+                const amplitude = dataArray[i] / 255.0;
+                if (amplitude < window.amplitudeThreshold) continue;
+                
+                const frequency = i * binFrequency;
+                if (frequency < window.minFrequency || frequency > window.maxFrequency) continue;
+                
+                let isLocalMax = true;
+                for (let j = 1; j <= 3; j++) {
+                    if (amplitude < dataArray[i - j] / 255.0 || amplitude < dataArray[i + j] / 255.0) {
+                        isLocalMax = false;
+                        break;
+                    }
+                }
+                if (!isLocalMax) continue;
+                
+                const alpha = dataArray[i - 1] / 255.0;
+                const beta = dataArray[i] / 255.0;
+                const gamma = dataArray[i + 1] / 255.0;
+                const p = 0.5 * (alpha - gamma) / (alpha - 2.0 * beta + gamma);
+                const preciseFrequency = (i + p) * binFrequency;
+                const fundamentalBin = i + p;
+                
+                const midiNote = 12 * Math.log2(preciseFrequency / A4_FREQ) + 69;
+                if (midiNote < window.pitchRangeMin || midiNote > window.pitchRangeMax) continue;
+                
+                const pitchClass = Math.round(midiNote) % 12;
+                
+                let harmonicSum = 0;
+                for (let h = 2; h <= 4; h++) {
+                    const targetBin = Math.round(fundamentalBin * h);
+                    let maxAmpInWindow = 0;
+                    for (let w = -harmonicSearchWidth; w <= harmonicSearchWidth; w++) {
+                        const bin = targetBin + w;
+                        if (bin > 0 && bin < binCount) {
+                            maxAmpInWindow = Math.max(maxAmpInWindow, dataArray[bin] / 255.0);
+                        }
+                    }
+                    harmonicSum += Math.min(maxAmpInWindow, amplitude);
+                }
+                const harmonicRichness = (amplitude > 0.01) ? harmonicSum / amplitude : 0;
+                
+                candidatePeaks.push({
+                    frequency: preciseFrequency,
+                    amplitude: amplitude,
+                    bin: i,
+                    midiNote: midiNote,
+                    pitchClass: pitchClass,
+                    harmonicRichness: harmonicRichness
+                });
+                
+                i += 3; 
+            }
+            
+            candidatePeaks.sort((a, b) => b.amplitude - a.amplitude);
+            const filteredPeaks = [];
+            for (const peak of candidatePeaks) {
+                let isMasked = false;
+                for (const filteredPeak of filteredPeaks) {
+                    if (Math.abs(peak.frequency - filteredPeak.frequency) < spectralMaskingHz) {
+                        isMasked = true;
+                        break;
+                    }
+                }
+                if (!isMasked) {
+                    filteredPeaks.push(peak);
+                    if (filteredPeaks.length >= window.maxPeaks) break;
+                }
+            }
+            return filteredPeaks;
+        }
+
+        // Nokta Oluşturma
+        function createPoint(x, y, z, color, amplitude, frequency, emissionTime, midiNote, harmonicRichness, pitchClass) {
+            const geometry = new THREE.SphereGeometry(0.3, 16, 16);
+            const material = new THREE.MeshBasicMaterial({
+                color: color,
+                transparent: true,
+                opacity: 1.0
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.set(x, y, z);
+            
+            const baseScale = window.pointScale;
+            const amplitudeScale = 0.2 + (amplitude * 0.8);
+            const finalScale = baseScale * amplitudeScale;
+            mesh.scale.set(finalScale, finalScale, finalScale);
+            
+            scene.add(mesh);
+            
+            const labelDiv = document.createElement('div');
+            labelDiv.className = 'label';
+            labelDiv.style.display = 'none';
+            document.body.appendChild(labelDiv);
+            
+            const point = {
+                position: mesh.position,
+                color: color.clone(),
+                lifetime: window.pointLifetime,
+                initialLifetime: window.pointLifetime,
+                mesh: mesh,
+                emissionTime: emissionTime,
+                amplitude: amplitude,
+                frequency: frequency,
+                midiNote: midiNote,
+                pitchClass: pitchClass,
+                harmonicRichness: harmonicRichness,
+                label: labelDiv,
+                x_norm: 0,
+                y_norm: 0,
+                z_norm: 0,
+                baseScale: baseScale
+            };
+            points.push(point);
+            return point;
+        }
+
+        // Çizgi Oluşturma (KALINLIK KALDIRILDI)
+        function createLine(startPoint, endPoint, color, type = 'track') {
+            let lineVisible, lineColor, lineOpacity;
+            if (type === 'track') {
+                lineVisible = window.enableLines;
+                lineColor = 0xAAAAAA;
+                lineOpacity = 0.5;
+            } else { // 'harmonic'
+                lineVisible = window.enableSimultaneousConnections;
+                lineColor = color;
+                lineOpacity = 0.7;
+            }
+            const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+                startPoint.position,
+                endPoint.position
+            ]);
+            const lineMaterial = new THREE.LineBasicMaterial({
+                color: lineColor,
+                transparent: true,
+                opacity: lineOpacity
+                // linewidth kaldırıldı
+            });
+            const line = new THREE.Line(lineGeometry, lineMaterial);
+            line.visible = lineVisible;
+            
+            scene.add(line);
+            
+            lines.push({
+                line: line,
+                startPoint: startPoint,
+                endPoint: endPoint,
+                type: type
+            });
+        }
+
+        // Ses Örnekleme
+  function sampleAudio() {
+    if (!isPlaying || !audioContext) return;
+    
+    // Geçen süreyi kontrol et
+    const currentTime = audioContext.currentTime - startTime;
+    
+    // YENİ: Belirlenen FPS'ye göre örnekleme zamanı kontrolü
+    if (currentTime - lastSampleTime >= 1.0 / window.sampleRateFps) {
+        const sampleTime = currentTime;
+        lastSampleTime = sampleTime;
+        
+        // 1. Tüm aktif tepe noktalarını (peaks) bul
+        const allPeaks = getAllActivePeaks();
+        const newPeakData = [];
+        
+        // Info Box'ı güncelle
+       if (allPeaks.length > 0) {
+    const mainPeak = allPeaks[0];
+    
+    // YENİ: SADECE FREKANS DEĞERİ
+    infoFreq.textContent = `${mainPeak.frequency.toFixed(0)} Hz`; 
+    
+    infoAmp.textContent = `${(mainPeak.amplitude * 100).toFixed(1)}%`;
+    infoTimbre.textContent = `${mainPeak.harmonicRichness.toFixed(2)}`;
+} else {
+            infoFreq.textContent = "--"; infoAmp.textContent = "--"; infoTimbre.textContent = "--";
+        }
+
+        // 2. Her tepe noktası için pozisyon ve renk hesapla, nokta oluştur
+        allPeaks.forEach(data => {
+            
+            const logMinFreq = Math.log10(window.minFrequency > 0 ? window.minFrequency : 1);
+    const logMaxFreq = Math.log10(window.maxFrequency);
+    const logCurrentFreq = Math.log10(data.frequency);
+    
+    let logNormalizedFreq = (logCurrentFreq - logMinFreq) / (logMaxFreq - logMinFreq);
+    logNormalizedFreq = Math.min(Math.max(logNormalizedFreq, 0), 1);
+    logNormalizedFreq = Math.pow(logNormalizedFreq, window.xAxisSensibility);
+    const x_norm = logNormalizedFreq - 0.5; // -0.5 ile +0.5 arasına normalize
+    
+    // Y-EKSENİ (AMPLITUDE) KISMI AYNEN KALACAK:
+    const ampRange = 1.0 - window.amplitudeThreshold;
+    let ampNormalized = (data.amplitude - window.amplitudeThreshold) / ampRange;
+    ampNormalized = Math.min(Math.max(ampNormalized, 0), 1);
+    ampNormalized = Math.pow(ampNormalized, window.yAxisSensibility);
+    const y_norm = ampNormalized - 0.5;
+    
+    // Z-EKSENİ (TIMBRE) KISMI AYNEN KALACAK:
+    let timbreNormalized = data.harmonicRichness * window.harmonicSensitivity;
+    timbreNormalized = Math.min(Math.max(timbreNormalized, 0), 1);
+    const z_norm = timbreNormalized - 0.5;
+    
+    // RENK, KATEGORİDEN GELMEYE DEVAM EDECEK
+    const color = getColorBySpectralBand(data.frequency); 
+    
+    // Nihai 3D Pozisyon
+    const x = x_norm * BASE_X_WIDTH * window.xAxisScale;
+    const y = y_norm * BASE_Y_HEIGHT * window.verticalScale;
+    const z = z_norm * BASE_Z_DEPTH * window.zAxisScale;
+            
+            // 3. Nokta Takibi (Peak Tracking)
+            let bestMatch = null;
+            let minNoteDiff = peakTrackingTolerance;
+            let bestMatchIndex = -1;
+            
+            for (let i = 0; i < previousPeaks.length; i++) {
+                const prevPeak = previousPeaks[i];
+                if (prevPeak.matched) continue;
+                const noteDiff = Math.abs(data.midiNote - prevPeak.midiNote);
+                if (noteDiff < minNoteDiff) {
+                    minNoteDiff = noteDiff;
+                    bestMatch = prevPeak;
+                    bestMatchIndex = i;
+                }
+            }
+            
+            // 4. Noktayı oluştur ve scene'e ekle
+            const newPoint = createPoint(x, y, z, color, data.amplitude, data.frequency, sampleTime, data.midiNote, data.harmonicRichness, data.pitchClass);
+            
+            // Normalize edilmiş pozisyonları kaydet
+            newPoint.x_norm = x_norm;
+            newPoint.y_norm = y_norm;
+            newPoint.z_norm = z_norm;
+            
+            // 5. Çizgi Bağlantısı (Track Line)
+            if (bestMatch) {
+                createLine(bestMatch.point, newPoint, color, 'track');
+                previousPeaks[bestMatchIndex].matched = true;
+            }
+            
+            newPeakData.push({
+                frequency: data.frequency,
+                midiNote: data.midiNote,
+                point: newPoint,
+                matched: false
+            });
+        });
+        
+        // 6. Aynı Anda Çalma Bağlantıları (Simultaneous Connections / Chord Lines)
+        if (window.enableSimultaneousConnections) {
+            for (let i = 0; i < newPeakData.length; i++) {
+                for (let j = i + 1; j < newPeakData.length; j++) {
+                    const p1 = newPeakData[i].point;
+                    const p2 = newPeakData[j].point;
+                    const dist = p1.position.distanceTo(p2.position);
+                    
+                    if (dist < window.connectionDistance) {
+                        // Not: Çizgi rengi, baskın olan noktanın rengini alır
+                        createLine(p1, p2, p1.color, 'harmonic'); 
+                    }
+                }
+            }
+        }
+        
+        previousPeaks = newPeakData;
+    }
+}
+        // Noktaları Güncelleme
+        function updatePointsAndLines(deltaTime) {
+            
+            for (let i = points.length - 1; i >= 0; i--) {
+                const point = points[i];
+                point.lifetime -= deltaTime;
+                
+                const opacity = Math.max(0, point.lifetime / point.initialLifetime);
+                point.mesh.material.opacity = opacity;
+                
+                const ampScale = 0.2 + (point.amplitude * 0.8);
+                const finalScale = point.baseScale * ampScale * (opacity * 0.5 + 0.5);
+                point.mesh.scale.set(finalScale, finalScale, finalScale);
+                
+                if (point.lifetime <= 0) {
+                    scene.remove(point.mesh);
+                    point.mesh.geometry.dispose();
+                    point.mesh.material.dispose();
+                    if(point.label.parentNode) document.body.removeChild(point.label);
+                    const removedPoint = points.splice(i, 1)[0];
+                    for (let j = previousPeaks.length - 1; j >= 0; j--) {
+                        if (previousPeaks[j].point === removedPoint) {
+                            previousPeaks.splice(j, 1);
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            for (let i = lines.length - 1; i >= 0; i--) {
+                const lineInfo = lines[i];
+                if (points.includes(lineInfo.startPoint) && points.includes(lineInfo.endPoint)) {
+                    if (lineInfo.type === 'track') {
+                        lineInfo.line.visible = window.enableLines;
+                    } else if (lineInfo.type === 'harmonic') {
+                        lineInfo.line.visible = window.enableSimultaneousConnections;
+                    }
+                    
+                    const minOpacity = Math.min(
+                        lineInfo.startPoint.mesh.material.opacity,
+                        lineInfo.endPoint.mesh.material.opacity
+                    );
+                    lineInfo.line.material.opacity = minOpacity * (lineInfo.type === 'track' ? 0.5 : 0.7);
+                } else {
+                    scene.remove(lineInfo.line);
+                    lineInfo.line.geometry.dispose();
+                    lineInfo.line.material.dispose();
+                    lines.splice(i, 1);
+                }
+            }
+        }
+        // Etiketleri Güncelleme
+        function updateLabels() {
+            points.forEach(point => {
+                // ... (Etiket mantığı değişmedi, ancak bu sürümde çağrılmıyor) ...
+            });
+        }
+        
+        // Ses motorunu durdurma (reset)
+
+
+
+      // Ses motorunu durdurma (reset)
+async function resetAudio() {
+    if (isPlaying && source) {
+        source.onended = null;
+        source.stop();
+    }
+    if (source) source.disconnect();
+    if (analyser) analyser.disconnect();
+    if (audioContext && audioContext.state !== 'closed') {
+        await audioContext.close();
+    }
+    source = null;
+    analyser = null;
+
+    points.forEach(p => {
+        scene.remove(p.mesh);
+        if (p.label && p.label.parentNode) {
+            document.body.removeChild(p.label);
+        }
+    });
+    lines.forEach(l => scene.remove(l.line));
+    points.length = 0;
+    lines.length = 0;
+    previousPeaks.length = 0;
+
+    isPlaying = false;
+    progressBar.style.width = '0%';
+    statusEl.textContent = 'Load a file or paste a URL';
+    playBtn.disabled = false;
+    
+    // UI Güncelleme (Remove/Reset sonrası)
+    playBtn.style.display = 'block';
+    pauseResumeButton.style.display = 'none';
+    
+    infoFreq.textContent = "--";
+    infoAmp.textContent = "--";
+    infoTimbre.textContent = "--";
+}
+
+
+function pauseAudio() {
+    if (isPlaying && audioContext && audioContext.state === 'running') {
+        audioContext.suspend();
+        isPlaying = false;
+        document.getElementById('pauseResumeButton').textContent = 'resume'; 
+    }
+}
+
+// Yeni Devam Etme Fonksiyonu (1. İstenen değişiklik)
+function resumeAudio() {
+    if (!isPlaying && audioContext && audioContext.state === 'suspended') {
+        audioContext.resume();
+        isPlaying = true;
+        document.getElementById('pauseResumeButton').textContent = 'pause'; 
+    }
+}
+
+
+        // Ses Yükleme
+        async function initAudio(sourceType) {
+            await resetAudio();
+            statusEl.textContent = 'Loading...';
+            playBtn.disabled = true;
+            try {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = FFT_SIZE;
+                analyser.smoothingTimeConstant = 0.75;
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                let audioBuffer;
+                
+                let sourceName = 'audio';
+                if (sourceType === 'file') {
+                    const file = fileInput.files[0];
+                    const arrayBuffer = await file.arrayBuffer();
+                    audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                    sourceName = file.name;
+                } else if (sourceType === 'url') {
+                    statusEl.textContent = 'Fetching from URL...';
+                    const response = await fetch(urlInput.value.trim());
+                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                    const arrayBuffer = await response.arrayBuffer();
+                    audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                    sourceName = 'URL';
+                }
+                else if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    const arrayBuffer = await file.arrayBuffer();
+                    audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                    sourceName = file.name;
+                } else if (urlInput.value.trim()) {
+                    statusEl.textContent = 'Fetching from URL...';
+                    const response = await fetch(urlInput.value.trim());
+                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                    const arrayBuffer = await response.arrayBuffer();
+                    audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                    sourceName = 'URL';
+                } else {
+                    statusEl.textContent = 'No life provided';
+                    playBtn.disabled = false;
+                    return;
+                }
+                statusEl.textContent = `Playing: ${sourceName}`;
+                source = audioContext.createBufferSource();
+                source.buffer = audioBuffer;
+                source.loop = window.loopAudio;
+                source.connect(analyser);
+                analyser.connect(audioContext.destination);
+                source.playbackRate.setValueAtTime(window.playbackSpeed, 0);
+                source.start(0);
+                startTime = audioContext.currentTime;
+                lastSampleTime = 0;
+                isPlaying = true;
+                playBtn.style.display = 'none';
+                pauseResumeButton.style.display = 'block'; // Yeni butonu göster
+                pauseResumeButton.textContent = 'pause'; // Başlangıçta 'pause' yazsın
+                playBtn.disabled = false;
+                
+                source.onended = () => {
+                    if (isPlaying) { 
+                        resetAudio();
+                        statusEl.textContent = 'Finished. Load new or Play again.';
+                    }
+                };
+            } catch (error) {
+                statusEl.textContent = 'Audio loading error: ' + error.message;
+                console.error(error);
+                playBtn.disabled = false;
+                stopBtn.style.display = 'none';
+                playBtn.style.display = 'block';
+            }
+        }
+
+        // Sahne Işıkları
+        const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.2);
+        scene.add(ambientLight);
+        
+        // Ana Render Döngüsü
+        let lastTime = performance.now();
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const currentTime = performance.now();
+            const deltaTime = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+            
+            if (isPlaying) {
+                sampleAudio();
+                updatePointsAndLines(deltaTime);
+            }
+            
+            // updateLabels(); // Etiketler kaldırıldı
+            
+            if (isPlaying && source && source.buffer) {
+                const elapsedTime = audioContext.currentTime - startTime;
+                const duration = source.buffer.duration;
+                const progress = Math.min(elapsedTime / duration, 1);
+                progressBar.style.width = (progress * 100) + '%';
+            }
+            
+            // YENİ: Auto-Rotate Mantığı Düzeltildi
+            if (controls && window.autoRotateSpeed !== 0) { // 'controls' yüklendi mi diye kontrol et
+                controls.autoRotate = true;
+                controls.autoRotateSpeed = window.autoRotateSpeed;
+            } else if (controls) { // 'controls' yüklendi mi diye kontrol et
+                controls.autoRotate = false;
+            }
+            
+            if (controls) controls.update(); // 'controls' yüklendi mi diye kontrol et
+            composer.render();
+            labelRenderer.render(scene, camera);
+        }
+
+        // Ana Event Listeners
+        playBtn.addEventListener('click', () => {
+    // Play'e basıldığında her şeyi başlat, Play butonunu gizle, Pause butonunu göster
+    initAudio();
+    playBtn.style.display = 'none';
+    pauseResumeButton.style.display = 'block';
+    pauseResumeButton.textContent = 'pause'; // Başlangıçta pause modunda olsun
+});
+
+// stopBtn.addEventListener('click', resetAudio); // Bu satırı SİLİN!
+
+pauseResumeButton.addEventListener('click', () => { // YENİ EKLE
+    if (isPlaying) {
+        pauseAudio();
+    } else {
+        resumeAudio();
+    }
+});
+
+removeBtn.addEventListener('click', () => {
+    resetAudio();
+    fileInput.value = '';
+    urlInput.value = '';
+    statusEl.textContent = 'world is sound frequencies.';
+    // Remove'a basılınca Pause'u gizle, Play'i göster
+    playBtn.style.display = 'block';
+    pauseResumeButton.style.display = 'none';
+});
+        
+        removeBtn.addEventListener('click', () => {
+            resetAudio();
+            fileInput.value = '';
+            urlInput.value = '';
+            statusEl.textContent = 'world is sound frequencies.';
+        });
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                // YENİ EKLENDİ: Dosya adını etikete yaz
+                const fileName = fileInput.files[0].name;
+                fileNameText.textContent = fileName;
+                fileInputLabel.classList.add('file-chosen');
+                
+                // ESKİ KOD (devam ediyor)
+                urlInput.value = '';
+                initAudio('file');
+            } else {
+                // YENİ EKLENDİ: Dosya seçimi iptal edilirse
+                fileNameText.textContent = 'Select Audio File';
+                fileInputLabel.classList.remove('file-chosen');
+            }
+        });
+        urlInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                if(urlInput.value.trim()) {
+                    fileInput.value = '';
+                    initAudio('url');
+                }
+            }
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // UI Gizleme
+        let uiVisible = true;
+        toggleUiBtn.addEventListener('click', () => {
+            uiVisible = !uiVisible;
+            const displayValue = uiVisible ? 'flex' : 'none';
+            // const blockDisplayValue = uiVisible ? 'block' : 'none'; // blockDisplayValue kaldırıldı
+            
+            controlsPanel.style.display = displayValue;
+            settingsContainer.style.display = uiVisible ? 'flex' : 'none'; // .settings-panel artık 'flex' kullanıyor
+            
+            if (parametricBox) parametricBox.visible = uiVisible;
+            if (labelRenderer) labelRenderer.domElement.style.display = uiVisible ? 'block' : 'none'; // YENİ: Etiket renderer'ını da gizle
+            
+            toggleUiBtn.textContent = uiVisible ? 'Hide UI' : 'Show UI';
+        });
+
+        // Info Modal Kontrolleri
+        infoBtn.addEventListener('click', () => {
+            infoModal.style.display = 'flex';
+        });
+        closeInfoBtn.addEventListener('click', () => {
+            infoModal.style.display = 'none';
+        });
+
+        // Global tıklama ile pop-up'ları kapat
+        document.body.addEventListener('click', (e) => {
+            // Ana info modal'ı
+            if (infoModal.style.display === 'flex' && e.target === infoModal) {
+                infoModal.style.display = 'none';
+            }
+        }, true); // Use capture phase
+
+        // YENİ: Düğme Sürükleme için global listener'lar (createKnobs içine taşındı)
+        // document.addEventListener('mousemove', onKnobMouseMove);
+        // document.addEventListener('mouseup', onKnobMouseUp);
+
+        // Başlangıç
+        animate();
+    </script>
+</body>
+</html>
