@@ -1,0 +1,1835 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>HOME</title>
+    
+    <!-- Utilities -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Meshopt Decoder (Global - Required for compressed GLBs) -->
+    <script src="https://unpkg.com/meshoptimizer@0.19.0/meshopt_decoder.js"></script>
+
+     <!-- FONTS -->
+      <style>
+        @font-face {
+            font-family: 'Telegrama Raw';
+            src: url('https://raw.githubusercontent.com/decentralize-dfw/font/main/vea.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'Telegrama Render';
+            src: url('https://raw.githubusercontent.com/decentralize-dfw/font/main/vea.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'GAU Private';
+            src: url('https://raw.githubusercontent.com/decentralize-dfw/font/main/vea.ttf') format('truetype');
+        }
+        @font-face {
+            font-family: 'Robot';
+            src: url('https://raw.githubusercontent.com/decentralize-dfw/font/main/vea.ttf') format('truetype');
+        }
+
+        :root {
+            --ui-color: #3d3d3d; 
+            --bg-color: #ededed; 
+            --modal-bg: white;
+            
+            /* Font Mapping */
+            --font-headers: 'Telegrama Raw', sans-serif;
+            --font-body: 'Telegrama Render', sans-serif;
+            --font-display: 'GAU Private', cursive;
+        }
+
+
+        html, body {
+            font-family: 'Telegrama Render', sans-serif;
+            background-color: white;
+            color: var(--ui-color);
+            margin: 0;
+            overflow: hidden; 
+            width: 100vw;
+            height: 100vh;
+            touch-action: none; 
+        }
+
+        /* --- 3D SCENE STYLES --- */
+        #scene-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+            touch-action: none;
+        }
+
+        .scene-html-element {
+            pointer-events: auto;
+            user-select: none;
+            backface-visibility: hidden;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid var(--accent-color);
+        }
+        
+        .scene-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        #loader {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.5s ease-out;
+            pointer-events: none;
+        }
+        .loader-text {
+            font-family: 'Telegrama Raw', sans-serif;
+            font-size: 2rem; color: var(--accent-color);
+            animation: pulse 1s infinite;
+            text-align: center;
+            padding: 20px;
+        }
+        @keyframes pulse { 0% { opacity: 0.5; } 100% { opacity: 1; } }
+
+        /* --- MODAL STYLES (GUFRAM INSPIRED) --- */
+        
+        /* Modal Container & Backdrop */
+        #modal-container {
+            opacity: 0; visibility: hidden; transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+            pointer-events: none;
+            z-index: 999;
+        }
+        #modal-container.open { opacity: 1; visibility: visible; pointer-events: auto; }
+        
+        #modal-backdrop {
+            opacity: 0; visibility: hidden; transition: opacity 0.3s ease-out, visibility 0.3s ease-out;
+            /* Updated Backdrop: 0.2 opacity white + 8px blur */
+            background-color: rgba(255, 255, 255, 0.2); 
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        #modal-backdrop.open { opacity: 1; visibility: visible; }
+
+        /* Main Content Wrapper */
+        #modal-content {
+            background-color: transparent !important;
+           // color: var(--ui-color);
+            /* Updated Shadow: Glow Style (Centered, blurred) - 0.3 Opacity */
+            box-shadow: 0 0 40px rgba(0,0,0,0.3); 
+            border: 1px solid black;
+            display: flex;
+        }
+
+       
+    
+
+        /* Typography */
+        .g-sidebar__title {
+            font-family: var(--font-headers);
+            font-size: 2.5rem;
+            line-height: 1;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+        .g-sidebar__author {
+            font-family: var(--font-body);
+            font-size: 1rem;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            border-bottom: 1px solid black;
+            padding-bottom: 1rem;
+        }
+        .g-body-text {
+            font-family: var(--font-body);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        
+        /* Buttons (SVG from reference) */
+        .g-cta {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid black;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            background: white; /* Ensure visibility over media */
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .g-cta:hover {
+            background: black;
+        }
+        .g-cta:hover svg path {
+            fill: white;
+            stroke: white; /* For stroke-based icons */
+        }
+        .g-cta.-back {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            z-index: 100;
+            background: white;
+        }
+        
+        /* Close Button Special */
+        .g-close-btn {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            z-index: 100;
+            font-family: var(--font-headers);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            background: transparent;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Gallery Arrows */
+        .gallery-nav {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .gallery-nav button {
+            width: 40px; 
+            height: 40px;
+        }
+        
+        /* Media Frame Style (Reused for all media types) */
+        .media-frame-style {
+            border: 1px solid black;
+            /* Updated Shadow: Glow Style for media - 0.3 Opacity */
+            box-shadow: 0 0 25px rgba(0,0,0,0.3);
+        }
+
+        /* Mobile Nav Scaling */
+        .mobile-nav-scale {
+            transform: scale(0.7); /* Scale down by 30% */
+            transform-origin: bottom right; /* Anchor to corner */
+        }
+
+        /* Responsive Overrides */
+        @media (max-width: 768px) {
+            .g-sidebar__title { font-size: 1.8rem; }
+            #modal-content { flex-direction: column; }
+            /* Mobile Fixed Bottom Info Logic */
+            .mobile-fixed-info {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 35vh;
+                background: white;
+                border-top: 1px solid black;
+                overflow-y: auto;
+                z-index: 60;
+                padding: 1.5rem;
+            }
+            .mobile-media-area {
+                height: 65vh;
+                width: 100%;
+                background-color: rgba(240, 240, 240, 0.4); /* Daha şeffaf bir gri */
+    backdrop-filter: blur(5px);
+                
+            }
+            
+            /* Hide the bottom gallery nav (Set B) on mobile */
+            .gallery-nav {
+                display: none; 
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- LOADING SCREEN -->
+    <div id="loader">
+        <div class="loader-text">INITIALIZING...</div>
+    </div>
+
+    <!-- 3D SCENE -->
+    <div id="scene-container"></div>
+
+    <!-- MODAL (POP UP) -->
+    <div id="modal-container" tabindex="-1" class="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 outline-none">
+        <div id="modal-backdrop" class="fixed inset-0 z-40"></div>
+        
+        <!-- Modal Content Box -->
+        <div id="modal-content" class="relative z-50 w-full h-full md:w-[95vw] md:h-[90vh] bg-white flex flex-col md:flex-row overflow-hidden">
+            
+            <!-- CLOSE BUTTON -->
+            <button id="modal-close-btn" class="g-close-btn">
+                Close 
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="black"/>
+                </svg>
+            </button>
+            
+            <!-- LEFT: MEDIA SECTION (Carousel) -->
+            <!-- Desktop: 65-70% width. Mobile: Top 65% height -->
+            <div id="modal-media-wrapper" class="mobile-media-area w-full md:w-[70%] h-full bg-[#f4f4f4] relative flex items-center justify-center overflow-hidden">
+                
+                <!-- Active Media -->
+                <!-- PADDING ADJUSTED HERE: p-12 md:p-32 (was p-8 md:p-12) to shrink media -->
+                <div id="active-media-container" class="w-full h-full flex items-center justify-center p-12 md:p-32 relative">
+                    <!-- Dynamic Media Content -->
+                </div>
+
+                <!-- Navigation Arrows (Overlay on Image for Desktop, Hidden/Different for mobile if needed) -->
+                <!-- Added mobile-nav-scale class -->
+                <div class="absolute bottom-8 right-8 flex gap-4 z-20 md:hidden mobile-nav-scale"> 
+                    <!-- Mobile Arrows embedded in media area -->
+                      <button id="prev-media-btn-m" class="g-cta">
+                        <svg width="24" height="24" viewbox="0 0 24 24" fill="none">
+                             <path d="M14 7.86989L9.42 12.4599L14 17.0499L11.8829 19.167L5.17579 12.4599L11.8829 5.75278L14 7.86989Z" fill="black"></path>
+                        </svg>
+                    </button>
+                    <button id="next-media-btn-m" class="g-cta">
+                        <svg width="24" height="24" viewbox="0 0 24 24" fill="none">
+                            <path d="M9.17579 7.86988L13.7558 12.4599L9.17579 17.0499L11.2929 19.167L18 12.4599L11.2929 5.75278L9.17579 7.86988Z" fill="black"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- RIGHT: INFO SECTION (Sidebar) -->
+            <!-- Desktop: 30% width. Mobile: Bottom 35% fixed height -->
+            <div id="modal-info-container" class="mobile-fixed-info md:w-[30%] md:h-full md:relative bg-white p-6 md:p-12 overflow-y-auto flex flex-col justify-between border-l border-black">
+                
+                <div>
+                    <!-- Title -->
+                    <div class="g-sidebar__title" id="modal-title"></div>
+                    
+                    <!-- Meta (Author/Year/Cats) -->
+                    <div class="g-sidebar__author">
+                        <span id="modal-year"></span>
+                        <span id="modal-cats" class="uppercase"></span>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="g-body-text" id="modal-desc"></div>
+                </div>
+
+                <!-- Desktop Navigation Arrows (Bottom of Sidebar) -->
+                <!-- Note: hidden via CSS @media on mobile now too, but keeping HTML intact -->
+                <div class="gallery-nav hidden md:flex">
+                    <button id="prev-media-btn" class="g-cta">
+                        <svg width="24" height="24" viewbox="0 0 24 24" fill="none">
+                             <path d="M14 7.86989L9.42 12.4599L14 17.0499L11.8829 19.167L5.17579 12.4599L11.8829 5.75278L14 7.86989Z" fill="black"></path>
+                        </svg>
+                    </button>
+                    <button id="next-media-btn" class="g-cta">
+                        <svg width="24" height="24" viewbox="0 0 24 24" fill="none">
+                            <path d="M9.17579 7.86988L13.7558 12.4599L9.17579 17.0499L11.2929 19.167L18 12.4599L11.2929 5.75278L9.17579 7.86988Z" fill="black"></path>
+                        </svg>
+                    </button>
+                    <span id="media-counter" class="self-center font-mono text-xs ml-4 opacity-50">1/1</span>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- THREE.JS IMPORTS -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { DragControls } from 'three/addons/controls/DragControls.js';
+        import { CSS3DRenderer, CSS3DObject } from 'three/addons/renderers/CSS3DRenderer.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+        import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+
+        // --- 1. DATA & SCENE CONFIG ---
+        
+        const sceneObjects = [
+  {
+    type: 'image',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png',
+    width: 700,
+    position: { x: -700, y: 1300, z: -700 },
+    rotation: { x: 0, y: 45, z: 0 },
+    scale: 1000,
+    modalContent: {
+      name: "Atmosphere",
+      categories: { sub1: "2024", sub2: "Environment" },
+      description: "Void environment.",
+      media: [
+        { 
+          type: "image", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg",
+          linkText: "OPEN IN A NEW TAB"
+        }
+      ]
+    }
+  },
+  {
+    type: 'image',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg',
+    width: 3000,
+    position: { x: -1700, y: 0, z: -1500 },
+    rotation: { x: 0, y: 45, z: 0 },
+    scale: 1000,
+    clickable: false,
+    modalContent: {
+      name: "Atmosphere",
+      categories: { sub1: "2024", sub2: "Environment" },
+      description: "Void environment.",
+      media: [
+        { 
+          type: "image", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg",
+          linkText: "OPEN IN A NEW TAB"
+        }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspiecesbook-opt-v11.glb',
+    position: { x: -1500, y: 600, z: 100 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: 500,
+    modalContent: {
+      name: "daspiecesbook-opt-v11.glb",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 01",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_0dac59951f9c42efbf6b8a3a77951e00/1080p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_0dac59951f9c42efbf6b8a3a77951e00/1080p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspiecesbook-opt-v11.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspiecesbook-opt-v11.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/93book-opt-v10.glb',
+    position: { x: -500, y: 600, z: 100 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: 500,
+    modalContent: {
+      name: "93book-opt-v10.glb",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 02",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_b443e8c0ed384e30bf532179d14769a8/1080p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_b443e8c0ed384e30bf532179d14769a8/1080p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/93book-opt-v10.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/93book-opt-v10.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/booth-opt-v9.glb',
+    position: { x: 500, y: 600, z: 100 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: 500,
+    modalContent: {
+      name: "booth-opt-v9.glb",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 03",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_6230b7e092674b0d8f32b87103b3c920/720p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_6230b7e092674b0d8f32b87103b3c920/720p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/booth-opt-v9.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/booth-opt-v9.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex1-opt-v8.glb',
+    position: { x: 1500, y: 600, z: 100 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: 500,
+    modalContent: {
+      name: "cicex1-opt-v8.glb",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 04",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_fba3080416b3426783eefde37e081efa/720p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_fba3080416b3426783eefde37e081efa/720p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex1-opt-v8.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex1-opt-v8.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
+      ]
+    }
+  },
+  {
+    type: 'image',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/SOUNDS.png',
+    width: 500,
+    position: { x: -1500, y: 250, z: 100 },
+    rotation: { x: 0, y: 45, z: 0 },
+    scale: 1000,
+    modalContent: {
+      name: "93book-copy.glb",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 13 (Copy)",
+      media: [
+        { 
+          type: "html", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/finder/refs/heads/main/birdsv10.html",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/finder/refs/heads/main/birdsv10.html",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/93book-opt-v10.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/93book-opt-v10.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspieces1-opt-v6.glb',
+    position: { x: -500, y: 0, z: 100 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: 500,
+    modalContent: {
+      name: "daspieces1-opt-v6.glb",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 06",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_ac3a4bd792a04e6ab5a9009dde170ea8/1080p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_ac3a4bd792a04e6ab5a9009dde170ea8/1080p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspieces1-opt-v6.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspieces1-opt-v6.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/sandalye-opt-v5.glb',
+    position: { x: 500, y: 0, z: 100 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: 500,
+    modalContent: {
+      name: "sandalye-opt-v5.glb",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 07",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_a98194f1174b434ea9f7f1ce355d6c81/1080p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_a98194f1174b434ea9f7f1ce355d6c81/1080p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/sandalye-opt-v5.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/sandalye-opt-v5.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/facade-opt-v4.glb',
+    position: { x: 1500, y: 0, z: 100 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: 500,
+    modalContent: {
+      name: "facade-opt-v4.glb",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 08",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_cbec7d394bfd417193d86ba249c93d63/720p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_cbec7d394bfd417193d86ba249c93d63/720p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/facade-opt-v4.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/facade-opt-v4.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/telefon-opt-v3.glb',
+    position: { x: -1500, y: -600, z: 100 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: 500,
+    modalContent: {
+      name: "telefon-opt-v3.glb",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 09",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_0347ca404afa45c7b59394ddad5370d0/720p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_0347ca404afa45c7b59394ddad5370d0/720p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/telefon-opt-v3.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/telefon-opt-v3.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/wireframe-opt-v2.glb',
+    position: { x: -500, y: -600, z: 100 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: 500,
+    modalContent: {
+      name: "wireframe-opt-v2.glb",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 10",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_9bb1f95695fd4d83aa68eda3da571e47/1080p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_9bb1f95695fd4d83aa68eda3da571e47/1080p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/wireframe-opt-v2.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/wireframe-opt-v2.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/mektup-opt-v1.glb',
+    position: { x: 500, y: -600, z: 100 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: 500,
+    modalContent: {
+      name: "mektup-opt-v1.glb",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 11",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_f47ac95a2e74487993200753805e8cee/1080p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_f47ac95a2e74487993200753805e8cee/1080p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/mektup-opt-v1.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/mektup-opt-v1.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/co-chair-opt-v1.glb',
+    position: { x: 1500, y: -600, z: 100 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: 500,
+    modalContent: {
+      name: "daspiecesbook-copy.glb",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 12 (Copy)",
+      media: [
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspiecesbook-opt-v11.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/daspiecesbook-opt-v11.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex2-opt-v7.glb',
+    position: { x: -1500, y: -1200, z: 100 },
+    rotation: { x: 0, y: 15, z: 0 },
+    scale: 500,
+    modalContent: {
+      name: "cicex2-opt-v7.glb",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 05",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_1c655cbc2e58493ea6dd0f8ab6fc46e1/720p/mp4/file.mp4",
+          linkUrl: "https://video.wixstatic.com/video/bbd25a_1c655cbc2e58493ea6dd0f8ab6fc46e1/720p/mp4/file.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex2-opt-v7.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex2-opt-v7.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/mail.glb',
+    position: { x: -500, y: -1000, z: 100 },
+    rotation: { x: 0, y: 80, z: 0 },
+    scale: 2500,
+    modalContent: {
+      name: "booth-copy.glb",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 14 (Copy)",
+      media: [
+        { 
+          type: "video", 
+          src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          linkUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/insta.glb',
+    position: { x: 500, y: -1050, z: 100 },
+    rotation: { x: 0, y: 80, z: 0 },
+    scale: 2500,
+    modalContent: {
+      name: "cicex1-copy.glb",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 15 (Copy)",
+      media: [
+        { 
+          type: "video", 
+          src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          linkUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex1-opt-v8.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex1-opt-v8.glb",
+          linkText: "OPEN IN A NEW TAB"
+        }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/ABOUT.glb',
+    position: { x: 1500, y: -1000, z: 100 },
+    rotation: { x: 0, y: 80, z: 0 },
+    scale: 2500,
+    modalContent: {
+      name: "cicex2-copy.glb",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 16 (Copy)",
+      media: [
+        { 
+          type: "video", 
+          src: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          linkUrl: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
+          linkText: "OPEN IN A NEW TAB"
+        },
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex2-opt-v7.glb",
+          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex2-opt-v7.glb",
+          linkText: "OPEN IN A NEW TAB",
+          
+        }
+      ]
+    }
+  }
+];
+
+
+
+     
+
+        // --- 2. SETUP ---
+        let camera, scene, rendererGL, rendererCSS, controls, dragControls;
+        let clock;
+        let raycaster, mouse;
+        const clickableObjects = []; 
+        let globalEnvMap = null; // ** GLOBAL ENV MAP for "Same Standards" **
+        
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        let frustumSize = isMobile ? 5500 : 3000; 
+        
+        let isClickBlocked = false; 
+
+        // Touch handling variables
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        // ** CAROUSEL STATE **
+        let currentModalContent = null;
+        let currentMediaIndex = 0;
+        
+        // ** MODAL 3D STATE **
+        let modalRenderer, modalScene, modalCamera, modalControls, modalAnimationFrameId, modalClock;
+
+        init();
+        animate();
+
+       let clickStartX = 0;
+let clickStartY = 0;
+
+function init() {
+    clock = new THREE.Clock();
+    raycaster = new THREE.Raycaster();
+    mouse = new THREE.Vector2();
+
+    const container = document.getElementById('scene-container');
+    camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 50000);
+    scene = new THREE.Scene();
+
+    // --- RENDERER SETUP ---
+    rendererCSS = new CSS3DRenderer();
+    rendererCSS.setSize(window.innerWidth, window.innerHeight);
+    rendererCSS.domElement.style.position = 'absolute';
+    rendererCSS.domElement.style.top = '0';
+    rendererCSS.domElement.style.zIndex = '0'; 
+    container.appendChild(rendererCSS.domElement);
+
+    rendererGL = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    rendererGL.setPixelRatio(window.devicePixelRatio);
+    rendererGL.setSize(window.innerWidth, window.innerHeight);
+    rendererGL.domElement.style.position = 'absolute';
+    rendererGL.domElement.style.top = '0';
+    rendererGL.domElement.style.zIndex = '1'; 
+    rendererGL.domElement.style.pointerEvents = 'none'; 
+    rendererGL.toneMapping = THREE.ACESFilmicToneMapping;
+    rendererGL.toneMappingExposure = 1.0;
+    rendererGL.outputColorSpace = THREE.SRGBColorSpace;
+    container.appendChild(rendererGL.domElement);
+
+    // OrbitControls: Kamerayı döndürmek için
+    controls = new OrbitControls(camera, document.body);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+
+    // DragControls: Sadece Desktop'ta objeleri taşımak için
+    if (!isMobile) {
+        dragControls = new DragControls(clickableObjects, camera, document.body);
+        dragControls.addEventListener('dragstart', () => controls.enabled = false);
+        dragControls.addEventListener('dragend', () => controls.enabled = true);
+    }
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 2.0);
+    scene.add(ambientLight);
+    const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
+    dirLight.position.set(1000, 1000, 1000);
+    scene.add(dirLight);
+
+    const pmremGenerator = new THREE.PMREMGenerator(rendererGL);
+    new RGBELoader().load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr', (texture) => {
+        const envMap = pmremGenerator.fromEquirectangular(texture).texture;
+        scene.environment = envMap;
+        globalEnvMap = envMap;
+        texture.dispose();
+        pmremGenerator.dispose();
+    });
+
+    document.fonts.ready.then(() => buildCuratedScene());
+    window.addEventListener('resize', onWindowResize);
+
+    // --- GELİŞMİŞ TIKLAMA/SÜRÜKLEME AYRIMI ---
+
+    // 1. Mouse/Touch Başlangıcı
+    const onPointerDown = (e) => {
+        clickStartX = e.clientX || (e.touches ? e.touches[0].clientX : 0);
+        clickStartY = e.clientY || (e.touches ? e.touches[0].clientY : 0);
+    };
+
+    // 2. Mouse/Touch Bitişi
+    const onPointerUp = (e) => {
+        const endX = e.clientX || (e.changedTouches ? e.changedTouches[0].clientX : 0);
+        const endY = e.clientY || (e.changedTouches ? e.changedTouches[0].clientY : 0);
+
+        // Başlangıç ve bitiş arasındaki mesafeyi hesapla (Piksel cinsinden)
+        const diffX = Math.abs(endX - clickStartX);
+        const diffY = Math.abs(endY - clickStartY);
+
+        // Eğer kullanıcı 7 pikselden fazla hareket ettirdiyse bu bir sürüklemedir, TIKLAMA DEĞİLDİR.
+        if (diffX < 7 && diffY < 7) {
+            handleInteraction(endX, endY);
+        }
+    };
+
+    window.addEventListener('mousedown', onPointerDown);
+    window.addEventListener('mouseup', onPointerUp);
+    window.addEventListener('touchstart', onPointerDown, { passive: false });
+    window.addEventListener('touchend', onPointerUp, { passive: false });
+
+    // Modal Kapatma
+    document.getElementById('modal-close-btn').addEventListener('click', (e) => { e.stopPropagation(); closeModal(); });
+    
+    setTimeout(() => { document.getElementById('loader').style.opacity = 0; }, 1000);
+    setTimeout(() => { document.getElementById('loader').style.display = 'none'; }, 1500);
+}
+
+        // --- UNIFIED INTERACTION HANDLER ---
+        function handleInteraction(clientX, clientY) {
+            // Check if click is inside modal, if so do nothing
+            if (document.getElementById('modal-container').classList.contains('open')) return;
+
+            mouse.x = (clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(clientY / window.innerHeight) * 2 + 1;
+
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(clickableObjects, true); 
+
+            if (intersects.length > 0) {
+                let object = intersects[0].object;
+                
+                // Traverse up to parent group/mesh with userData
+                while(object.parent && !object.userData.isVideo && !object.userData.isSound && !object.userData.isLink && !object.userData.modalContent) {
+                    object = object.parent;
+                    if (!object) break; 
+                }
+                if (!object) object = intersects[0].object; 
+
+                // ** CHECK CLICKABLE PROPERTY **
+                if (object.userData.clickable === false) return;
+
+                // --- VIDEO PLAY/PAUSE ---
+                if (object.userData.isVideo) {
+                    const vid = object.userData.videoEl;
+                    const playBtn = object.userData.playBtn;
+                    
+                    if (vid.paused || vid.ended) {
+                        vid.play(); 
+                        object.material.map = object.userData.videoTex;
+                        object.userData.isPlaying = true;
+                        playBtn.visible = false;
+                        
+                        vid.onended = () => {
+                            object.userData.isPlaying = false;
+                            playBtn.visible = true;
+                        };
+                    } else {
+                        vid.pause();
+                        object.userData.isPlaying = false;
+                        playBtn.visible = true;
+                    }
+                    object.material.needsUpdate = true;
+                    return; 
+                }
+
+                // --- SOUND PLAY/PAUSE ---
+                if (object.userData.isSound) {
+                    const audio = object.userData.audioEl;
+                    if (audio.paused) {
+                        audio.play();
+                        object.userData.isPlaying = true;
+                        new TWEEN.Tween(object.scale).to({x: object.scale.x * 1.1, y: object.scale.y * 1.1}, 100).yoyo(true).repeat(1).start();
+                    } else {
+                        audio.pause();
+                        audio.currentTime = 0; 
+                        object.userData.isPlaying = false;
+                    }
+                    return; 
+                }
+
+                // --- LINK CLICK ---
+                if (object.userData.isLink) {
+                    new TWEEN.Tween(object.scale).to({x: object.scale.x * 0.9, y: object.scale.y * 0.9}, 100).yoyo(true).repeat(1).start();
+                    setTimeout(() => {
+                        window.open(object.userData.url, '_blank');
+                    }, 150);
+                    return; 
+                }
+
+                // --- OPEN MODAL (Image, Model, Text) ---
+                if (object.userData.modalContent) {
+                    openModal(object.userData.modalContent);
+                }
+            }
+        }
+
+        // --- 3. BUILDER ---
+
+        function fixGithubUrl(url) {
+            if (!url) return '';
+            
+            // Check for raw.githubusercontent.com - if so, convert to githack for correct MIME type on GLB
+            if (url.includes('raw.githubusercontent.com') && (url.endsWith('.glb') || url.endsWith('.gltf'))) {
+                 return url.replace('raw.githubusercontent.com', 'raw.githack.com');
+            }
+
+            if (url.includes('github.com') && url.includes('/blob/')) {
+                // If it's a model, go to githack, otherwise raw
+                if (url.endsWith('.glb') || url.endsWith('.gltf')) {
+                    return url.replace('github.com', 'raw.githack.com').replace('/blob/', '/');
+                }
+                return url.replace('github.com', 'raw.githubusercontent.com').replace('/blob/', '/');
+            }
+            return url;
+        }
+
+        function degToRad(degrees) {
+            return degrees * (Math.PI / 180);
+        }
+
+        function createTextTexture(text, fontSize, font, color) {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            const lines = text.split('\\n').length > 1 ? text.split('\\n') : text.split('\n');
+            const lineHeight = fontSize * 1.1;
+            
+            ctx.font = `${fontSize}px "${font}"`;
+            let maxWidth = 0;
+            lines.forEach(line => {
+                const w = ctx.measureText(line).width;
+                if(w > maxWidth) maxWidth = w;
+            });
+            
+            canvas.width = Math.ceil(maxWidth + 40); 
+            canvas.height = Math.ceil(lines.length * lineHeight + 40);
+            
+            ctx.font = `${fontSize}px "${font}"`;
+            ctx.fillStyle = color;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            const centerX = canvas.width / 2;
+            let startY = (canvas.height - (lines.length - 1) * lineHeight) / 2;
+            
+            lines.forEach((line, i) => {
+                ctx.fillText(line, centerX, startY + (i * lineHeight));
+            });
+            
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            return { texture: tex, width: canvas.width, height: canvas.height };
+        }
+
+        function createPlayButtonTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.beginPath();
+            ctx.moveTo(35, 25);
+            ctx.lineTo(105, 64);
+            ctx.lineTo(35, 103);
+            ctx.closePath();
+            
+            ctx.fillStyle = '#FF006A';
+            ctx.shadowColor = "rgba(0,0,0,0.5)";
+            ctx.shadowBlur = 10;
+            ctx.fill();
+
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.colorSpace = THREE.SRGBColorSpace;
+            return tex;
+        }
+
+        function buildCuratedScene() {
+            const gltfLoader = new GLTFLoader();
+            const dracoLoader = new DRACOLoader();
+            dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+            gltfLoader.setDRACOLoader(dracoLoader);
+            gltfLoader.setMeshoptDecoder(MeshoptDecoder);
+            const textureLoader = new THREE.TextureLoader();
+
+            sceneObjects.forEach(item => {
+                const applyTransform = (obj3d) => {
+                    if (item.position) obj3d.position.set(item.position.x, item.position.y, item.position.z);
+                    if (item.rotation) obj3d.rotation.set(degToRad(item.rotation.x), degToRad(item.rotation.y), degToRad(item.rotation.z));
+                    if (item.scale) {
+                        if (typeof item.scale === 'number') obj3d.scale.setScalar(item.scale);
+                        else obj3d.scale.set(item.scale.x, item.scale.y, item.scale.z);
+                    }
+                };
+
+                const safeSrc = item.src ? fixGithubUrl(item.src) : '';
+
+                // --- VIDEO ---
+                if (item.type === 'video') {
+                    const video = document.createElement('video');
+                    video.src = safeSrc;
+                    video.crossOrigin = "anonymous";
+                    video.loop = false;
+                    video.muted = false;
+                    video.playsInline = true;
+                    video.style.display = 'none'; 
+                    document.body.appendChild(video);
+
+                    const thumbUrl = item.poster ? fixGithubUrl(item.poster) : 'https://placehold.co/1024x576/000/FFF?text=PLAY';
+                    const posterTexture = textureLoader.load(thumbUrl);
+                    posterTexture.colorSpace = THREE.SRGBColorSpace;
+
+                    const videoTexture = new THREE.VideoTexture(video);
+                    videoTexture.colorSpace = THREE.SRGBColorSpace;
+
+                    const geometry = new THREE.PlaneGeometry(item.width, item.height);
+                    const material = new THREE.MeshBasicMaterial({ map: posterTexture, side: THREE.DoubleSide, transparent: false });
+                    const mesh = new THREE.Mesh(geometry, material);
+                    
+                    const playTex = createPlayButtonTexture();
+                    const playGeo = new THREE.PlaneGeometry(200, 200); 
+                    const playMat = new THREE.MeshBasicMaterial({ map: playTex, transparent: true, side: THREE.DoubleSide, depthTest: false });
+                    const playMesh = new THREE.Mesh(playGeo, playMat);
+                    playMesh.position.z = 5; 
+                    playMesh.renderOrder = 1; 
+                    
+                    playMesh.name = "PlayButton";
+                    
+                    mesh.add(playMesh); 
+
+                    applyTransform(mesh);
+                    
+                    mesh.userData = { 
+                        isVideo: true, 
+                        videoEl: video, 
+                        videoTex: videoTexture,
+                        posterTex: posterTexture,
+                        isPlaying: false,
+                        playBtn: playMesh,
+                        clickable: item.clickable !== undefined ? item.clickable : true
+                    };
+                    
+                    scene.add(mesh);
+                    clickableObjects.push(mesh);
+                }
+
+                // --- HTML (IFRAME) ---
+                else if (item.type === 'html') {
+                    const div = document.createElement('div');
+                    div.className = 'scene-html-element';
+                    div.style.width = (item.width || 800) + 'px';
+                    div.style.height = (item.height || 600) + 'px';
+                    
+                    const iframe = document.createElement('iframe');
+                    iframe.className = 'scene-iframe';
+                    iframe.src = safeSrc;
+                    div.appendChild(iframe);
+
+                    const cssObj = new CSS3DObject(div);
+                    applyTransform(cssObj);
+                    scene.add(cssObj);
+                }
+
+                // --- SOUND ---
+                else if (item.type === 'sound') {
+                    const audio = new Audio(safeSrc);
+                    const speakerTex = textureLoader.load('https://raw.githubusercontent.com/decentralize-dfw/decentralize-archives/main/speaker.png');
+                    speakerTex.colorSpace = THREE.SRGBColorSpace;
+
+                    const size = 200; 
+                    const geometry = new THREE.PlaneGeometry(size, size);
+                    const material = new THREE.MeshBasicMaterial({ 
+                        map: speakerTex, 
+                        transparent: true, 
+                        side: THREE.DoubleSide 
+                    });
+                    const mesh = new THREE.Mesh(geometry, material);
+                    
+                    applyTransform(mesh);
+
+                    if (item.label) {
+                        const { texture, width, height } = createTextTexture(item.label, 40, item.fontFamily || 'sans-serif', item.color || '#fff');
+                        const labelGeo = new THREE.PlaneGeometry(width, height);
+                        const labelMat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide });
+                        const labelMesh = new THREE.Mesh(labelGeo, labelMat);
+                        labelMesh.position.y = size / 2 + height / 2 + 10; 
+                        mesh.add(labelMesh);
+                    }
+
+                    mesh.userData = {
+                        isSound: true,
+                        audioEl: audio,
+                        isPlaying: false,
+                        clickable: item.clickable !== undefined ? item.clickable : true
+                    };
+
+                    scene.add(mesh);
+                    clickableObjects.push(mesh);
+                }
+
+                // --- IMAGE ---
+                else if (item.type === 'image') {
+                    const texture = textureLoader.load(safeSrc);
+                    texture.colorSpace = THREE.SRGBColorSpace;
+                    
+                    const geometry = new THREE.PlaneGeometry(1, 1); 
+                    const material = new THREE.MeshBasicMaterial({ 
+                        map: texture, 
+                        side: THREE.DoubleSide, 
+                        transparent: true,
+                        alphaTest: 0.5 
+                    });
+                    
+                    const mesh = new THREE.Mesh(geometry, material);
+                    applyTransform(mesh);
+                    
+                    if (item.width) {
+                        mesh.scale.set(item.width, item.width, 1); 
+                        texture.onload = () => {
+                            const aspect = texture.image.width / texture.image.height;
+                            mesh.scale.set(item.width, item.width / aspect, 1);
+                        }
+                    }
+
+                    mesh.userData = { 
+                        modalContent: item.modalContent,
+                        clickable: item.clickable !== undefined ? item.clickable : true
+                    }; 
+                    scene.add(mesh);
+                    clickableObjects.push(mesh); 
+                }
+
+                // --- TEXT (WEBGL) ---
+                else if (item.type === 'text') {
+                    const { texture, width, height } = createTextTexture(item.content, item.fontSize, item.fontFamily, item.color);
+                    
+                    const geometry = new THREE.PlaneGeometry(width, height);
+                    const material = new THREE.MeshBasicMaterial({ 
+                        map: texture, 
+                        transparent: true, 
+                        side: THREE.DoubleSide,
+                        alphaTest: 0.1 
+                    });
+                    
+                    const mesh = new THREE.Mesh(geometry, material);
+                    applyTransform(mesh);
+                    
+                    mesh.userData = { 
+                        modalContent: item.modalContent,
+                        clickable: item.clickable !== undefined ? item.clickable : true
+                    };
+                    scene.add(mesh);
+                    clickableObjects.push(mesh); 
+                }
+
+                // --- MODEL ---
+               else if (item.type === 'model') {
+    gltfLoader.load(safeSrc, (gltf) => {
+        const model = gltf.scene;
+        applyTransform(model);
+        model.userData = { 
+            modalContent: item.modalContent,
+            clickable: item.clickable !== undefined ? item.clickable : true
+        }; 
+        
+        model.traverse((child) => {
+            if (child.isMesh) child.userData = { parentRoot: model };
+        });
+
+        scene.add(model);
+        clickableObjects.push(model); 
+
+        // TÜM OBJELERİN BOYUTU ARTIK BELLİ, KAMERAYI FİTLE
+        fitCameraToScene(); 
+        
+        if (gltf.animations && gltf.animations.length > 0) {
+            const mixer = new THREE.AnimationMixer(model);
+            gltf.animations.forEach(clip => mixer.clipAction(clip).play());
+            if (!window.mixers) window.mixers = [];
+            window.mixers.push(mixer);
+        }
+    }, undefined, (err) => console.error(err));
+}
+
+                // --- LINK OBJECT ---
+                else if (item.type === 'link') {
+                    const group = new THREE.Group();
+                    applyTransform(group);
+                    
+                    const texture = textureLoader.load(safeSrc);
+                    texture.colorSpace = THREE.SRGBColorSpace;
+                    
+                    const imgWidth = item.width || 200;
+                    const imgGeo = new THREE.PlaneGeometry(imgWidth, imgWidth); 
+                    const imgMat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, side: THREE.DoubleSide });
+                    const imgMesh = new THREE.Mesh(imgGeo, imgMat);
+                    
+                    texture.onload = () => {
+                        const aspect = texture.image.width / texture.image.height;
+                        imgMesh.scale.set(1, 1/aspect, 1); 
+                    };
+
+                    group.add(imgMesh);
+
+                    if (item.label) {
+                        const { texture: textTex, width: textW, height: textH } = createTextTexture(
+                            item.label, 
+                            item.fontSize || 40, 
+                            item.fontFamily || 'sans-serif', 
+                            item.color || '#fff'
+                        );
+                        
+                        const labelGeo = new THREE.PlaneGeometry(textW, textH);
+                        const labelMat = new THREE.MeshBasicMaterial({ map: textTex, transparent: true, side: THREE.DoubleSide });
+                        const labelMesh = new THREE.Mesh(labelGeo, labelMat);
+                        
+                        labelMesh.position.y = - (imgWidth / 2 + 50); 
+                        
+                        group.add(labelMesh);
+                    }
+
+                    group.userData = {
+                        isLink: true,
+                        url: item.link,
+                        clickable: item.clickable !== undefined ? item.clickable : true
+                    };
+
+                    scene.add(group);
+                    clickableObjects.push(group); 
+                }
+            });
+        }
+
+        // --- 4. MODAL LOGIC (CAROUSEL) ---
+        function openModal(content) {
+            if (!content) return;
+
+            // ** FREEZE CONTROLS **
+            if (controls) controls.enabled = false;
+            if (dragControls) dragControls.enabled = false;
+
+            currentModalContent = content;
+            currentMediaIndex = 0;
+
+            const modalContainer = document.getElementById('modal-container');
+            const modalBackdrop = document.getElementById('modal-backdrop');
+
+            // Populate Text Info
+            document.getElementById('modal-title').textContent = content.name || 'Untitled';
+            
+            const cats = content.categories;
+            const year = cats && cats.sub1 ? cats.sub1 : '';
+            const otherCats = Object.values(cats || {}).filter(v => v !== year && v !== '-').join(', ');
+            
+            document.getElementById('modal-year').textContent = year;
+            document.getElementById('modal-cats').textContent = otherCats;
+            // Sadece temel açıklamayı buraya yazmıyoruz, renderCurrentMedia içinde yöneteceğiz.
+
+            // Render Initial Media
+            renderCurrentMedia();
+
+            // Show
+            modalContainer.classList.add('open');
+            modalBackdrop.classList.add('open');
+        }
+
+        function renderCurrentMedia() {
+            if (!currentModalContent) return;
+
+            const mediaWrapper = document.getElementById('active-media-container');
+            const prevBtn = document.getElementById('prev-media-btn');
+            const nextBtn = document.getElementById('next-media-btn');
+            const counter = document.getElementById('media-counter');
+            
+            // Mobile Buttons
+            const prevBtnM = document.getElementById('prev-media-btn-m');
+            const nextBtnM = document.getElementById('next-media-btn-m');
+            
+            // Clean up previous 3D model if exists
+            if (modalAnimationFrameId) {
+                cancelAnimationFrame(modalAnimationFrameId);
+                modalAnimationFrameId = null;
+            }
+            if (modalRenderer) {
+                const dom = modalRenderer.domElement;
+                if (dom && dom.parentNode) dom.parentNode.removeChild(dom);
+                modalRenderer.dispose();
+                modalRenderer = null;
+            }
+            if (modalScene) {
+                // simple traversal dispose
+                modalScene.traverse(o => {
+                    if (o.geometry) o.geometry.dispose();
+                    if (o.material) {
+                         if(o.material.length) o.material.forEach(m=>m.dispose());
+                         else o.material.dispose();
+                    }
+                });
+                modalScene = null;
+            }
+
+            mediaWrapper.innerHTML = ''; 
+
+            const mediaList = currentModalContent.media || [];
+            const total = mediaList.length;
+
+            // Handle Buttons & Counter Visibility
+            if (total <= 1) {
+                if(prevBtn) prevBtn.style.display = 'none';
+                if(nextBtn) nextBtn.style.display = 'none';
+                if(prevBtnM) prevBtnM.style.display = 'none';
+                if(nextBtnM) nextBtnM.style.display = 'none';
+                if(counter) counter.style.display = 'none';
+            } else {
+                if(prevBtn) prevBtn.style.display = 'flex';
+                if(nextBtn) nextBtn.style.display = 'flex';
+                // Only show mobile buttons if on mobile
+                if (window.innerWidth < 768) {
+                    if(prevBtnM) prevBtnM.style.display = 'flex';
+                    if(nextBtnM) nextBtnM.style.display = 'flex';
+                }
+                if(counter) {
+                    counter.style.display = 'block';
+                    counter.innerText = `${currentMediaIndex + 1} / ${total}`;
+                }
+            }
+
+            if (total === 0) {
+                mediaWrapper.innerHTML = '<div class="text-gray-400">No Media</div>';
+                return;
+            }
+
+            // Get Current Media
+            const m = mediaList[currentMediaIndex];
+            const fixedSrc = fixGithubUrl(m.src);
+            let mediaEl;
+
+            // Common Class for centering content within container
+            const commonClass = "max-w-full max-h-full object-contain media-frame-style";
+
+            if (m.type === 'image') {
+                mediaEl = document.createElement('img');
+                mediaEl.src = fixedSrc;
+                mediaEl.className = commonClass;
+                mediaWrapper.appendChild(mediaEl);
+            } 
+            else if (m.type === 'video') {
+                // 1. Container for video + button
+                // Flex column to stack video and button vertically
+                const container = document.createElement('div');
+                container.className = "flex flex-col items-center justify-center w-full h-full";
+
+                // 2. The Video Element
+                mediaEl = document.createElement('video');
+                mediaEl.src = fixedSrc;
+                
+                // CRITICAL FIX:
+                // Removed 'flex-1' so the border hugs the video content.
+                // Changed 'max-h-full' to 'max-h-[calc(100%-60px)]' to reserve space for the button below.
+                mediaEl.className = "max-w-full max-h-[calc(100%-60px)] object-contain media-frame-style"; 
+                
+                mediaEl.playsInline = true;
+                mediaEl.autoplay = true;
+                mediaEl.loop = true; 
+                mediaEl.controls = false; // CRITICAL: NO NATIVE CONTROLS
+                mediaEl.muted = true; // CRITICAL: Required for autoplay on most browsers
+
+                // 3. The Custom Mute Button
+                const muteBtn = document.createElement('button');
+                
+                // UPDATED CLASSNAME FOR RESPONSIVE POSITIONING & SCALING
+                // Mobile: Absolute position bottom-left, scaled down 30% (scale-0.7), anchored to bottom-left.
+                // Desktop (md:): Static position (in flow below video), normal scale, margin-top for spacing.
+                muteBtn.className = "g-cta shadow-md flex-none " + 
+                                    "absolute bottom-8 left-8 z-30 scale-[0.7] origin-bottom-left " + 
+                                    "md:static md:mt-4 md:scale-100 md:origin-center md:transform-none"; 
+                
+                // SVG Icons (Muted vs Unmuted) - Thin strokes
+                const iconMuted = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5.889 16H2C1.448 16 1 15.552 1 15V9C1 8.448 1.448 8 2 8H5.889L10.293 3.596C10.927 2.962 12 3.411 12 4.308V19.692C12 20.59 10.927 21.038 10.293 20.404L5.889 16ZM16 9L20 13M16 13L20 9" stroke="#3d3d3d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+                const iconSound = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5.889 16H2C1.448 16 1 15.552 1 15V9C1 8.448 1.448 8 2 8H5.889L10.293 3.596C10.927 2.962 12 3.411 12 4.308V19.692C12 20.59 10.927 21.038 10.293 20.404L5.889 16ZM15.536 8.464C17.488 10.417 17.488 13.583 15.536 15.536M18.364 5.636C21.879 9.151 21.879 14.849 18.364 18.364" stroke="#3d3d3d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+                muteBtn.innerHTML = iconMuted; // Default state
+
+                // Click Handler
+                muteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    mediaEl.muted = !mediaEl.muted;
+                    muteBtn.innerHTML = mediaEl.muted ? iconMuted : iconSound;
+                };
+
+                // Assemble
+                container.appendChild(mediaEl);
+                container.appendChild(muteBtn);
+                mediaWrapper.appendChild(container);
+
+                // Force play promise handling
+                const playPromise = mediaEl.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.log("Autoplay prevented:", error);
+                    });
+                }
+            } 
+            else if (m.type === 'audio') {
+                mediaEl = document.createElement('audio');
+                mediaEl.src = fixedSrc;
+                mediaEl.controls = true;
+                mediaEl.className = "w-full md:w-2/3 h-12 bg-white/50 rounded-full border border-gray-300";
+                mediaWrapper.appendChild(mediaEl);
+            } 
+            else if (m.type === 'model') {
+                // ** CUSTOM THREE.JS MODAL RENDERER (Replacing model-viewer) **
+                // This ensures we use the EXACT SAME standards (Draco, Meshopt) as the main scene
+                const container = document.createElement('div');
+                container.className = "media-frame-style w-full h-full relative"; // Add shadow to container
+                
+                // Need inner wrapper to not mess up canvas positioning with borders
+                const inner = document.createElement('div');
+                inner.style.width = '100%';
+                inner.style.height = '100%';
+                container.appendChild(inner);
+                
+                mediaWrapper.appendChild(container);
+
+                initModal3D(inner, fixedSrc);
+            }
+            else if (m.type === 'html') {
+                const wrapper = document.createElement('div');
+                // 'overflow-hidden' eklendi: İframe'in dışarı taşan kısımlarını gizler.
+                wrapper.className = "w-full max-w-[80vh] aspect-square bg-white relative media-frame-style mx-auto overflow-hidden";
+                
+                let url = fixedSrc;
+                if (url.includes('raw.githubusercontent.com') && url.endsWith('.html')) {
+                    url = url.replace('raw.githubusercontent.com', 'raw.githack.com').replace('/refs/heads/', '/');
+                }
+
+                const iframe = document.createElement('iframe');
+                iframe.src = url;
+                /* Kritik Değişiklik: 
+                   1. w-[200%] h-[200%] -> İframe'i kutunun 2 katı boyuta çıkarır (Web sayfasını masaüstü gibi genişletir).
+                   2. origin-top-left -> Küçültme işlemini sol üstten başlatır.
+                   3. scale-50 -> 2 kat büyük iframe'i %50 küçülterek wrapper kutusuna tam sığdırır.
+                */
+                iframe.className = "absolute top-0 left-0 w-[200%] h-[200%] border-none origin-top-left scale-50";
+                iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+                iframe.allowFullscreen = true;
+                
+                wrapper.appendChild(iframe);
+                mediaWrapper.appendChild(wrapper);
+            }
+const descEl = document.getElementById('modal-desc');
+let baseDescription = currentModalContent.description || '';
+
+if (m.linkUrl) { // Burada linkUrl null değilse çalışır
+    descEl.innerHTML = `${baseDescription}<br><br><a href="${m.linkUrl}" target="_blank" class="underline hover:opacity-70 transition-opacity font-bold">
+        ${m.linkText || 'VIEW LINK'}
+    </a>`;
+} else {
+    descEl.innerHTML = baseDescription;
+}
+        }
+
+        // --- NEW MODAL 3D LOGIC ---
+        function initModal3D(container, src) {
+            // 1. Setup Scene
+            modalScene = new THREE.Scene();
+            modalScene.background = new THREE.Color(0xf4f4f4); 
+            modalClock = new THREE.Clock(); // Reset clock for smooth animation
+
+            // ** APPLY SHARED ENVIRONMENT MAP **
+            if (globalEnvMap) {
+                modalScene.environment = globalEnvMap;
+            }
+
+            // 2. Setup Camera
+            const width = container.clientWidth || 300;
+            const height = container.clientHeight || 300;
+            modalCamera = new THREE.PerspectiveCamera(45, width / height, 0.001, 100000);
+            
+            // 3. Setup Renderer
+            modalRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            modalRenderer.setSize(width, height);
+            modalRenderer.setPixelRatio(window.devicePixelRatio);
+            modalRenderer.outputColorSpace = THREE.SRGBColorSpace;
+            modalRenderer.toneMapping = THREE.ACESFilmicToneMapping; // Match main renderer tone mapping
+            modalRenderer.toneMappingExposure = 1.0;
+            container.appendChild(modalRenderer.domElement);
+
+            // 4. Lights - MATCHING MAIN SCENE EXACTLY + BOOST for visibility
+            const ambientLight = new THREE.AmbientLight(0xffffff, 3.0); // Boosted from 2.0
+            modalScene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 3.0); // Boosted from 2.5
+            dirLight.position.set(1000, 1000, 1000); 
+            modalScene.add(dirLight);
+             
+            // Add Hemisphere Light for better overall illumination (fixes dark areas)
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 3.0);
+            hemiLight.position.set(0, 20, 0);
+            modalScene.add(hemiLight);
+
+            // 5. Controls
+            modalControls = new OrbitControls(modalCamera, modalRenderer.domElement);
+            modalControls.enableDamping = true;
+            modalControls.autoRotate = true;
+            modalControls.autoRotateSpeed = 2.0; // Consistent slow speed
+            
+            // Stop auto-rotate on interaction
+            modalControls.addEventListener('start', function() {
+                modalControls.autoRotate = false;
+            });
+
+            // 6. Load Model (Reusing Standard Loaders)
+            const gltfLoader = new GLTFLoader();
+            const dracoLoader = new DRACOLoader();
+            dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+            gltfLoader.setDRACOLoader(dracoLoader);
+            gltfLoader.setMeshoptDecoder(MeshoptDecoder); // Using global Meshopt
+
+            gltfLoader.load(src, (gltf) => {
+                const model = gltf.scene;
+                
+                // Calculate bounding box
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                
+                // ** FIX FOR "UP HIGH" / POSITIONING **
+                // Instead of moving the model geometry (which can break animations), 
+                // we center the controls target on the model's actual center.
+                modalControls.target.copy(center);
+                
+                // Fit to view logic
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const fov = modalCamera.fov * (Math.PI / 180);
+                
+                // If model is empty or extremely tiny, provide a default camera distance
+                let cameraZ = Math.abs(maxDim / (2 * Math.tan(fov / 2)));
+                if (cameraZ < 0.01) cameraZ = 10; 
+                
+                cameraZ *= 2.0; // Zoom out a bit for comfortable view
+                
+                // Position camera relative to the center of the object
+                modalCamera.position.set(center.x, center.y + (size.y * 0.2), center.z + cameraZ);
+                
+                modalControls.maxDistance = cameraZ * 10;
+                modalControls.update();
+
+                modalScene.add(model);
+                
+                // Play animations with correct delta time
+                if (gltf.animations && gltf.animations.length > 0) {
+                      const mixer = new THREE.AnimationMixer(model);
+                      gltf.animations.forEach(clip => mixer.clipAction(clip).play());
+                      modalScene.userData.mixer = mixer;
+                }
+
+            }, undefined, (err) => {
+                console.error("Modal Load Error:", err);
+                const errDiv = document.createElement('div');
+                errDiv.className = "absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-red-500";
+                errDiv.textContent = "Error loading model";
+                container.appendChild(errDiv);
+            });
+
+            // 7. Animation Loop
+            modalClock.start(); // Ensure clock starts fresh
+            const animateModal = () => {
+                modalAnimationFrameId = requestAnimationFrame(animateModal);
+                
+                // Handle resize dynamically if container changes size
+                if (modalRenderer && container) {
+                    const w = container.clientWidth;
+                    const h = container.clientHeight;
+                    const canvas = modalRenderer.domElement;
+                    if (canvas.width !== w || canvas.height !== h) {
+                        modalRenderer.setSize(w, h, false);
+                        modalCamera.aspect = w / h;
+                        modalCamera.updateProjectionMatrix();
+                    }
+                }
+                
+                const delta = modalClock.getDelta(); // Use real time delta for smooth animation
+
+                if (modalControls) modalControls.update();
+                if (modalScene && modalScene.userData.mixer) modalScene.userData.mixer.update(delta); 
+                if (modalRenderer && modalScene && modalCamera) modalRenderer.render(modalScene, modalCamera);
+            };
+            animateModal();
+        }
+
+
+        function nextMedia() {
+            if (!currentModalContent || currentModalContent.media.length <= 1) return;
+            currentMediaIndex = (currentMediaIndex + 1) % currentModalContent.media.length;
+            renderCurrentMedia();
+        }
+
+        function prevMedia() {
+            if (!currentModalContent || currentModalContent.media.length <= 1) return;
+            currentMediaIndex = (currentMediaIndex - 1 + currentModalContent.media.length) % currentModalContent.media.length;
+            renderCurrentMedia();
+        }
+
+        function closeModal() {
+            const modalContainer = document.getElementById('modal-container');
+            const modalBackdrop = document.getElementById('modal-backdrop');
+            
+            modalContainer.classList.remove('open');
+            modalBackdrop.classList.remove('open');
+            
+            // ** CLEANUP MODAL 3D **
+            if (modalAnimationFrameId) {
+                cancelAnimationFrame(modalAnimationFrameId);
+                modalAnimationFrameId = null;
+            }
+            if (modalRenderer) {
+                modalRenderer.dispose();
+                modalRenderer = null;
+            }
+            if (modalScene) modalScene = null;
+
+            // ** UNFREEZE CONTROLS **
+            if (controls) controls.enabled = true;
+            if (dragControls) dragControls.enabled = true;
+
+            currentModalContent = null;
+            setTimeout(() => {
+                document.getElementById('active-media-container').innerHTML = '';
+            }, 300);
+        }
+
+        // --- RENDER LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+            TWEEN.update();
+            
+            if (clock) {
+                const delta = clock.getDelta();
+                if (window.mixers) {
+                    window.mixers.forEach(mixer => mixer.update(delta));
+                }
+            }
+
+            if (controls) controls.update();
+            
+            rendererGL.render(scene, camera);
+            rendererCSS.render(scene, camera);
+        }
+
+        function onWindowResize() {
+    rendererGL.setSize(window.innerWidth, window.innerHeight);
+    rendererCSS.setSize(window.innerWidth, window.innerHeight);
+    
+    // Eski sabit kodları sil, sadece yeni fonksiyonu çağır
+    fitCameraToScene();
+}
+
+
+function fitCameraToScene() {
+    if (!scene || !camera || clickableObjects.length === 0) return;
+
+    const boundingBox = new THREE.Box3();
+    clickableObjects.forEach(obj => boundingBox.expandByObject(obj));
+
+    const center = new THREE.Vector3();
+    boundingBox.getCenter(center);
+    
+    const sphere = new THREE.Sphere();
+    boundingBox.getBoundingSphere(sphere);
+    const radius = sphere.radius;
+
+    const aspect = window.innerWidth / window.innerHeight;
+
+    // --- TÜM CİHAZLAR İÇİN ORTAK AYARLAR ---
+    // Desktop'ta beğendiğin değerleri buraya sabitledim.
+    const padding = 0.48;    // Yakınlık (0.55 çok yakın, her şeyi doldurur)
+    const xOffset = -750;   // Sola yatıklık miktarı
+    const yOffset = -75;    // Dikey konum
+    const dist = 15000;     // Geri çekilme mesafesi (kesilmeyi önler)
+
+    // --- ZOOM (FRUSTUM) HESABI ---
+    // Bu kısım ekranın dikey veya yatay olmasına göre sığdırmayı otomatik yapar
+    if (aspect > 1) {
+        camera.top = radius * padding;
+        camera.bottom = -radius * padding;
+        camera.left = -radius * aspect * padding;
+        camera.right = radius * aspect * padding;
+    } else {
+        camera.left = -radius * padding;
+        camera.right = radius * padding;
+        camera.top = radius / aspect * padding;
+        camera.bottom = -radius / aspect * padding;
+    }
+
+    // --- POZİSYON VE AÇI ---
+    // Hem kamera hem hedef (target) aynı offset değerlerini kullandığı için 
+    // ekran oranı ne olursa olsun kadrajın "solunda" kalma oranı bozulmaz.
+    camera.position.set(center.x + dist + xOffset, center.y + yOffset, center.z + dist);
+    const targetPoint = new THREE.Vector3(center.x + xOffset, center.y + yOffset, center.z);
+    camera.lookAt(targetPoint);
+
+    if (controls) {
+        controls.target.copy(targetPoint);
+        controls.update();
+    }
+    camera.updateProjectionMatrix();
+}
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script> 
+</body>
+</html>
