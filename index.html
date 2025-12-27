@@ -847,24 +847,60 @@
         }
 
         function applyHover(obj) {
-            currentHoveredObject = obj;
-            new TWEEN(obj.position).to({ y: obj.userData.originalPosition.y + PARAMS.hoverLiftDistance }, PARAMS.hoverAnimationDuration).start();
-            
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const fs = PARAMS.hoverLabelFontSize;
-            ctx.font = `${fs}px "Telegrama Render"`;
-            const w = ctx.measureText(obj.userData.modalContent.name).width + 60;
-            canvas.width = w; canvas.height = fs+60;
-            ctx.font = `${fs}px "Telegrama Render"`; ctx.fillStyle='#000'; ctx.textAlign='center'; ctx.textBaseline='middle';
-            ctx.fillText(obj.userData.modalContent.name, w/2, (fs+60)/2);
-            
-            const tex = new THREE.CanvasTexture(canvas);
-            hoverLabel = new THREE.Mesh(new THREE.PlaneGeometry(w, fs+60), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthTest: false, side: THREE.DoubleSide }));
-            hoverLabel.position.copy(obj.position).y += PARAMS.hoverLabelOffsetY;
-            hoverLabel.rotation.set(PARAMS.hoverLabelRotationX*Math.PI/180, PARAMS.hoverLabelRotationY*Math.PI/180, PARAMS.hoverLabelRotationZ*Math.PI/180);
-            scene.add(hoverLabel);
-        }
+    currentHoveredObject = obj;
+    
+    // Objenin hafif yukarı kalkma animasyonu
+    new TWEEN(obj.position).to({ y: obj.userData.originalPosition.y + PARAMS.hoverLiftDistance }, PARAMS.hoverAnimationDuration).start();
+    
+    // 1. Yüksek Çözünürlüklü Canvas Oluşturma (Netlik için)
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const fs = PARAMS.hoverLabelFontSize;
+    
+    // Metni ölç ve canvas boyutunu ayarla
+    ctx.font = `bold ${fs}px "Telegrama Render"`;
+    const textWidth = ctx.measureText(obj.userData.modalContent.name).width;
+    canvas.width = textWidth + 100; // Kenar payı
+    canvas.height = fs + 80;
+
+    // 2. Metni Çiz (Saf Siyah ve Keskin)
+    ctx.font = `bold ${fs}px "Telegrama Render"`;
+    ctx.fillStyle = '#000000'; // Saf siyah
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    // Metni çiziyoruz
+    ctx.fillText(obj.userData.modalContent.name, canvas.width / 2, canvas.height / 2);
+    
+    // 3. Texture ve Materyal Ayarları
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.needsUpdate = true;
+    // Eğik bakıldığında bulanıklaşmaması için en yüksek keskinlik ayarı:
+    tex.anisotropy = rendererGL.capabilities.getMaxAnisotropy(); 
+
+    const mat = new THREE.MeshBasicMaterial({ 
+        map: tex, 
+        transparent: true, 
+        depthTest: false,   // BAŞKA MODELLERİN ARKASINDA KALMASINI ENGELLER
+        depthWrite: false,  // Modelleri delip geçmesini engeller
+        side: THREE.DoubleSide,
+        toneMapped: false   // SAHNE IŞIĞINDAN VE TONE MAPPING'DEN ETKİLENMEZ (RENK SOLMAZ)
+    });
+
+    hoverLabel = new THREE.Mesh(new THREE.PlaneGeometry(canvas.width, canvas.height), mat);
+    
+    // 4. Render Sırası (En Önemli Kısım)
+    hoverLabel.renderOrder = 9999; // Sahnedeki her şeyden sonra çizilir (En üstte görünür)
+
+    hoverLabel.position.copy(obj.position).y += PARAMS.hoverLabelOffsetY;
+    hoverLabel.rotation.set(
+        PARAMS.hoverLabelRotationX * Math.PI / 180, 
+        PARAMS.hoverLabelRotationY * Math.PI / 180, 
+        PARAMS.hoverLabelRotationZ * Math.PI / 180
+    );
+    
+    scene.add(hoverLabel);
+}
 
         function clearHover() {
             if(currentHoveredObject) {
@@ -1069,13 +1105,19 @@
         }
 
         function animate() {
-            requestAnimationFrame(animate); 
-            controls.update(); 
-            // Matris her frame güncellenmeli (zoom animasyonları için)
-            camera.updateProjectionMatrix(); 
-            composer.render();
-            if(hoverLabel && currentHoveredObject) hoverLabel.position.copy(currentHoveredObject.position).y += PARAMS.hoverLabelOffsetY;
-        }
+    requestAnimationFrame(animate); 
+    controls.update(); 
+    
+    // Zoom animasyonları ve matris güncellemeleri
+    camera.updateProjectionMatrix(); 
+    
+    // Hover etiketi varsa objeyi takip etsin
+    if(hoverLabel && currentHoveredObject) {
+        hoverLabel.position.copy(currentHoveredObject.position).y += PARAMS.hoverLabelOffsetY;
+    }
+    
+    composer.render();
+}
 
         function TWEEN(obj) {
             this.target = obj;
