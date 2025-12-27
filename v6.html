@@ -25,6 +25,13 @@
             --font-headers: 'Telegrama Render', sans-serif;
             --font-body: 'Telegrama Render', sans-serif;
             
+            /* ========== CAMERA & INTERACTION ========== */
+            --camera-fov: 10; /* Low FOV for "nearly ortho" perspective effect */
+            --camera-min-distance: 2000;
+            --camera-max-distance: 25000;
+            --enable-pan: no; /* yes / no */
+            --initial-camera-zoom: 1.2;
+            
             /* ========== HOVER EFFECT PARAMETERS ========== */
             --hover-lift-distance: 100px;
             --hover-animation-duration: 0.3s;
@@ -59,13 +66,7 @@
             --zoom-in-animation-duration: 1.0s;
             --zoom-out-animation-duration: 1.2s;
             
-            /* ========== INITIAL CAMERA ========== */
-            --initial-camera-zoom: 0.58;
-            
-            /* ========== INTERACTION PARAMETERS ========== */
-            --enable-object-dragging: yes;
             --click-threshold-pixels: 7;
-            
             --app-height: 100vh;
         }
 
@@ -182,7 +183,6 @@
             display: flex; align-items: center; justify-content: center;
         }
 
-        /* Web Viewer için Özel Wrapper (Kareyi tam doldurur) */
         .web-wrapper {
             width: 100%; height: 100%;
             border-radius: 16px;
@@ -312,7 +312,11 @@
             selectionZoomFactor: getParamNum('--selection-zoom-factor'),
             zoomInAnimationDuration: parseFloat(getParam('--zoom-in-animation-duration')) * 1000,
             zoomOutAnimationDuration: parseFloat(getParam('--zoom-out-animation-duration')) * 1000,
-            initialCameraZoom: getParamNum('--initial-camera-zoom')
+            initialCameraZoom: getParamNum('--initial-camera-zoom'),
+            cameraFov: getParamNum('--camera-fov'),
+            cameraMinDist: getParamNum('--camera-min-distance'),
+            cameraMaxDist: getParamNum('--camera-max-distance'),
+            enablePan: getParam('--enable-pan') === 'yes'
         };
 
         const sceneObjects = [
@@ -341,6 +345,7 @@
       ]
     }
   },
+//{type: 'model',    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/labsglb-v1.glb',    width: 700,    position: { x: 0, y: -110000, z: 0 },    rotation: { x: 0, y: 0, z: 0 },    scale: 500,    clickable: false,    modalContent: {      name: "bldg",      categories: { sub1: "2025", sub2: "ABOUT" },      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",  media: [   {   type: "image",   src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png",      linkUrl: null,      linkText: "OPEN IN A NEW TAB"   }  ] }  },
 
  //{type: 'model',    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/untitled-opt-v1.glb',    width: 700,    position: { x: 0, y: 0, z: 0 },    rotation: { x: 0, y: 0, z: 0 },    scale: 200,    clickable: false,    modalContent: {      name: "bldg",      categories: { sub1: "2025", sub2: "ABOUT" },      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",  media: [   {   type: "image",   src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png",      linkUrl: null,      linkText: "OPEN IN A NEW TAB"   }  ] }  },
  //{type: 'model',    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/kutudeneme.glb',    width: 700,    position: { x: 0, y: 0, z: 0 },    rotation: { x: 0, y: 0, z: 0 },    scale: 80,    clickable: false,    modalContent: {      name: "bldg",      categories: { sub1: "2025", sub2: "ABOUT" },      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",  media: [   {   type: "image",   src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png",      linkUrl: null,      linkText: "OPEN IN A NEW TAB"   }  ] }  },
@@ -675,7 +680,7 @@
         let loadedAssets = 0, totalAssets = 0;
         let currentHoveredObject = null, hoverLabel = null, currentSelectedObject = null;
         let originalCameraState = null, currentActiveVideos = [];
-        let modalRenderer, modalScene, modalCamera, modalControls, modalAnimationFrameId;
+        let modalAnimationFrameId;
         const clickableObjects = [];
 
         async function startEngine() {
@@ -701,19 +706,26 @@
             rendererGL.outputColorSpace = THREE.SRGBColorSpace;
             container.appendChild(rendererGL.domElement);
 
-            camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 50000);
+            // Switching to Perspective Camera with narrow FOV for "Nearly Ortho" look
+            camera = new THREE.PerspectiveCamera(PARAMS.cameraFov, window.innerWidth / window.innerHeight, 10, 100000);
+            
             scene = new THREE.Scene();
             scene.background = null; 
 
             controls = new OrbitControls(camera, rendererGL.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
+            
+            // Apply Panning and Zoom Constraints from CSS Params
+            controls.enablePan = PARAMS.enablePan;
+            controls.minDistance = PARAMS.cameraMinDist;
+            controls.maxDistance = PARAMS.cameraMaxDist;
 
             scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.6));
             const sun = new THREE.DirectionalLight(0xffffff, 4.0);
             sun.position.set(2000, 3000, 2000);
             sun.castShadow = true;
-            sun.shadow.mapSize.set(4096, 4096);
+            sun.shadow.mapSize.set(2048, 2048);
             scene.add(sun);
             scene.add(new THREE.AmbientLight(0xffffff, 0.2));
 
@@ -756,9 +768,17 @@
                     m.position.set(item.position.x, item.position.y || 0, item.position.z);
                     if (item.rotation) m.rotation.set(item.rotation.x*Math.PI/180, item.rotation.y*Math.PI/180, item.rotation.z*Math.PI/180);
                     m.scale.setScalar(item.scale);
-                    m.userData = { modalContent: item.modalContent, originalPosition: m.position.clone() };
+                    
+                    // Assigning "clickable" state to user data
+                    m.userData = { 
+                        modalContent: item.modalContent, 
+                        clickable: item.clickable !== false,
+                        originalPosition: m.position.clone() 
+                    };
+                    
                     m.traverse(c => { if(c.isMesh) { c.castShadow=true; c.receiveShadow=true; } });
-                    scene.add(m); clickableObjects.push(m);
+                    scene.add(m); 
+                    clickableObjects.push(m);
                     loadedAssets++; updateLoader();
                     if(loadedAssets === totalAssets) fitCameraToScene();
                 });
@@ -783,13 +803,21 @@
             if(hits.length>0) {
                 let obj = hits[0].object;
                 while(obj.parent && !obj.userData.modalContent) obj = obj.parent;
-                if(obj.userData.modalContent && currentHoveredObject !== obj) { clearHover(); applyHover(obj); }
+                
+                // Only hover if clickable is true
+                if(obj.userData.modalContent && obj.userData.clickable && currentHoveredObject !== obj) { 
+                    clearHover(); 
+                    applyHover(obj); 
+                } else if (!obj.userData.clickable) {
+                    clearHover();
+                }
             } else clearHover();
         }
 
         function applyHover(obj) {
             currentHoveredObject = obj;
             new TWEEN(obj.position).to({ y: obj.userData.originalPosition.y + PARAMS.hoverLiftDistance }, PARAMS.hoverAnimationDuration).start();
+            
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
             const fs = PARAMS.hoverLabelFontSize;
@@ -798,6 +826,7 @@
             canvas.width = w; canvas.height = fs+60;
             ctx.font = `${fs}px "Telegrama Render"`; ctx.fillStyle='#000'; ctx.textAlign='center'; ctx.textBaseline='middle';
             ctx.fillText(obj.userData.modalContent.name, w/2, (fs+60)/2);
+            
             const tex = new THREE.CanvasTexture(canvas);
             hoverLabel = new THREE.Mesh(new THREE.PlaneGeometry(w, fs+60), new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthTest: false, side: THREE.DoubleSide }));
             hoverLabel.position.copy(obj.position).y += PARAMS.hoverLabelOffsetY;
@@ -824,7 +853,11 @@
                 if(hits.length>0) {
                     let obj = hits[0].object;
                     while(obj.parent && !obj.userData.modalContent) obj = obj.parent;
-                    if(obj.userData.modalContent) openPanel(obj.userData.modalContent, obj);
+                    
+                    // Only open panel if clickable is true
+                    if(obj.userData.modalContent && obj.userData.clickable) {
+                        openPanel(obj.userData.modalContent, obj);
+                    }
                 }
             }
         }
@@ -834,23 +867,31 @@
             clearHover();
             currentActiveVideos.forEach(v => { v.pause(); v.src = ""; v.load(); });
             currentActiveVideos = [];
-            if(!originalCameraState) originalCameraState = { left:camera.left, right:camera.right, top:camera.top, bottom:camera.bottom, target:controls.target.clone() };
+            
+            if(!originalCameraState) originalCameraState = { position: camera.position.clone(), target: controls.target.clone(), fov: camera.fov };
+            
             currentSelectedObject = obj;
             const box = new THREE.Box3().setFromObject(obj);
             const center = box.getCenter(new THREE.Vector3());
-            const factor = PARAMS.selectionZoomFactor;
-            animateZoom({
-                left: originalCameraState.left*factor, right: originalCameraState.right*factor,
-                top: originalCameraState.top*factor, bottom: originalCameraState.bottom*factor,
-                target: center
-            }, PARAMS.zoomInAnimationDuration);
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            
+            // Zoom camera in to center on perspective camera
+            const zoomDist = maxDim * 4; 
+            const newPos = center.clone().add(new THREE.Vector3(zoomDist, zoomDist * 0.5, -zoomDist));
+
+            new TWEEN(camera.position).to({ x: newPos.x, y: newPos.y, z: newPos.z }, PARAMS.zoomInAnimationDuration).start();
+            new TWEEN(controls.target).to({ x: center.x, y: center.y, z: center.z }, PARAMS.zoomInAnimationDuration).start();
+
             document.getElementById('panel-title').innerText = content.name;
             const cats = content.categories || {};
             document.getElementById('panel-year').innerText = cats.sub1 || '';
             document.getElementById('panel-cats').innerText = Object.values(cats).slice(1).filter(v=>v && v!=='-').join(', ');
             document.getElementById('panel-desc').innerText = content.description;
+            
             const links = document.getElementById('panel-links'); links.innerHTML = '';
             const media = document.getElementById('panel-media'); media.innerHTML = '';
+            
             content.media?.forEach(m => {
                 const item = document.createElement('div'); item.className = 'panel-media-item';
                 if(m.type === 'image') {
@@ -866,21 +907,15 @@
                     v.onclick = toggleVideo; b.onclick = (e) => { e.stopPropagation(); toggleVideo(); };
                     wrapper.appendChild(v); wrapper.appendChild(b); item.appendChild(wrapper);
                     currentActiveVideos.push(v);
-                } if(m.type === 'model') {
-            const wrapper = document.createElement('div'); 
-            wrapper.className = 'w-full h-full relative rounded-[16px] overflow-hidden bg-[#f4f4f4]';
-            item.appendChild(wrapper);
-            media.appendChild(item); // Önce DOM'a ekle
-
-            // 2. KISA BİR GECİKME İLE BAŞLAT (CSS transition'ın başlaması için)
-            setTimeout(() => {
-                initModal3D(wrapper, m.src);
-            }, 50);
-        
+                } else if(m.type === 'model') {
+                    const wrapper = document.createElement('div'); 
+                    wrapper.className = 'w-full h-full relative rounded-[16px] overflow-hidden bg-[#f4f4f4]';
+                    item.appendChild(wrapper);
+                    setTimeout(() => initModal3D(wrapper, m.src), 50);
                 } else if(m.type === 'html') {
                     const wrapper = document.createElement('div'); wrapper.className = 'web-wrapper';
                     const ifr = document.createElement('iframe');
-                    ifr.src = m.src.replace('raw.githubusercontent.com', 'raw.githack.com').replace('/refs/heads/', '/');
+                    ifr.src = m.src.replace('raw.githubusercontent.com', 'raw.githack.com');
                     ifr.className = 'w-[200%] h-[200%] border-none origin-top-left scale-50 absolute top-0 left-0';
                     wrapper.appendChild(ifr); item.appendChild(wrapper);
                 }
@@ -893,140 +928,106 @@
             document.getElementById('side-panel').classList.add('open');
         }
 
-       function initModal3D(container, src) {
-    // 1. Sahne ve Renderer Kurulumu
-    const sceneM = new THREE.Scene(); 
-    sceneM.background = new THREE.Color(0xf4f4f4); 
-    if (globalEnvMap) sceneM.environment = globalEnvMap;
+        function initModal3D(container, src) {
+            const sceneM = new THREE.Scene(); 
+            sceneM.background = new THREE.Color(0xf4f4f4); 
+            if (globalEnvMap) sceneM.environment = globalEnvMap;
 
-    const renM = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renM.setPixelRatio(window.devicePixelRatio);
-    renM.toneMapping = THREE.ACESFilmicToneMapping;
-    renM.toneMappingExposure = 1.3; // Temiz ve parlak bir görünüm için
-    container.appendChild(renM.domElement);
+            const renM = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renM.setPixelRatio(window.devicePixelRatio);
+            renM.toneMapping = THREE.ACESFilmicToneMapping;
+            renM.toneMappingExposure = 1.3;
+            container.appendChild(renM.domElement);
 
-    const camM = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
-    
-    // 2. IŞIK AYARLARI (Typo düzeltildi ve optimize edildi)
-    // Yumuşak dolgu ışığı
-    const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 1.2);
-    sceneM.add(hemiLight);
+            const camM = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
+            const hemiLight = new THREE.HemisphereLight(0xffffff, 0xffffff, 1.2);
+            sceneM.add(hemiLight);
 
-    // Ana Stüdyo Işığı (Tek kaynak hissi, sağ üst çaprazdan)
-    const dirLight = new THREE.DirectionalLight(0xffffff, 3.5); 
-    dirLight.position.set(5, 10, 7); 
-    sceneM.add(dirLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 3.5); 
+            dirLight.position.set(5, 10, 7); 
+            sceneM.add(dirLight);
 
-    // 3. Kontroller ve "Dokununca Durma" Özelliği
-    const ctrlM = new OrbitControls(camM, renM.domElement); 
-    ctrlM.autoRotate = true; 
-    ctrlM.autoRotateSpeed = 2.5; 
-    ctrlM.enableDamping = true;
-    ctrlM.dampingFactor = 0.05;
+            const ctrlM = new OrbitControls(camM, renM.domElement); 
+            ctrlM.autoRotate = true; 
+            ctrlM.autoRotateSpeed = 2.5; 
+            ctrlM.enableDamping = true;
+            ctrlM.addEventListener('start', () => { ctrlM.autoRotate = false; });
 
-    // DOKUNUNCA DURMA: Kullanıcı etkileşime girdiği an döngü durur
-    ctrlM.addEventListener('start', () => {
-        ctrlM.autoRotate = false;
-    });
+            const loader = new GLTFLoader();
+            const draco = new DRACOLoader();
+            draco.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+            loader.setDRACOLoader(draco);
+            loader.setMeshoptDecoder(MeshoptDecoder);
 
-    // 4. Model Yükleme İşlemi
-    const loader = new GLTFLoader();
-    const draco = new DRACOLoader();
-    draco.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
-    loader.setDRACOLoader(draco);
-    if (typeof MeshoptDecoder !== 'undefined') loader.setMeshoptDecoder(MeshoptDecoder);
+            loader.load(src, (gltf) => {
+                const model = gltf.scene;
+                model.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; if (c.material) c.material.envMapIntensity = 1.2; } });
+                sceneM.add(model);
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                ctrlM.target.copy(center);
+                camM.position.set(center.x, center.y + maxDim * 0.2, center.z + maxDim * 2.5);
+                
+                const w = container.offsetWidth || 300;
+                renM.setSize(w, w);
+                camM.aspect = 1;
+                camM.updateProjectionMatrix();
+                ctrlM.update();
+            });
 
-    loader.load(src, (gltf) => {
-        const model = gltf.scene;
-        
-        model.traverse(c => {
-            if (c.isMesh) {
-                c.castShadow = true;
-                c.receiveShadow = true;
-                if (c.material) c.material.envMapIntensity = 1.2;
+            const clock = new THREE.Clock();
+            function loop() { 
+                if (!document.getElementById('side-panel').classList.contains('open')) { renM.dispose(); return; }
+                modalAnimationFrameId = requestAnimationFrame(loop); 
+                ctrlM.update(); 
+                renM.render(sceneM, camM); 
             }
-        });
-
-        sceneM.add(model);
-
-        const box = new THREE.Box3().setFromObject(model);
-        const center = box.getCenter(new THREE.Vector3());
-        const size = box.getSize(new THREE.Vector3());
-        const maxDim = Math.max(size.x, size.y, size.z);
-        
-        ctrlM.target.copy(center);
-        camM.position.set(center.x, center.y + maxDim * 0.2, center.z + maxDim * 2.5);
-        
-        const w = container.offsetWidth || 300;
-        renM.setSize(w, w);
-        camM.aspect = 1;
-        camM.updateProjectionMatrix();
-        ctrlM.update();
-
-        if (gltf.animations && gltf.animations.length) {
-            const mixer = new THREE.AnimationMixer(model);
-            gltf.animations.forEach(clip => mixer.clipAction(clip).play());
-            sceneM.userData.mixer = mixer;
-        }
-    });
-
-    // 5. Animasyon Döngüsü
-    const clock = new THREE.Clock();
-    function loop() { 
-        // Panel kapandığında renderer'ı ve döngüyü temizle
-        if (!document.getElementById('side-panel').classList.contains('open')) {
-            renM.dispose();
-            return;
-        }
-        
-        modalAnimationFrameId = requestAnimationFrame(loop); 
-        const delta = clock.getDelta();
-        if (sceneM.userData.mixer) sceneM.userData.mixer.update(delta);
-        
-        ctrlM.update(); 
-        renM.render(sceneM, camM); 
-    }
-    loop();
-}
-        function animateZoom(t, dur) {
-            const s = { l:camera.left, r:camera.right, t:camera.top, b:camera.bottom, tx:controls.target.x, ty:controls.target.y, tz:controls.target.z };
-            const startTime = Date.now();
-            function step() {
-                const p = Math.min((Date.now()-startTime)/dur, 1); const e = p*(2-p);
-                camera.left = s.l+(t.left-s.l)*e; camera.right = s.r+(t.right-s.r)*e;
-                camera.top = s.t+(t.top-s.t)*e; camera.bottom = s.b+(t.bottom-s.b)*e;
-                controls.target.set(s.tx+(t.target.x-s.tx)*e, s.ty+(t.target.y-s.ty)*e, s.tz+(t.target.z-s.tz)*e);
-                camera.updateProjectionMatrix(); controls.update();
-                if(p<1) requestAnimationFrame(step);
-            }
-            step();
+            loop();
         }
 
         window.closePanel = function() {
             currentActiveVideos.forEach(v => { v.pause(); v.src = ""; v.load(); v.remove(); });
             currentActiveVideos = [];
             document.getElementById('panel-media').innerHTML = "";
-            if(originalCameraState) animateZoom(originalCameraState, PARAMS.zoomOutAnimationDuration);
+            
+            if(originalCameraState) {
+                new TWEEN(camera.position).to({ x: originalCameraState.position.x, y: originalCameraState.position.y, z: originalCameraState.position.z }, PARAMS.zoomOutAnimationDuration).start();
+                new TWEEN(controls.target).to({ x: originalCameraState.target.x, y: originalCameraState.target.y, z: originalCameraState.target.z }, PARAMS.zoomOutAnimationDuration).start();
+            }
+            
             originalCameraState = null; currentSelectedObject=null;
             if(modalAnimationFrameId) { cancelAnimationFrame(modalAnimationFrameId); modalAnimationFrameId = null; }
             document.getElementById('side-panel').classList.remove('open');
         }
 
         function fitCameraToScene() {
-            const box = new THREE.Box3(); clickableObjects.forEach(o => box.expandByObject(o));
-            const center = box.getCenter(new THREE.Vector3()); const maxDim = Math.max(box.getSize(new THREE.Vector3()).x, box.getSize(new THREE.Vector3()).y);
-            const aspect = window.innerWidth/window.innerHeight; const z = PARAMS.initialCameraZoom;
-            camera.left = -maxDim*aspect*z; camera.right = maxDim*aspect*z; camera.top = maxDim*z; camera.bottom = -maxDim*z;
-            camera.position.set(center.x+5000, center.y+5000, center.z-5000);
-            controls.target.copy(center); camera.updateProjectionMatrix(); controls.update();
+            const box = new THREE.Box3(); 
+            clickableObjects.forEach(o => box.expandByObject(o));
+            const center = box.getCenter(new THREE.Vector3()); 
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            
+            // Positioning the Perspective camera far away with low FOV for nearly-ortho look
+            const dist = maxDim * 6 * PARAMS.initialCameraZoom;
+            camera.position.set(center.x + dist, center.y + dist, center.z - dist);
+            controls.target.copy(center);
+            camera.updateProjectionMatrix();
+            controls.update();
         }
 
         function onWindowResize() { 
-            rendererGL.setSize(window.innerWidth, window.innerHeight); composer.setSize(window.innerWidth, window.innerHeight); fitCameraToScene(); 
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            rendererGL.setSize(window.innerWidth, window.innerHeight); 
+            composer.setSize(window.innerWidth, window.innerHeight); 
         }
 
         function animate() {
-            requestAnimationFrame(animate); controls.update(); composer.render();
+            requestAnimationFrame(animate); 
+            controls.update(); 
+            composer.render();
             if(hoverLabel && currentHoveredObject) hoverLabel.position.copy(currentHoveredObject.position).y += PARAMS.hoverLabelOffsetY;
         }
 
@@ -1037,7 +1038,8 @@
                 const start = {}; for(let k in this.dest) start[k] = this.target[k];
                 const startTime = Date.now();
                 const tick = () => {
-                    const p = Math.min((Date.now()-startTime)/this.dur, 1); const e = p*(2-p);
+                    const p = Math.min((Date.now()-startTime)/this.dur, 1); 
+                    const e = p*(2-p);
                     for(let k in this.dest) this.target[k] = start[k]+(this.dest[k]-start[k])*e;
                     if(p<1) requestAnimationFrame(tick);
                 }; tick();
