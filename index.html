@@ -3,9 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Virtually Ever After</title>
+    <title>Deniz Agaoglu | Virtual Design & Metaverse Architecture Luxembourg</title>
+    
+    
+    <meta name="title" content="Virtually Ever After | Virtual Design & Metaverse Architecture Luxembourg">
+    <meta name="description" content="Official portfolio of Deniz Agaoglu. Specialized in high-end virtual design, metaverse architecture, and art direction. Pioneering digital spaces in Luxembourg.">
+    <meta name="keywords" content="Deniz Agaoglu, Metaverse Design, Virtual Architecture, Art Direction, Architecture Luxembourg, Metaverse Architect, Virtual Design, Digital Art Direction, Deniz Agaoglu Luxembourg">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="author" content="Deniz Agaoglu">
+    <link rel="canonical" href="https://virtuallyeverafter.work/">
+
+    
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://virtuallyeverafter.work/">
+    <meta property="og:title" content="Deniz Agaoglu | Virtual Architecture & Art Direction">
+    <meta property="og:description" content="Discover the virtual realms and metaverse architecture of Deniz Agaoglu. Innovative design based in Luxembourg.">
+    <meta property="og:image" content="https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/veacrop.png">
+    <meta property="og:site_name" content="Virtually Ever After">
+
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Deniz Agaoglu",
+      "jobTitle": "Metaverse Architect & Art Director",
+      "url": "https://virtuallyeverafter.work",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Luxembourg",
+        "addressCountry": "LU"
+      },
+      "description": "Expert in Virtual Design, Metaverse Architecture, and Art Direction based in Luxembourg.",
+      "sameAs": [
+        "https://www.instagram.com/virtually.ever.after/",
+        "https://virtuallyeverafter.xyz",
+        "https://de-centralize.com"
+      ]
+    }
+    </script>
+
     <style>
-        /* ÖZEL FONT TANIMLAMASI */
+       
         @font-face {
             font-family: 'Telegrama Render';
             src: url('https://raw.githubusercontent.com/decentralize-dfw/font/main/vea.ttf') format('truetype');
@@ -16,8 +56,7 @@
             --vea-border: #000000;
             --vea-white: #ffffff;
             --menu-img: url('https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/menu2.jpg');
-            --header-h-desktop: 26px;
-            --header-h-mobile: 44px;
+            --header-h: 26px; /* Hem desktop hem mobil için sabit yükseklik */
             --vea-blue: #0061d5;
         }
 
@@ -32,6 +71,7 @@
             cursor: auto;
         }
 
+        /* ANA NAVIGASYON KONTEYNIRI */
         #nav-container {
             position: fixed;
             top: 10px;
@@ -65,6 +105,7 @@
             transition: border-radius 0.1s;
         }
 
+        /* AÇIK HAL: Görsel Maskeleme Başlangıcı */
         .custom-dropdown.open {
             border-radius: 8px 8px 0 0;
             background-image: var(--menu-img);
@@ -81,7 +122,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            height: var(--header-h-desktop);
+            height: var(--header-h);
             box-sizing: border-box;
             text-transform: uppercase;
             position: relative;
@@ -93,6 +134,7 @@
             text-shadow: 1px 1px 2px #000;
         }
 
+        /* OK SİMGESİ MASKELEME: Aynı JPEG, aynı hizalama */
         .arrow-icons {
             background-image: var(--menu-img);
             background-size: 100px auto;
@@ -123,6 +165,7 @@
             line-height: 1;
         }
 
+        /* LİSTE MASKELEME: Arka plan header yüksekliği kadar yukarı kaydırılır */
         .dropdown-list {
             display: none;
             list-style: none;
@@ -132,11 +175,12 @@
             background-image: var(--menu-img);
             background-size: 100px auto;
             background-repeat: no-repeat;
-            background-position: center calc(var(--header-h-desktop) * -1); 
+            /* Header yüksekliği kadar yukarı kaydırarak süreklilik sağlanır */
+            background-position: center calc(var(--header-h) * -1); 
             width: calc(100% + 2px);
             position: absolute;
             left: -1px;
-            top: calc(var(--header-h-desktop) - 1px); 
+            top: calc(var(--header-h) - 1px); 
             box-sizing: border-box;
             border-radius: 0 0 8px 8px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
@@ -165,7 +209,27 @@
             text-shadow: 1px 1px 3px #000;
         }
 
-        /* FOOTER ŞERİDİ */
+        /* IFRAME ALANI */
+        #iframe-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+        }
+
+        #content-viewer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            z-index: 1;
+        }
+
+        /* FOOTER TASARIMI */
         #footer-info {
             position: fixed;
             bottom: 0;
@@ -192,7 +256,7 @@
             color: inherit;
         }
 
-        /* SAĞ ALT LEGAL NOTICE */
+        /* LEGAL NOTICE */
         #legal-notice {
             position: fixed;
             bottom: 11px;
@@ -210,7 +274,9 @@
             pointer-events: auto;
         }
 
-        /* ÇEREZ ONAY BANDI */
+        .short-legal { display: none; }
+
+        /* ÇEREZ BANDI */
         #cookie-consent {
             position: fixed;
             bottom: 40px;
@@ -238,72 +304,64 @@
             cursor: pointer;
             border-radius: 4px;
             text-transform: uppercase;
+            color: inherit;
+            transition: background 0.2s, color 0.2s;
         }
 
         .cookie-btn:hover {
-            background: var(--vea-border);
-            color: #fff;
+            background: var(--vea-border) !important;
+            color: #fff !important;
         }
 
-        /* YES butonu için stil düzenlemesi */
-        .cookie-btn.yes {
-            background: none;
-            color: inherit;
-        }
+        .cookie-btn.yes { background: none; }
 
-        /* MOBİL TASARIM */
+        /* MOBİL TASARIM DÜZENLEMELERİ */
         @media (max-width: 576px) {
             #nav-container {
                 top: 10px;
                 left: 10px;
-                width: 100px; /* Genişlik masaüstü ile aynı (100px) */
-                flex-direction: column; /* Yatay dizilimden dikey dizilime geri dönüldü */
+                width: 100px; 
+                flex-direction: column;
                 background: transparent;
                 border-bottom: none;
             }
-            #logo-link {
-                width: 100px;
-                margin-bottom: 5px;
-                display: block;
+
+            .dropdown-header { 
+                height: var(--header-h); 
+                font-size: 9px; 
             }
-            #logo-img { max-height: none; width: 100%; }
-            .custom-dropdown {
-                width: 100%;
-                border: 1px solid var(--vea-border);
-                border-radius: 8px !important;
-                background: var(--vea-white);
-            }
-            
-            .custom-dropdown.open { 
-                border-radius: 8px 8px 0 0 !important;
-                background-image: var(--menu-img);
-                background-size: 100px auto;
-                background-position: top center;
-            }
-            
-            .dropdown-header { height: var(--header-h-mobile); font-size: 11px; padding-right: 44px; }
-            .arrow-icons { 
-                width: 36px; 
-                border-radius: 0 7px 7px 0;
+
+            .arrow-icons {
+                width: 22px; 
                 background-size: 100px auto;
                 background-position: right top;
             }
-            
+
             .dropdown-list {
-                top: calc(var(--header-h-mobile) - 1px);
-                position: absolute;
-                left: -1px;
-                width: calc(100% + 2px);
-                border-radius: 0 0 8px 8px;
+                top: calc(var(--header-h) - 1px);
                 background-size: 100px auto;
-                background-position: center calc(var(--header-h-mobile) * -1);
+                background-position: center calc(var(--header-h) * -1);
             }
-            .dropdown-list li { padding: 12px 6px; font-size: 11px; }
+
+            /* Footer mobilde sığması için sola yaslama */
+            #footer-info {
+                font-size: 9px;
+                justify-content: flex-start;
+                padding-left: 10px;
+                box-sizing: border-box;
+            }
+            .desktop-only {
+                display: none;
+            }
+
+            /* Legal Notice mobilde kısaltma */
+            .full-legal { display: none; }
+            .short-legal { display: inline; }
 
             #legal-notice {
                 font-size: 7px;
-                right: 10px;
-                bottom: 10px;
+                right: 8px;
+                bottom: 11px;
             }
 
             #cookie-consent {
@@ -316,23 +374,23 @@
         }
     </style>
 
-    <!-- Google tag (gtag.js) - Botlar için görünür ve varsayılan olarak engelli -->
+    <!-- Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-VM05VRLYKH"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
-
-      // Varsayılan olarak tüm izlemeleri 'denied' (reddedildi) olarak başlatın
       gtag('consent', 'default', {
         'ad_storage': 'denied',
         'analytics_storage': 'denied'
       });
-
       gtag('js', new Date());
       gtag('config', 'G-VM05VRLYKH');
     </script>
 </head>
 <body>
+    <!-- Botlar İçin Gizli Ana Başlık -->
+    <h1 style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;">
+        Deniz Agaoglu - Virtual Design & Metaverse Architecture Luxembourg</h1>
 
     <div id="nav-container">
         <div id="logo-link">
@@ -357,12 +415,10 @@
         </div>
     </div>
 
-    <!-- Iframe Container -->
-    <div id="iframe-wrapper" style="width:100%; height:100%; position:absolute; top:0; left:0; background: #ffffff;">
-        <iframe id="content-viewer" src="https://virtuallyeverafter.work/home" title="Content Viewer" style="position:absolute; top:0; left:0; width:100%; height:100%; border:none; z-index:1;"></iframe>
+    <div id="iframe-wrapper">
+        <iframe id="content-viewer" src="https://virtuallyeverafter.work/home" title="Content Viewer"></iframe>
     </div>
 
-    <!-- Çerez Onay Bandı -->
     <div id="cookie-consent">
         <span>WE USE COOKIES</span>
         <div style="display:flex; gap:5px;">
@@ -372,11 +428,14 @@
     </div>
 
     <div id="footer-info">
-        <a href="mailto:hello@virtuallyeverafter.xyz">hello@virtuallyeverafter.xyz</a> &emsp;&emsp; Luxembourg &emsp;&emsp; +352 661953108
+        <a href="mailto:hello@virtuallyeverafter.xyz">hello@virtuallyeverafter.xyz</a> &emsp;&emsp; Luxembourg <span class="desktop-only">&emsp;&emsp; +352 661953108</span>
     </div>
 
     <div id="legal-notice">
-        <a href="https://virtuallyeverafter.work/legal" target="_blank">legal notice and terms of use</a>
+        <a href="https://virtuallyeverafter.work/legal" target="_blank">
+            <span class="full-legal">legal notice and terms of use</span>
+            <span class="short-legal">legal / terms</span>
+        </a>
     </div>
 
     <script>
@@ -392,7 +451,7 @@
             if (consent === null) {
                 cookieBanner.style.display = 'flex';
             } else if (consent === 'true') {
-                updateConsent(true); // Daha önce onay verilmişse izni güncelle
+                updateConsent(true);
             }
         });
 
@@ -404,15 +463,9 @@
             }
         }
 
-        /**
-         * Google'a iznin verildiğini bildirir
-         */
         function updateConsent(accepted) {
             if (accepted) {
-                gtag('consent', 'update', {
-                    'analytics_storage': 'granted'
-                });
-                console.log("Analytics izni verildi.");
+                gtag('consent', 'update', { 'analytics_storage': 'granted' });
                 trackPageView("INIT");
             }
         }
@@ -440,37 +493,18 @@
 
         function loadPage(event, name, url) {
             event.stopPropagation();
-            
             const oldViewer = document.getElementById('content-viewer');
             if (oldViewer) {
                 oldViewer.src = "about:blank";
                 oldViewer.remove();
             }
-
             const newViewer = document.createElement('iframe');
             newViewer.id = 'content-viewer';
-            newViewer.title = 'Content Viewer';
-            newViewer.style.position = 'absolute';
-            newViewer.style.top = '0';
-            newViewer.style.left = '0';
-            newViewer.style.width = '100%';
-            newViewer.style.height = '100%';
-            newViewer.style.border = 'none';
-            newViewer.style.zIndex = '1';
-            
-            iframeWrapper.appendChild(newViewer);
             newViewer.src = url;
-            
-            headerText.innerHTML = `
-                ${name}
-                <span class="arrow-icons">
-                    <i class="up">▲</i>
-                    <i class="down">▼</i>
-                </span>
-            `;
+            iframeWrapper.appendChild(newViewer);
+            headerText.innerHTML = `${name} <span class="arrow-icons"><i class="up">▲</i><i class="down">▼</i></span>`;
             dropdownList.style.display = 'none';
             dropdownToggle.classList.remove('open');
-
             trackPageView(name);
         }
 
