@@ -77,8 +77,44 @@
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
             z-index: 1;
-            /* Saf beyaz arka plan CSS ile veriliyor */
             background: #ffffff; 
+        }
+
+        /* Işık Ayarları Paneli */
+        #lighting-controls {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 8px;
+            padding: 6px;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 12px;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .preset-btn {
+            font-family: var(--font-headers);
+            font-size: 0.65rem;
+            padding: 6px 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: transparent;
+            color: #888;
+            border: none;
+        }
+
+        .preset-btn:hover { color: #000; background: rgba(0,0,0,0.05); }
+        .preset-btn.active {
+            background: #000;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
         #loader {
@@ -243,9 +279,7 @@
             transition: opacity 0.2s;
         }
 
-        .panel-link:hover {
-            opacity: 0.6;
-        }
+        .panel-link:hover { opacity: 0.6; }
 
         @media (max-width: 768px) {
             #side-panel { 
@@ -255,6 +289,7 @@
                 transform: translateY(100%);
             }
             #side-panel.open { transform: translateY(0); }
+            #lighting-controls { display: none !important; }
             :root {
                 --panel-media-padding-horizontal: 25%;
                 --panel-media-padding-top: 5%;
@@ -269,6 +304,13 @@
     <div id="loader">
         <div class="loader-text">ARCHIVE LOADING</div>
         <div class="loader-bar-container"><div class="loader-bar"></div></div>
+    </div>
+
+    <!-- Lighting Controls -->
+    <div id="lighting-controls">
+        <button class="preset-btn" onclick="applyLightingPreset('low')" id="btn-low">Low</button>
+        <button class="preset-btn" onclick="applyLightingPreset('mid')" id="btn-mid">Mid</button>
+        <button class="preset-btn" onclick="applyLightingPreset('high')" id="btn-high">High</button>
     </div>
 
     <div id="scene-container"></div>
@@ -352,7 +394,6 @@
             {
                 type: 'model',
                 src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/vea3d-v2-opt-v1.glb',
-                width: 700,
                 position: { x: 2400, y: 0, z: -1500 },
                 rotation: { x: 0, y: 180, z: 0 },
                 scale: 200,
@@ -593,6 +634,7 @@
         ];
 
         let camera, scene, renderer, controls, raycaster, mouse, composer, globalEnvMap;
+        let bloomPass, ssaoPass;
         let loadedAssets = 0, totalAssets = 0;
         let currentHoveredObject = null, hoverLabel = null, currentSelectedObject = null;
         let originalCameraState = null, currentActiveVideos = [];
@@ -613,20 +655,25 @@
         function init() {
             const container = document.getElementById('scene-container');
             
-            // 1. RENDERER CONFIGURATION (Şeffaf Arka Plan İçin Alpha: true)
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
+            // 1. RENDERER CONFIGURATION (LogarithmicDepthBuffer Siyah Lekeleri Engeller)
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true, 
+                alpha: true, 
+                powerPreference: "high-performance",
+                precision: "highp",
+                logarithmicDepthBuffer: true // KRİTİK: Zoom yapınca derinlik hatasını (siyahlık) çözer
+            });
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
             
-            // Işık Motoru Değerleri
             renderer.outputColorSpace = THREE.SRGBColorSpace;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
             renderer.toneMappingExposure = 0.85; 
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-            // Arka planın CSS'den gelmesi için clearAlpha 0
             renderer.setClearAlpha(0);
+            renderer.setClearColor(0xffffff, 0);
 
             container.appendChild(renderer.domElement);
 
@@ -638,7 +685,6 @@
             }
             
             scene = new THREE.Scene();
-            // Sahne arka planını null tutuyoruz (şeffaflık için)
             scene.background = null; 
 
             controls = new OrbitControls(camera, renderer.domElement);
@@ -649,7 +695,7 @@
             controls.maxDistance = PARAMS.cameraMaxDist;
             controls.maxPolarAngle = Math.PI / 2; 
 
-            // 2. IBL & ENVIRONMENTAL LIGHTING
+            // 2. IBL
             const pmrem = new THREE.PMREMGenerator(renderer);
             new RGBELoader().load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr', (tex) => {
                 tex.mapping = THREE.EquirectangularReflectionMapping;
@@ -659,20 +705,15 @@
             });
 
             // 3. IŞIK HİYERARŞİSİ
-            const hemiLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.5);
-            hemiLight.position.set(0, 20, 0);
-            scene.add(hemiLight);
-
+            scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.5));
             const sun = new THREE.DirectionalLight(0xffffff, 3.6);
             sun.position.set(1200, 2400, 1200);
             sun.castShadow = true;
             sun.shadow.mapSize.set(2048, 2048);
             sun.shadow.camera.near = 0.5;
             sun.shadow.camera.far = 16000;
-            sun.shadow.camera.left = -5500;
-            sun.shadow.camera.right = 5500;
-            sun.shadow.camera.top = 5500;
-            sun.shadow.camera.bottom = -5500;
+            sun.shadow.camera.left = -5500; sun.shadow.camera.right = 5500;
+            sun.shadow.camera.top = 5500; sun.shadow.camera.bottom = -5500;
             sun.shadow.bias = -0.00012;
             sun.shadow.normalBias = 0.02;
             scene.add(sun);
@@ -687,17 +728,19 @@
 
             // 4. POST-PROCESSING PIPELINE
             composer = new EffectComposer(renderer);
-            composer.addPass(new RenderPass(scene, camera));
+            const renderPass = new RenderPass(scene, camera);
+            renderPass.clearAlpha = 0;
+            composer.addPass(renderPass);
 
-            // SSAO (Şeffaf arka planda kenarları koyulaştırmaması için optimize edildi)
-            const ssaoPass = new SSAOPass(scene, camera, window.innerWidth, window.innerHeight);
-            ssaoPass.kernelRadius = 5;
-            ssaoPass.minDistance = 0.003;
-            ssaoPass.maxDistance = 0.08;
+            // SSAO Pass (Sahne ölçeğine göre optimize edildi)
+            ssaoPass = new SSAOPass(scene, camera, window.innerWidth, window.innerHeight);
+            ssaoPass.kernelRadius = 32; 
+            ssaoPass.minDistance = 0.008; // Yüzey titremesini engellemek için artırıldı
+            ssaoPass.maxDistance = 0.2;
             composer.addPass(ssaoPass);
 
-            // Unreal Bloom (Parlama)
-            const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.25, 0.35, 0.8);
+            // Unreal Bloom
+            bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.25, 0.35, 0.8);
             composer.addPass(bloomPass);
 
             composer.addPass(new OutputPass());
@@ -715,11 +758,48 @@
             
             buildScene(isMobile);
 
+            if (isMobile) {
+                applyLightingPreset('low');
+            } else {
+                applyLightingPreset('mid');
+            }
+
             window.addEventListener('resize', onWindowResize);
             renderer.domElement.addEventListener('mousemove', onMouseMove);
             renderer.domElement.addEventListener('mousedown', onPointerDown);
             renderer.domElement.addEventListener('mouseup', onPointerUp);
         }
+
+        // LIGHTING PRESETS
+        window.applyLightingPreset = function(level) {
+            if (!bloomPass || !ssaoPass || !renderer) return;
+
+            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+            const activeBtn = document.getElementById(`btn-${level}`);
+            if (activeBtn) activeBtn.classList.add('active');
+
+            switch(level) {
+                case 'low':
+                    bloomPass.enabled = false;
+                    ssaoPass.enabled = false;
+                    renderer.toneMappingExposure = 0.85;
+                    break;
+                case 'mid':
+                    bloomPass.enabled = true;
+                    bloomPass.strength = 0.25;
+                    ssaoPass.enabled = true;
+                    ssaoPass.kernelRadius = 32;
+                    renderer.toneMappingExposure = 0.85;
+                    break;
+                case 'high':
+                    bloomPass.enabled = true;
+                    bloomPass.strength = 0.45;
+                    ssaoPass.enabled = true;
+                    ssaoPass.kernelRadius = 64; 
+                    renderer.toneMappingExposure = 0.95;
+                    break;
+            }
+        };
 
         function buildScene(isMobile) {
             const loader = new GLTFLoader();
