@@ -1,0 +1,1181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>VEA | ARCHITECTURAL VISUALIZATION ENGINE</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/meshoptimizer@0.19.0/meshopt_decoder.js"></script>
+
+    <style>
+        @font-face {
+            font-family: 'Telegrama Render';
+            src: url('https://raw.githubusercontent.com/decentralize-dfw/font/main/vea.ttf') format('truetype');
+            font-display: block;
+        }
+
+        :root {
+            --ui-color: #000000;
+            --bg-color: #ffffff; 
+            --accent-color: #FF006A;
+            --font-headers: 'Telegrama Render', sans-serif;
+            --font-body: 'Telegrama Render', sans-serif;
+            --camera-type: ortho; 
+            --initial-camera-zoom: 2.0; 
+            --cam-pos-x: 5000;
+            --cam-pos-y: 5000;
+            --cam-pos-z: -5000;
+            --cam-lookat-x: 0;
+            --cam-lookat-y: 0;
+            --cam-lookat-z: 0;
+            --camera-fov: 10; 
+            --camera-min-distance: 1000;
+            --camera-max-distance: 45000;
+            --enable-pan: yes; 
+            --hover-lift-distance: 100px;
+            --hover-animation-duration: 0.3s;
+            --hover-label-font-size: 140px;
+            --hover-label-rotation-x: 0deg;
+            --hover-label-rotation-y: 90deg;
+            --hover-label-rotation-z: 0deg;
+            --hover-label-offset-y: 550px;
+            --panel-width: 480px;
+            --panel-right-offset: 20px;
+            --panel-top-offset: 80px;
+            --panel-bottom-offset: 20px;
+            --panel-border-radius: 24px;
+            --panel-bg-opacity: 0.4; 
+            --panel-blur: 8px; 
+            --panel-animation-duration: 0.8s;
+            --panel-media-padding-horizontal: 10%;
+            --panel-media-padding-top: 2rem;
+            --panel-media-spacing: 20px;
+            --panel-title-font-size: 2rem;
+            --panel-meta-font-size: 0.9rem;
+            --panel-desc-font-size: 0.95rem;
+            --panel-text-spacing: 1.5rem;
+            --panel-content-padding: 2rem;
+            --selection-zoom-factor: 0.2; 
+            --zoom-in-animation-duration: 1.0s;
+            --zoom-out-animation-duration: 1.2s;
+            --app-height: 100vh;
+        }
+
+        html, body {
+            font-family: var(--font-body);
+            background-color: var(--bg-color);
+            color: var(--ui-color);
+            margin: 0; padding: 0;
+            overflow: hidden;
+            width: 100vw; height: 100vh;
+            touch-action: none;
+        }
+
+        #scene-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+            background: #ffffff; 
+        }
+
+        /* ========== COMPACT GRAPHICS SWITCHER ========== */
+        #graphics-switcher {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            user-select: none;
+        }
+
+        .graphics-label {
+            font-family: var(--font-headers);
+            font-size: 10px;
+            color: #000;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .toggle-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .toggle-btn {
+            padding: 6px 14px;
+            font-family: var(--font-headers);
+            font-size: 10px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #000;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+        }
+
+        .toggle-btn.active {
+            background: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            border-color: rgba(0, 0, 0, 0.85);
+        }
+
+        #loader {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: white;
+            z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        
+        .loader-text {
+            font-family: var(--font-headers);
+            font-size: 1.5rem;
+            color: #000;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+        }
+        
+        .loader-bar-container {
+            width: 200px; height: 2px;
+            background: #eee;
+            position: relative; overflow: hidden;
+        }
+
+        .loader-bar {
+            height: 100%;
+            background: #000;
+            width: 0%;
+            transition: width 0.3s ease-out;
+        }
+
+        /* ========== SIDE PANEL & MINIMAL SCROLLBAR ========== */
+        #side-panel {
+            position: fixed;
+            right: var(--panel-right-offset);
+            top: var(--panel-top-offset);
+            width: var(--panel-width);
+            max-height: calc(100vh - var(--panel-top-offset) - var(--panel-bottom-offset));
+            background: rgba(255, 255, 255, var(--panel-bg-opacity));
+            backdrop-filter: blur(var(--panel-blur));
+            -webkit-backdrop-filter: blur(var(--panel-blur));
+            border-radius: var(--panel-border-radius);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.1);
+            transform: translateY(50px);
+            opacity: 0; visibility: hidden;
+            transition: transform var(--panel-animation-duration) cubic-bezier(0.19, 1, 0.22, 1),
+                        opacity var(--panel-animation-duration) cubic-bezier(0.19, 1, 0.22, 1),
+                        visibility var(--panel-animation-duration) cubic-bezier(0.19, 1, 0.22, 1);
+            z-index: 100;
+            overflow-y: auto; overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+        }
+
+        /* Chrome, Safari, Edge için 5px içeride duran scroller */
+        #side-panel::-webkit-scrollbar {
+            width: 8px; /* 3px scroller + 5px boşluk */
+        }
+
+        #side-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #side-panel::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.15);
+            background-clip: padding-box; /* Renklerin padding alanına taşmasını engeller */
+            border-right: 5px solid transparent; /* Çubuğu 5px sola iter */
+            border-radius: 10px;
+        }
+
+        /* Okları tamamen kaldırır */
+        #side-panel::-webkit-scrollbar-button {
+            display: none !important;
+            height: 0;
+            width: 0;
+        }
+        
+        #side-panel.open {
+            transform: translateY(0);
+            opacity: 1; visibility: visible;
+        }
+        
+        .panel-close-btn {
+            position: sticky;
+            top: 1.5rem; 
+            margin-left: auto;
+            margin-right: 1.5rem;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(4px);
+            border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s ease;
+            z-index: 50;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .panel-close-btn:hover { background: rgba(0, 0, 0, 0.05); transform: rotate(90deg); }
+        
+        .panel-media-section {
+            padding: 0 var(--panel-media-padding-horizontal) var(--panel-media-spacing);
+            display: flex; flex-direction: column; align-items: center;
+        }
+        
+        .panel-media-item {
+            width: 100%;
+            aspect-ratio: 1;
+            margin-bottom: var(--panel-media-spacing);
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
+            background: transparent;
+        }
+        
+        .media-wrapper {
+            position: relative;
+            max-width: 100%; max-height: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+            background: #fcfcfc;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .web-wrapper {
+            width: 100%; height: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            background: white;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+        }
+
+        .panel-media-item img,
+        .panel-media-item video {
+            max-width: 100%; max-height: 100%;
+            width: auto; height: auto;
+            display: block; object-fit: contain;
+        }
+        
+        .media-play-button {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 54px; height: 54px;
+            border-radius: 50%; background: white;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: opacity 0.3s; z-index: 5;
+            pointer-events: none;
+        }
+
+        .media-play-button.playing { opacity: 0; }
+
+        .panel-text-section { padding: var(--panel-content-padding); padding-top: 0; }
+        
+        .panel-title {
+            font-family: var(--font-headers);
+            font-size: var(--panel-title-font-size);
+            line-height: 1.1; text-transform: uppercase;
+            margin-bottom: var(--panel-text-spacing); color: #000;
+        }
+
+        .panel-meta {
+            font-family: var(--font-body);
+            font-size: var(--panel-meta-font-size);
+            margin-bottom: var(--panel-text-spacing);
+            display: flex; flex-wrap: wrap; gap: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            text-transform: uppercase; color: black; letter-spacing: 0.5px;
+        }
+        
+        .panel-description {
+            font-family: var(--font-body);
+            font-size: var(--panel-desc-font-size);
+            line-height: 1.7; white-space: pre-line; color: black;
+        }
+
+        .panel-link {
+            display: block;
+            margin-top: 1rem;
+            text-decoration: underline;
+            text-underline-offset: 4px;
+            color: #000;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: opacity 0.2s;
+        }
+
+        .panel-link:hover { opacity: 0.6; }
+
+        @media (max-width: 768px) {
+            #side-panel { 
+                right: 0; bottom: 0; top: auto;
+                width: 100%; height: 85vh; max-height: 85vh;
+                border-radius: 32px 32px 0 0;
+                transform: translateY(100%);
+            }
+            #side-panel.open { transform: translateY(0); }
+            #graphics-switcher { display: none !important; }
+            :root {
+                --panel-media-padding-horizontal: 25%;
+                --panel-media-padding-top: 1rem;
+                --panel-media-spacing: 30px;
+                --panel-content-padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <div class="loader-text">ARCHIVE LOADING</div>
+        <div class="loader-bar-container"><div class="loader-bar"></div></div>
+    </div>
+
+    <!-- COMPACT GRAPHICS SWITCHER -->
+    <div id="graphics-switcher">
+        <span class="graphics-label">graphics 🖳</span>
+        <div class="toggle-group">
+            <button class="toggle-btn active" id="btn-mid" onclick="handlePresetSelection('mid')">MID</button>
+            <button class="toggle-btn" id="btn-high" onclick="handlePresetSelection('high')">HIGH</button>
+        </div>
+    </div>
+
+    <div id="scene-container"></div>
+
+    <div id="side-panel">
+        <button class="panel-close-btn" onclick="closePanel()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="#000"/>
+            </svg>
+        </button>
+        <div class="panel-media-section" id="panel-media"></div>
+        <div class="panel-text-section">
+            <div class="panel-title" id="panel-title"></div>
+            <div class="panel-meta">
+                <span id="panel-year"></span>
+                <span id="panel-cats"></span>
+            </div>
+            <div class="panel-description" id="panel-desc"></div>
+            <div id="panel-links"></div>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+                "three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.6.8/build/index.module.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+        import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
+        import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
+
+        THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+        THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
+        THREE.Mesh.prototype.raycast = acceleratedRaycast;
+
+        const getParam = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        const getParamNum = (name) => parseFloat(getParam(name));
+
+        const PARAMS = {
+            hoverLiftDistance: getParamNum('--hover-lift-distance'),
+            hoverAnimationDuration: parseFloat(getParam('--hover-animation-duration')) * 1000,
+            hoverLabelFontSize: getParamNum('--hover-label-font-size'),
+            hoverLabelRotationX: parseFloat(getParam('--hover-label-rotation-x')),
+            hoverLabelRotationY: parseFloat(getParam('--hover-label-rotation-y')),
+            hoverLabelRotationZ: parseFloat(getParam('--hover-label-rotation-z')),
+            hoverLabelOffsetY: getParamNum('--hover-label-offset-y'),
+            selectionZoomFactor: getParamNum('--selection-zoom-factor'),
+            zoomInAnimationDuration: parseFloat(getParam('--zoom-in-animation-duration')) * 1000,
+            zoomOutAnimationDuration: parseFloat(getParam('--zoom-out-animation-duration')) * 1000,
+            initialCameraZoom: getParamNum('--initial-camera-zoom'),
+            cameraType: getParam('--camera-type').toLowerCase(),
+            cameraFov: getParamNum('--camera-fov'),
+            cameraMinDist: getParamNum('--camera-min-distance'),
+            cameraMaxDist: getParamNum('--camera-max-distance'),
+            enablePan: getParam('--enable-pan') === 'yes',
+            camPosX: getParamNum('--cam-pos-x'),
+            camPosY: getParamNum('--cam-pos-y'),
+            camPosZ: getParamNum('--cam-pos-z'),
+            camLookX: getParamNum('--cam-lookat-x'),
+            camLookY: getParamNum('--cam-lookat-y'),
+            camLookZ: getParamNum('--cam-lookat-z')
+        };
+
+        const sceneObjects = [
+            {
+                type: 'model',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/vea3d-v2-opt-v1.glb',
+                position: { x: 2400, y: 0, z: -1500 },
+                rotation: { x: 0, y: 180, z: 0 },
+                scale: 200,
+                modalContent: {
+                    name: "About",
+                    categories: { sub1: "2025", sub2: "ABOUT" },
+                    description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.",
+                    media: [ { type: "image", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png" } ],
+                    links: [ { text: "OPEN IN A NEW TAB", url: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png" } ]
+                }
+            },
+            {
+                type: 'model',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/exhbt22-opt.glb',
+                position: { x: 0, y: -560, z: 0 },
+                scale: 400,
+                clickable: false, 
+                includeInFit: false
+            },
+            {
+                type: 'model',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/tablelabael2.glb',
+                position: { x: -10, y: -560, z: -20 },
+                scale: 400,
+                clickable: false, 
+                includeInFit: false
+            },
+            {
+                type: 'model',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main//daspieces1-opt-v6.glb',
+                position: { x: 0, y: 0, z: -750 },
+                rotation: { x: 0, y: 90, z: 0 },
+                scale: 500,
+                modalContent: {
+                    name: "DAS PIECES Book",
+                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+                    description: "Item 01",
+                    media: [
+                        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_0dac59951f9c42efbf6b8a3a77951e00/1080p/mp4/file.mp4" },
+                        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_ac3a4bd792a04e6ab5a9009dde170ea8/1080p/mp4/file.mp4" }
+                    ],
+                    links: [ { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQo4sq2iEaH/" } ]
+                }
+            },
+            {
+                type: 'model',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/93book-opt-v10.glb',
+                position: { x: 0, y: 0, z: -1500 },
+                rotation: { x: 0, y: 90, z: 0 },
+                scale: 500,
+                modalContent: {
+                    name: "Novantatre",
+                    categories: { sub1: "2025", sub2: "Archive", sub3: "Vea" },
+                    description: "Item 02",
+                    media: [ { type: "video", src: "https://video.wixstatic.com/video/bbd25a_b443e8c0ed384e30bf532179d14769a8/1080p/mp4/file.mp4" } ],
+                    links: [ { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DSSBQPrjFkP/" } ]
+                }
+            },
+            {
+                type: 'model',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/ipod-opt-v2.glb',
+                position: { x: 0, y: 255, z: 750 },
+                rotation: { x: 0, y: 180, z: 0 },
+                scale: 400,
+                modalContent: {
+                    name: "Acoustic Architecture System",
+                    categories: { sub1: "2025", sub2: "HTML", sub3: "kimse." },
+                    description: "Spectral Point Cloud Interpretation...",
+                    media: [ { type: "html", src: "https://raw.githubusercontent.com/decentralize-dfw/finder/refs/heads/main/birdsv10.html" } ],
+                    links: [ { text: "OPEN IN A NEW TAB", url: "https://www.virtuallyeverafter.work/sv" } ]
+                }
+            },
+            {
+                type: 'model',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize-archives/main/celly-o.glb',
+                position: { x: 0, y: 250, z: 1500 },
+                rotation: { x: 0, y: 90, z: 0 },
+                scale: 500,
+                modalContent: {
+                    name: "decentralize*",
+                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+                    description: "Item 06",
+                    media: [ { type: "html", src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/refs/heads/main/index.html" } ],
+                    links: [ { text: "OPEN IN A NEW TAB", url: "https://de-centralize.com/" } ]
+                }
+            },
+            {
+                type: 'model',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/co-chair-opt-v1.glb',
+                position: { x: 0, y: 0, z: 0 },
+                rotation: { x: 0, y: 90, z: 0 },
+                scale: 600,
+                modalContent: {
+                    name: "status_CO",
+                    categories: { sub1: "2025-2026", sub2: "Brand Construction", sub3: "Vea" },
+                    description: "soon to be announced",
+                    media: [ { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/co-chair-opt-v1.glb" } ],
+                    links: []
+                }
+            },
+            {
+                type: 'model',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/booth-opt-v9.glb',
+                position: { x: -2400, y: 0, z: 1500 },
+                rotation: { x: 0, y: 90, z: 0 },
+                scale: 600,
+                modalContent: {
+                    name: "booth-opt-v9.glb",
+                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+                    description: "Item 03",
+                    media: [ { type: "video", src: "https://video.wixstatic.com/video/bbd25a_6230b7e092674b0d8f32b87103b3c920/720p/mp4/file.mp4" } ],
+                    links: [ { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DP3gbgpiKbS/" } ]
+                }
+            },
+            {
+                type: 'model',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex1-opt-v8.glb',
+                position: { x: -2400, y: 0, z: -1500 },
+                rotation: { x: 0, y: 90, z: 0 },
+                scale: 500,
+                modalContent: {
+                    name: "cicex1-opt-v8.glb",
+                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+                    description: "Item 04",
+                    media: [ { type: "video", src: "https://video.wixstatic.com/video/bbd25a_fba3080416b3426783eefde37e081efa/720p/mp4/file.mp4" } ],
+                    links: [ { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQHQ-3MCBkP/" } ]
+                }
+            },
+            {
+                type: 'model',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/sandalye-opt-v5.glb',
+                position: { x: -1600, y: -600, z: 1200 },
+                scale: 1200,
+                modalContent: {
+                    name: "the waiting room no.1",
+                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+                    description: "Item 07",
+                    media: [ { type: "video", src: "https://video.wixstatic.com/video/bbd25a_a98194f1174b434ea9f7f1ce355d6c81/1080p/mp4/file.mp4" } ],
+                    links: [ { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQmUnZkCHOl/" } ]
+                }
+            },
+            {
+                type: 'model',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/facade-opt-v4.glb',
+                position: { x: -2400, y: 0, z: 750},
+                rotation: { x: 0, y: 90, z: 0 },
+                scale: 700,
+                modalContent: {
+                    name: "facade-opt-v4.glb",
+                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+                    description: "Item 08",
+                    media: [ { type: "video", src: "https://video.wixstatic.com/video/bbd25a_cbec7d394bfd417193d86ba249c93d63/720p/mp4/file.mp4" } ],
+                    links: [ { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DP6cIwoCOFO/" } ]
+                }
+            },
+            {
+                type: 'model',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/wireframe-opt-v2.glb',
+                position: { x: -2400, y: 0, z: -750},
+                scale: 400,
+                modalContent: {
+                    name: "wireframe-opt-v2.glb",
+                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+                    description: "Item 10",
+                    media: [ { type: "video", src: "https://video.wixstatic.com/video/bbd25a_9bb1f95695fd4d83aa68eda3da571e47/1080p/mp4/file.mp4" } ],
+                    links: [ { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQUK0uOiORM/" } ]
+                }
+            },
+            {
+                type: 'model',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/mektup-opt-v1.glb',
+                position: { x: 2400, y: 0, z: 750 },
+                rotation: { x: 0, y: -90, z: 0 },
+                scale: 500,
+                modalContent: {
+                    name: "Contact",
+                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+                    description: "hello@virtuallyeverafter.xyz",
+                    media: [ { type: "video", src: "https://video.wixstatic.com/video/bbd25a_f47ac95a2e74487993200753805e8cee/1080p/mp4/file.mp4" } ],
+                    links: [ { text: "Follow on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQ6mGDAiELU/" } ]
+                }
+            },
+            {
+                type: 'model',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex2-opt-v7.glb',
+                position: { x: -2400, y: 50, z: 0 },
+                scale: 500,
+                modalContent: {
+                    name: "virtually Grown",
+                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+                    description: "Item 05",
+                    media: [ { type: "video", src: "https://video.wixstatic.com/video/bbd25a_1c655cbc2e58493ea6dd0f8ab6fc46e1/720p/mp4/file.mp4" } ],
+                    links: [ { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQEj6rJCMbS/" } ]
+                }
+            },
+            {
+                type: 'model',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/serfvs-v3.glb',
+                position: { x: 2500, y: 150, z: 0 },
+                rotation: { x: 0, y: 180, z: 0 },
+                scale: 250,
+                modalContent: {
+                    name: "Servives",
+                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+                    description: "Worldbuilding, Identity, Content",
+                    media: [ { type: "video", src: "https://video.wixstatic.com/video/bbd25a_9c4fa7997a654eb2b1fa56ac22155d27/1080p/mp4/file.mp4" } ],
+                    links: [ { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DSXgFb8iNB-/" } ]
+                }
+            },
+            {
+                type: 'model',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/vea-iwwd-opt-v2.glb',
+                position: { x: 2500, y: 200, z: -750 },
+                rotation: { x: 0, y: 180, z: 0 },
+                scale: 250,
+                modalContent: {
+                    name: "What We Do",
+                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+                    description: "Virtually ever after is a studio...",
+                    media: [ { type: "html", src: "https://raw.githubusercontent.com/decentralize-dfw/veawork/refs/heads/main/spherework.html" } ],
+                    links: [ { text: "OPEN IN A NEW TAB", url: "https://raw.githack.com/decentralize-dfw/veawork/refs/heads/main/spherework.html" } ]
+                }
+            },
+            {
+                type: 'model',
+                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/telefon-opt-v3.glb',
+                position: { x: 2400, y: 0, z: 1500 },
+                rotation: { x: 0, y: 90, z: 0 },
+                scale: 500,
+                modalContent: {
+                    name: "Book a Meeting",
+                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+                    description: "Item 09",
+                    media: [ { type: "video", src: "https://video.wixstatic.com/video/bbd25a_0347ca404afa45c7b59394ddad5370d0/720p/mp4/file.mp4" } ],
+                    links: [ { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DP03diJiMCw/" } ]
+                }
+            }
+        ];
+
+        let camera, scene, renderer, controls, raycaster, mouse, composer, globalEnvMap;
+        let bloomPass, ssaoPass;
+        let loadedAssets = 0, totalAssets = 0;
+        let currentHoveredObject = null, hoverLabel = null, currentSelectedObject = null;
+        let originalCameraState = null, currentActiveVideos = [];
+        let modalAnimationFrameId;
+        const clickableObjects = [];
+
+        async function startEngine() {
+            try {
+                const font = new FontFace('Telegrama Render', 'url(https://raw.githubusercontent.com/decentralize-dfw/font/main/vea.ttf)');
+                await font.load();
+                document.fonts.add(font);
+                init(); animate();
+            } catch (err) { init(); animate(); }
+        }
+
+        startEngine();
+
+        function init() {
+            const container = document.getElementById('scene-container');
+            
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true, 
+                alpha: true, 
+                powerPreference: "high-performance",
+                precision: "highp",
+                logarithmicDepthBuffer: true
+            });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 0.85; 
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            renderer.setClearAlpha(0);
+            renderer.setClearColor(0xffffff, 0);
+
+            container.appendChild(renderer.domElement);
+
+            const aspect = window.innerWidth / window.innerHeight;
+            if (PARAMS.cameraType === 'ortho') {
+                camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100000);
+            } else {
+                camera = new THREE.PerspectiveCamera(PARAMS.cameraFov, aspect, 10, 100000);
+            }
+            
+            scene = new THREE.Scene();
+            scene.background = null; 
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.enablePan = PARAMS.enablePan;
+            controls.minDistance = PARAMS.cameraMinDist;
+            controls.maxDistance = PARAMS.cameraMaxDist;
+            controls.maxPolarAngle = Math.PI / 2; 
+
+            const pmrem = new THREE.PMREMGenerator(renderer);
+            new RGBELoader().load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr', (tex) => {
+                tex.mapping = THREE.EquirectangularReflectionMapping;
+                globalEnvMap = pmrem.fromEquirectangular(tex).texture;
+                scene.environment = globalEnvMap;
+                tex.dispose(); pmrem.dispose();
+            });
+
+            scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.5));
+            const sun = new THREE.DirectionalLight(0xffffff, 3.6);
+            sun.position.set(1200, 2400, 1200);
+            sun.castShadow = true;
+            sun.shadow.mapSize.set(2048, 2048);
+            sun.shadow.camera.near = 0.5;
+            sun.shadow.camera.far = 16000;
+            sun.shadow.camera.left = -5500; sun.shadow.camera.right = 5500;
+            sun.shadow.camera.top = 5500; sun.shadow.camera.bottom = -5500;
+            sun.shadow.bias = -0.00012;
+            sun.shadow.normalBias = 0.02;
+            scene.add(sun);
+
+            const fill1 = new THREE.PointLight(0xffffff, 1.4, 7000);
+            fill1.position.set(2000, 1200, 1800);
+            scene.add(fill1);
+
+            const fill2 = new THREE.PointLight(0xffffff, 1.2, 7000);
+            fill2.position.set(-1800, 1200, -2000);
+            scene.add(fill2);
+
+            composer = new EffectComposer(renderer);
+            const renderPass = new RenderPass(scene, camera);
+            renderPass.clearAlpha = 0;
+            composer.addPass(renderPass);
+
+            ssaoPass = new SSAOPass(scene, camera, window.innerWidth, window.innerHeight);
+            ssaoPass.kernelRadius = 32; 
+            ssaoPass.minDistance = 0.01; 
+            ssaoPass.maxDistance = 0.25;
+            composer.addPass(ssaoPass);
+
+            bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.25, 0.35, 0.8);
+            composer.addPass(bloomPass);
+
+            composer.addPass(new OutputPass());
+
+            const fxaaPass = new ShaderPass(FXAAShader);
+            fxaaPass.material.uniforms['resolution'].value.set(1/(window.innerWidth*window.devicePixelRatio), 1/(window.innerHeight*window.devicePixelRatio));
+            composer.addPass(fxaaPass);
+
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+            
+            const isMobile = window.innerWidth <= 768;
+            buildScene(isMobile);
+
+            // DEFAULT MODE SELECTION
+            applyLightingPreset('mid');
+
+            window.addEventListener('resize', onWindowResize);
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+            renderer.domElement.addEventListener('mousedown', onPointerDown);
+            renderer.domElement.addEventListener('mouseup', onPointerUp);
+        }
+
+        // ========== GRAPHICS LOGIC UPDATED ==========
+
+        window.handlePresetSelection = function(level) {
+            applyLightingPreset(level);
+        };
+
+        window.applyLightingPreset = function(level) {
+            if (!bloomPass || !ssaoPass || !renderer) return;
+
+            const btnMid = document.getElementById('btn-mid');
+            const btnHigh = document.getElementById('btn-high');
+
+            if (level === 'mid') {
+                btnMid.classList.add('active');
+                btnHigh.classList.remove('active');
+                bloomPass.enabled = false;
+                ssaoPass.enabled = false;
+                renderer.toneMappingExposure = 0.85;
+            } else if (level === 'high') {
+                btnHigh.classList.add('active');
+                btnMid.classList.remove('active');
+                bloomPass.enabled = true;
+                bloomPass.strength = 0.25;
+                ssaoPass.enabled = true;
+                ssaoPass.kernelRadius = 32;
+                renderer.toneMappingExposure = 0.85;
+            }
+        };
+
+        function buildScene(isMobile) {
+            const loader = new GLTFLoader();
+            const draco = new DRACOLoader();
+            draco.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+            loader.setDRACOLoader(draco);
+            loader.setMeshoptDecoder(MeshoptDecoder);
+
+            const validObjects = sceneObjects.filter(item => !(isMobile && item.showOnMobile === false));
+            totalAssets = validObjects.length;
+
+            sceneObjects.forEach(item => {
+                if (isMobile && item.showOnMobile === false) return;
+
+                loader.load(item.src, (gltf) => {
+                    const m = gltf.scene;
+                    m.position.set(item.position.x, item.position.y || 0, item.position.z);
+                    if (item.rotation) m.rotation.set(item.rotation.x*Math.PI/180, item.rotation.y*Math.PI/180, item.rotation.z*Math.PI/180);
+                    m.scale.setScalar(item.scale);
+                    
+                    m.userData = { 
+                        modalContent: item.modalContent, 
+                        clickable: item.clickable !== false,
+                        includeInFit: item.includeInFit !== false,
+                        originalPosition: m.position.clone() 
+                    };
+                    
+                    m.traverse(c => { 
+                        if(c.isMesh) { 
+                            c.castShadow = true; 
+                            c.receiveShadow = true; 
+                            if(c.geometry.computeBoundsTree) c.geometry.computeBoundsTree();
+                        } 
+                    });
+                    
+                    scene.add(m); 
+                    clickableObjects.push(m);
+                    loadedAssets++; updateLoader();
+                    if(loadedAssets === totalAssets) fitCameraToScene();
+                });
+            });
+        }
+
+        function updateLoader() {
+            const p = Math.round((loadedAssets/totalAssets)*100);
+            document.querySelector('.loader-bar').style.width = p+'%';
+            if(loadedAssets>=totalAssets) setTimeout(()=> { 
+                document.getElementById('loader').style.opacity='0';
+                setTimeout(()=>document.getElementById('loader').style.display='none', 800);
+            }, 500);
+        }
+
+        function onMouseMove(e) {
+            if (document.getElementById('side-panel').classList.contains('open')) return;
+            mouse.x = (e.clientX/window.innerWidth)*2-1;
+            mouse.y = -(e.clientY/window.innerHeight)*2+1;
+            raycaster.setFromCamera(mouse, camera);
+            const hits = raycaster.intersectObjects(clickableObjects, true);
+            if(hits.length>0) {
+                let obj = hits[0].object;
+                while(obj.parent && !obj.userData.modalContent) obj = obj.parent;
+                if(obj.userData.modalContent && obj.userData.clickable && currentHoveredObject !== obj) { 
+                    clearHover(); 
+                    applyHover(obj); 
+                } else if (!obj.userData.clickable) {
+                    clearHover();
+                }
+            } else clearHover();
+        }
+
+        function applyHover(obj) {
+            currentHoveredObject = obj;
+            new TWEEN(obj.position).to({ y: obj.userData.originalPosition.y + PARAMS.hoverLiftDistance }, PARAMS.hoverAnimationDuration).start();
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const fs = PARAMS.hoverLabelFontSize;
+            ctx.font = `bold ${fs}px "Telegrama Render"`;
+            const textWidth = ctx.measureText(obj.userData.modalContent.name).width;
+            canvas.width = textWidth + 100;
+            canvas.height = fs + 80;
+
+            ctx.font = `bold ${fs}px "Telegrama Render"`;
+            ctx.fillStyle = '#000000';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(obj.userData.modalContent.name, canvas.width / 2, canvas.height / 2);
+            
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.needsUpdate = true;
+            tex.anisotropy = renderer.capabilities.getMaxAnisotropy(); 
+
+            const mat = new THREE.MeshBasicMaterial({ 
+                map: tex, 
+                transparent: true, 
+                depthTest: false,
+                depthWrite: false,
+                side: THREE.DoubleSide,
+                toneMapped: false
+            });
+
+            hoverLabel = new THREE.Mesh(new THREE.PlaneGeometry(canvas.width, canvas.height), mat);
+            hoverLabel.renderOrder = 9999;
+            hoverLabel.position.copy(obj.position).y += PARAMS.hoverLabelOffsetY;
+            hoverLabel.rotation.set(
+                PARAMS.hoverLabelRotationX * Math.PI / 180, 
+                PARAMS.hoverLabelRotationY * Math.PI / 180, 
+                PARAMS.hoverLabelRotationZ * Math.PI / 180
+            );
+            
+            scene.add(hoverLabel);
+        }
+
+        function clearHover() {
+            if(currentHoveredObject) {
+                new TWEEN(currentHoveredObject.position).to({ y: currentHoveredObject.userData.originalPosition.y }, PARAMS.hoverAnimationDuration).start();
+                currentHoveredObject = null;
+            }
+            if(hoverLabel) { scene.remove(hoverLabel); hoverLabel=null; }
+        }
+
+        let sX, sY;
+        function onPointerDown(e) { sX=e.clientX; sY=e.clientY; }
+        function onPointerUp(e) {
+            if(Math.abs(e.clientX-sX)<5 && Math.abs(e.clientY-sY)<5) {
+                mouse.x = (e.clientX/window.innerWidth)*2-1;
+                mouse.y = -(e.clientY/window.innerHeight)*2+1;
+                raycaster.setFromCamera(mouse, camera);
+                const hits = raycaster.intersectObjects(clickableObjects, true);
+                if(hits.length>0) {
+                    let obj = hits[0].object;
+                    while(obj.parent && !obj.userData.modalContent) obj = obj.parent;
+                    if(obj.userData.modalContent && obj.userData.clickable) {
+                        openPanel(obj.userData.modalContent, obj);
+                    }
+                }
+            }
+        }
+
+        function openPanel(content, obj) {
+            if(currentSelectedObject === obj && document.getElementById('side-panel').classList.contains('open')) return;
+            clearHover();
+            currentActiveVideos.forEach(v => { v.pause(); v.src = ""; v.load(); });
+            currentActiveVideos = [];
+            
+            if(!originalCameraState) originalCameraState = { position: camera.position.clone(), target: controls.target.clone(), zoom: camera.zoom };
+            
+            currentSelectedObject = obj;
+            const box = new THREE.Box3().setFromObject(obj);
+            const center = box.getCenter(new THREE.Vector3());
+            
+            const targetZoom = PARAMS.initialCameraZoom / PARAMS.selectionZoomFactor;
+            new TWEEN(camera).to({ zoom: targetZoom }, PARAMS.zoomInAnimationDuration).start();
+            new TWEEN(controls.target).to({ x: center.x, y: center.y, z: center.z }, PARAMS.zoomInAnimationDuration).start();
+
+            document.getElementById('panel-title').innerText = content.name;
+            const cats = content.categories || {};
+            document.getElementById('panel-year').innerText = cats.sub1 || '';
+            document.getElementById('panel-cats').innerText = Object.values(cats).slice(1).filter(v=>v && v!=='-').join(', ');
+            document.getElementById('panel-desc').innerText = content.description;
+            
+            const linksContainer = document.getElementById('panel-links'); 
+            linksContainer.innerHTML = ''; 
+            const mediaContainer = document.getElementById('panel-media'); 
+            mediaContainer.innerHTML = '';
+            
+            content.media?.forEach(m => {
+                const item = document.createElement('div'); 
+                item.className = 'panel-media-item';
+                let wrapper = document.createElement('div');
+                wrapper.className = 'media-wrapper';
+
+                if(m.type === 'image') {
+                    const img = document.createElement('img'); 
+                    img.src = m.src; 
+                    wrapper.appendChild(img);
+                    item.appendChild(wrapper);
+                } 
+                else if(m.type === 'video') {
+                    const v = document.createElement('video'); 
+                    v.src = m.src; v.loop=true; v.playsInline=true;
+                    const b = document.createElement('div'); 
+                    b.className = 'media-play-button';
+                    b.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="black"><path d="M8 5v14l11-7z"/></svg>`;
+                    const toggleVideo = () => { 
+                        if(v.paused) { v.play(); b.classList.add('playing'); } 
+                        else { v.pause(); b.classList.remove('playing'); } 
+                    };
+                    v.onclick = toggleVideo; 
+                    b.onclick = (e) => { e.stopPropagation(); toggleVideo(); };
+                    wrapper.appendChild(v); 
+                    wrapper.appendChild(b); 
+                    item.appendChild(wrapper);
+                    currentActiveVideos.push(v);
+                } 
+                else if(m.type === 'model') {
+                    wrapper.className = 'w-full h-full relative rounded-[16px] overflow-hidden bg-[#f4f4f4]';
+                    item.appendChild(wrapper);
+                    setTimeout(() => initModal3D(wrapper, m.src), 50);
+                } 
+                else if(m.type === 'html') {
+                    const webWrapper = document.createElement('div'); 
+                    webWrapper.className = 'web-wrapper';
+                    const ifr = document.createElement('iframe');
+                    ifr.src = m.src.replace('raw.githubusercontent.com', 'raw.githack.com');
+                    ifr.className = 'w-[200%] h-[200%] border-none origin-top-left scale-50 absolute top-0 left-0';
+                    webWrapper.appendChild(ifr); 
+                    item.appendChild(webWrapper);
+                }
+                mediaContainer.appendChild(item);
+                if(m.linkUrl) createLinkElement(m.linkUrl, m.linkText || "VIEW MEDIA", linksContainer);
+            });
+
+            if (content.links && Array.isArray(content.links)) {
+                content.links.forEach(linkObj => createLinkElement(linkObj.url, linkObj.text, linksContainer));
+            }
+
+            document.getElementById('side-panel').classList.add('open');
+            document.getElementById('side-panel').scrollTop = 0;
+        }
+
+        function createLinkElement(url, text, container) {
+            const a = document.createElement('a');
+            a.href = url; a.target = '_blank';
+            a.className = 'panel-link';
+            a.innerText = text || "OPEN LINK";
+            container.appendChild(a);
+        }
+
+        function initModal3D(container, src) {
+            const sceneM = new THREE.Scene(); 
+            sceneM.background = new THREE.Color(0xf4f4f4); 
+            if (globalEnvMap) sceneM.environment = globalEnvMap;
+
+            const renM = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renM.setPixelRatio(window.devicePixelRatio);
+            renM.toneMapping = THREE.ACESFilmicToneMapping;
+            renM.toneMappingExposure = 1.3;
+            container.appendChild(renM.domElement);
+
+            const camM = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
+            sceneM.add(new THREE.HemisphereLight(0xffffff, 0xffffff, 1.2));
+            const dirLight = new THREE.DirectionalLight(0xffffff, 3.5); 
+            dirLight.position.set(5, 10, 7); 
+            sceneM.add(dirLight);
+
+            const ctrlM = new OrbitControls(camM, renM.domElement); 
+            ctrlM.autoRotate = true; ctrlM.autoRotateSpeed = 2.5; 
+            ctrlM.enableDamping = true;
+
+            const loader = new GLTFLoader();
+            const draco = new DRACOLoader();
+            draco.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+            loader.setDRACOLoader(draco);
+            loader.setMeshoptDecoder(MeshoptDecoder);
+
+            loader.load(src, (gltf) => {
+                const model = gltf.scene;
+                model.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+                sceneM.add(model);
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                ctrlM.target.copy(center);
+                camM.position.set(center.x, center.y + maxDim * 0.2, center.z + maxDim * 2.5);
+                
+                const w = container.offsetWidth || 300;
+                renM.setSize(w, w);
+                camM.aspect = 1;
+                camM.updateProjectionMatrix();
+                ctrlM.update();
+            });
+
+            function loop() { 
+                if (!document.getElementById('side-panel').classList.contains('open')) { renM.dispose(); return; }
+                modalAnimationFrameId = requestAnimationFrame(loop); 
+                ctrlM.update(); 
+                renM.render(sceneM, camM); 
+            }
+            loop();
+        }
+
+        window.closePanel = function() {
+            currentActiveVideos.forEach(v => { v.pause(); v.src = ""; v.load(); v.remove(); });
+            currentActiveVideos = [];
+            document.getElementById('panel-media').innerHTML = "";
+            if(originalCameraState) {
+                new TWEEN(camera).to({ zoom: originalCameraState.zoom }, PARAMS.zoomOutAnimationDuration).start();
+                new TWEEN(controls.target).to({ x: originalCameraState.target.x, y: originalCameraState.target.y, z: originalCameraState.target.z }, PARAMS.zoomOutAnimationDuration).start();
+            }
+            originalCameraState = null; currentSelectedObject=null;
+            if(modalAnimationFrameId) { cancelAnimationFrame(modalAnimationFrameId); modalAnimationFrameId = null; }
+            document.getElementById('side-panel').classList.remove('open');
+        }
+
+        function fitCameraToScene() {
+            camera.position.set(PARAMS.camPosX, PARAMS.camPosY, PARAMS.camPosZ);
+            controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+            if (camera.isOrthographicCamera) updateOrthoFrustum();
+            camera.zoom = PARAMS.initialCameraZoom;
+            camera.updateProjectionMatrix();
+            controls.update();
+        }
+
+        function updateOrthoFrustum() {
+            if (!camera.isOrthographicCamera) return;
+            const aspect = window.innerWidth / window.innerHeight;
+            const box = new THREE.Box3();
+            const fitTargets = clickableObjects.filter(o => o.userData.includeInFit);
+            (fitTargets.length > 0 ? fitTargets : clickableObjects).forEach(o => box.expandByObject(o));
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y);
+            camera.left = -maxDim * aspect; camera.right = maxDim * aspect;
+            camera.top = maxDim; camera.bottom = -maxDim;
+        }
+
+        function onWindowResize() { 
+            const aspect = window.innerWidth / window.innerHeight;
+            if (camera.isOrthographicCamera) updateOrthoFrustum();
+            else camera.aspect = aspect;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight); 
+            composer.setSize(window.innerWidth, window.innerHeight); 
+        }
+
+        function animate() {
+            requestAnimationFrame(animate); 
+            controls.update(); 
+            camera.updateProjectionMatrix(); 
+            if(hoverLabel && currentHoveredObject) {
+                hoverLabel.position.copy(currentHoveredObject.position).y += PARAMS.hoverLabelOffsetY;
+            }
+            composer.render();
+        }
+
+        function TWEEN(obj) {
+            this.target = obj;
+            this.to = (dest, dur) => { this.dest = dest; this.dur = dur; return this; };
+            this.start = () => {
+                const start = {}; for(let k in this.dest) start[k] = this.target[k];
+                const startTime = Date.now();
+                const tick = () => {
+                    const p = Math.min((Date.now()-startTime)/this.dur, 1); 
+                    const e = p*(2-p);
+                    for(let k in this.dest) this.target[k] = start[k]+(this.dest[k]-start[k])*e;
+                    if(p<1) requestAnimationFrame(tick);
+                }; tick();
+            };
+        }
+    </script>
+</body>
+</html>
