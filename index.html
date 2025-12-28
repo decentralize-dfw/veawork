@@ -18,6 +18,7 @@
             --menu-img: url('https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/menu2.jpg');
             --header-h-desktop: 26px;
             --header-h-mobile: 44px;
+            --vea-blue: #0061d5;
         }
 
         body, html {
@@ -199,7 +200,6 @@
             font-size: 8px;
             z-index: 10001;
             color: black;
-            /* text-transform: uppercase; KALDIRILDI - Küçük harf için */
             user-select: none;
         }
 
@@ -208,6 +208,47 @@
             color: inherit;
             cursor: pointer;
             pointer-events: auto;
+        }
+
+        /* ÇEREZ ONAY BANDI */
+        #cookie-consent {
+            position: fixed;
+            bottom: 40px;
+            left: 10px;
+            background: var(--vea-white);
+            border: 1px solid var(--vea-border);
+            padding: 6px 10px;
+            font-size: 8px;
+            border-radius: 8px;
+            z-index: 10002;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            backdrop-filter: blur(5px);
+            background: rgba(255,255,255,0.7);
+        }
+
+        .cookie-btn {
+            background: none;
+            border: 1px solid var(--vea-border);
+            padding: 2px 6px;
+            font-family: inherit;
+            font-size: 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .cookie-btn:hover {
+            background: var(--vea-border);
+            color: #fff;
+        }
+
+        .cookie-btn.yes {
+            background: var(--vea-blue);
+            color: #fff;
+            border-color: var(--vea-blue);
         }
 
         /* MOBİL TASARIM */
@@ -271,6 +312,14 @@
                 right: 10px;
                 bottom: 10px;
             }
+
+            #cookie-consent {
+                bottom: 40px;
+                left: 5%;
+                width: 90%;
+                justify-content: space-between;
+                font-size: 7px;
+            }
         }
     </style>
 </head>
@@ -304,6 +353,15 @@
         <iframe id="content-viewer" src="https://virtuallyeverafter.work" title="Content Viewer" style="position:absolute; top:0; left:0; width:100%; height:100%; border:none; z-index:1;"></iframe>
     </div>
 
+    <!-- Çerez Onay Bandı -->
+    <div id="cookie-consent">
+        <span>WE USE COOKIES</span>
+        <div style="display:flex; gap:5px;">
+            <button class="cookie-btn yes" onclick="handleCookie(true)">YES</button>
+            <button class="cookie-btn" onclick="handleCookie(false)">NO</button>
+        </div>
+    </div>
+
     <div id="footer-info">
         <a href="mailto:hello@virtuallyeverafter.xyz">hello@virtuallyeverafter.xyz</a> &emsp;&emsp; Luxembourg &emsp;&emsp; +352 661953108
     </div>
@@ -317,6 +375,56 @@
         const dropdownList = document.getElementById('dropdown-list');
         const headerText = document.getElementById('current-selection-header');
         const iframeWrapper = document.getElementById('iframe-wrapper');
+        const cookieBanner = document.getElementById('cookie-consent');
+
+        const GA_MEASUREMENT_ID = 'G-K3BPJJFP5C';
+
+        // Analytics fonksiyonunu window seviyesinde tanımla
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){window.dataLayer.push(arguments);}
+
+        window.addEventListener('load', () => {
+            const consent = localStorage.getItem('vea_cookie_consent');
+            if (consent === null) {
+                cookieBanner.style.display = 'flex';
+            } else if (consent === 'true') {
+                initAnalytics();
+            }
+        });
+
+        function handleCookie(accepted) {
+            localStorage.setItem('vea_cookie_consent', accepted);
+            cookieBanner.style.display = 'none';
+            if (accepted) {
+                initAnalytics();
+            }
+        }
+
+        function initAnalytics() {
+            if (!document.getElementById('ga-script')) {
+                const script = document.createElement('script');
+                script.id = 'ga-script';
+                script.async = true;
+                script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
+                document.head.appendChild(script);
+
+                gtag('js', new Date());
+                gtag('config', GA_MEASUREMENT_ID, {
+                    'page_path': window.location.pathname
+                });
+                console.log("Analytics initialized.");
+            }
+        }
+
+        function trackPageView(pageName) {
+            if (localStorage.getItem('vea_cookie_consent') === 'true' && typeof gtag === 'function') {
+                gtag('event', 'page_view', {
+                    page_title: pageName,
+                    page_location: window.location.href,
+                    page_path: '/' + pageName.toLowerCase()
+                });
+            }
+        }
 
         dropdownToggle.addEventListener('click', function(e) {
             const isVisible = dropdownList.style.display === 'block';
@@ -329,20 +437,14 @@
             }
         });
 
-        /**
-         * Sayfayı yüklerken eski içeriği tamamen temizler ve medyayı keser.
-         */
         function loadPage(event, name, url) {
             event.stopPropagation();
-            
-            // 1. Mevcut iframe'i durdur ve tamamen DOM'dan sil
             const oldViewer = document.getElementById('content-viewer');
             if (oldViewer) {
-                oldViewer.src = "about:blank"; // Akışı anında kes
+                oldViewer.src = "about:blank";
                 oldViewer.remove();
             }
 
-            // 2. Tamamen yeni ve temiz bir iframe oluştur
             const newViewer = document.createElement('iframe');
             newViewer.id = 'content-viewer';
             newViewer.title = 'Content Viewer';
@@ -354,11 +456,9 @@
             newViewer.style.border = 'none';
             newViewer.style.zIndex = '1';
             
-            // 3. Iframe'i DOM'a ekle ve URL'yi yükle
             iframeWrapper.appendChild(newViewer);
             newViewer.src = url;
             
-            // UI Güncellemeleri
             headerText.innerHTML = `
                 ${name}
                 <span class="arrow-icons">
@@ -368,6 +468,8 @@
             `;
             dropdownList.style.display = 'none';
             dropdownToggle.classList.remove('open');
+
+            trackPageView(name);
         }
 
         window.onclick = function(event) {
