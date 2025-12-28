@@ -28,7 +28,7 @@
             width: 100%;
             overflow: hidden;
             font-family: 'Telegrama Render', sans-serif;
-            background-color: #ffffff; /* Siyah ekranı önlemek için varsayılanı beyaz yapalım */
+            background-color: #ffffff;
             cursor: auto;
         }
 
@@ -349,7 +349,7 @@
     </div>
 
     <!-- Iframe Container -->
-    <div id="iframe-wrapper" style="width:100%; height:100%; position:absolute; top:0; left:0; background: #fff;">
+    <div id="iframe-wrapper" style="width:100%; height:100%; position:absolute; top:0; left:0; background: #ffffff;">
         <iframe id="content-viewer" src="https://virtuallyeverafter.work/home" title="Content Viewer" style="position:absolute; top:0; left:0; width:100%; height:100%; border:none; z-index:1;"></iframe>
     </div>
 
@@ -371,10 +371,12 @@
     </div>
 
     <script>
-        // Global Analytics Setup
+        /** * GOOGLE ANALYTICS GLOBAL SETUP 
+         * Crawlerin gtag'i tanıması için window seviyesinde hemen tanımlıyoruz.
+         */
         window.dataLayer = window.dataLayer || [];
         function gtag(){window.dataLayer.push(arguments);}
-
+        
         const GA_MEASUREMENT_ID = 'G-K3BPJJFP5C';
         const dropdownToggle = document.getElementById('dropdown-toggle');
         const dropdownList = document.getElementById('dropdown-list');
@@ -399,9 +401,6 @@
             }
         }
 
-        /**
-         * Google Analytics 4 Entegrasyonu (G-K3BPJJFP5C)
-         */
         function initAnalytics() {
             if (!document.getElementById('ga-script')) {
                 const script = document.createElement('script');
@@ -415,7 +414,7 @@
                     'page_path': window.location.pathname,
                     'cookie_flags': 'SameSite=None;Secure'
                 });
-                console.log("Analytics initialized.");
+                console.log("Analytics (GA4) initialized.");
             }
         }
 
