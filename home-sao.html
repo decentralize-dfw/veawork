@@ -61,6 +61,11 @@
             --zoom-out-animation-duration: 1.2s;
             --click-threshold-pixels: 7;
             --app-height: 100vh;
+
+            /* DROPDOWN PARAMETERS */
+            --header-h: 30px;
+            --dropdown-w: 120px;
+            --menu-img: url('https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg'); /* Örnek görsel, kendi URL'nizle değiştirebilirsiniz */
         }
 
         html, body {
@@ -80,41 +85,79 @@
             background: #ffffff; 
         }
 
-        /* Işık Ayarları Paneli */
-        #lighting-controls {
+        /* ========== GRAPHICS DROPDOWN SYSTEM ========== */
+        #graphics-container {
             position: fixed;
-            top: 20px;
-            right: 20px;
+            top: 10px;
+            right: 10px;
             z-index: 1000;
-            display: flex;
-            gap: 8px;
-            padding: 6px;
-            background: rgba(255, 255, 255, 0.4);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-radius: 12px;
-            border: 1px solid rgba(0,0,0,0.05);
+            width: var(--dropdown-w);
+            user-select: none;
         }
 
-        .preset-btn {
-            font-family: var(--font-headers);
-            font-size: 0.65rem;
-            padding: 6px 14px;
-            border-radius: 8px;
+        .dropdown-header {
+            height: var(--header-h);
+            background-image: var(--menu-img);
+            background-size: cover;
+            background-position: right top;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
             cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            border-radius: 4px;
+            transition: border-radius 0.2s;
+            /* Typography */
+            font-family: var(--font-headers);
+            font-size: 9px;
+            color: #fff;
             text-transform: uppercase;
             letter-spacing: 1px;
-            background: transparent;
-            color: #888;
-            border: none;
+            text-shadow: 1px 1px 2px #000;
         }
 
-        .preset-btn:hover { color: #000; background: rgba(0,0,0,0.05); }
-        .preset-btn.active {
-            background: #000;
+        .dropdown-header.open {
+            border-radius: 4px 4px 0 0;
+        }
+
+        .dropdown-list {
+            display: none;
+            list-style: none;
+            margin: 0; padding: 0;
+            background-image: var(--menu-img);
+            background-size: cover;
+            background-position: center calc(var(--header-h) * -1);
+            border-radius: 0 0 4px 4px;
+            overflow: hidden;
+        }
+
+        .dropdown-list.open {
+            display: block;
+        }
+
+        .dropdown-item {
+            height: var(--header-h);
+            display: flex;
+            align-items: center;
+            padding: 0 10px;
+            cursor: pointer;
+            font-family: var(--font-headers);
+            font-size: 9px;
             color: #fff;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 1px 1px 2px #000;
+            background: rgba(0,0,0,0.2); /* Hafif maskeleme */
+            transition: background 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: transparent; /* Görseli netleştirme */
+        }
+
+        .dropdown-item.active {
+            background: transparent;
+            font-weight: bold;
         }
 
         #loader {
@@ -289,7 +332,7 @@
                 transform: translateY(100%);
             }
             #side-panel.open { transform: translateY(0); }
-            #lighting-controls { display: none !important; }
+            #graphics-container { display: none !important; }
             :root {
                 --panel-media-padding-horizontal: 25%;
                 --panel-media-padding-top: 5%;
@@ -306,11 +349,17 @@
         <div class="loader-bar-container"><div class="loader-bar"></div></div>
     </div>
 
-    <!-- Lighting Controls -->
-    <div id="lighting-controls">
-        <button class="preset-btn" onclick="applyLightingPreset('low')" id="btn-low">Low</button>
-        <button class="preset-btn" onclick="applyLightingPreset('mid')" id="btn-mid">Mid</button>
-        <button class="preset-btn" onclick="applyLightingPreset('high')" id="btn-high">High</button>
+    <!-- GRAPHICS DROPDOWN -->
+    <div id="graphics-container">
+        <div class="dropdown-header" id="drop-header" onclick="toggleDropdown()">
+            <span>graphics🖳</span>
+            <span id="drop-arrow">▲</span>
+        </div>
+        <ul class="dropdown-list" id="drop-list">
+            <li class="dropdown-item" onclick="handlePresetSelection('high')">HIGH</li>
+            <li class="dropdown-item" onclick="handlePresetSelection('mid')">MID</li>
+            <li class="dropdown-item" onclick="handlePresetSelection('low')">LOW</li>
+        </ul>
     </div>
 
     <div id="scene-container"></div>
@@ -655,13 +704,12 @@
         function init() {
             const container = document.getElementById('scene-container');
             
-            // 1. RENDERER CONFIGURATION (LogarithmicDepthBuffer Siyah Lekeleri Engeller)
             renderer = new THREE.WebGLRenderer({ 
                 antialias: true, 
                 alpha: true, 
                 powerPreference: "high-performance",
                 precision: "highp",
-                logarithmicDepthBuffer: true // KRİTİK: Zoom yapınca derinlik hatasını (siyahlık) çözer
+                logarithmicDepthBuffer: true // Depth buffer hatalarını donanımsal çözer
             });
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -695,7 +743,6 @@
             controls.maxDistance = PARAMS.cameraMaxDist;
             controls.maxPolarAngle = Math.PI / 2; 
 
-            // 2. IBL
             const pmrem = new THREE.PMREMGenerator(renderer);
             new RGBELoader().load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr', (tex) => {
                 tex.mapping = THREE.EquirectangularReflectionMapping;
@@ -704,7 +751,6 @@
                 tex.dispose(); pmrem.dispose();
             });
 
-            // 3. IŞIK HİYERARŞİSİ
             scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.5));
             const sun = new THREE.DirectionalLight(0xffffff, 3.6);
             sun.position.set(1200, 2400, 1200);
@@ -726,20 +772,18 @@
             fill2.position.set(-1800, 1200, -2000);
             scene.add(fill2);
 
-            // 4. POST-PROCESSING PIPELINE
             composer = new EffectComposer(renderer);
             const renderPass = new RenderPass(scene, camera);
             renderPass.clearAlpha = 0;
             composer.addPass(renderPass);
 
-            // SSAO Pass (Sahne ölçeğine göre optimize edildi)
+            // SSAO Pass Optimization
             ssaoPass = new SSAOPass(scene, camera, window.innerWidth, window.innerHeight);
             ssaoPass.kernelRadius = 32; 
-            ssaoPass.minDistance = 0.008; // Yüzey titremesini engellemek için artırıldı
-            ssaoPass.maxDistance = 0.2;
+            ssaoPass.minDistance = 0.01; 
+            ssaoPass.maxDistance = 0.25;
             composer.addPass(ssaoPass);
 
-            // Unreal Bloom
             bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.25, 0.35, 0.8);
             composer.addPass(bloomPass);
 
@@ -753,11 +797,9 @@
             mouse = new THREE.Vector2();
             
             const isMobile = window.innerWidth <= 768;
-            const validObjects = sceneObjects.filter(item => !(isMobile && item.showOnMobile === false));
-            totalAssets = validObjects.length;
-            
             buildScene(isMobile);
 
+            // Lighting Initialization
             if (isMobile) {
                 applyLightingPreset('low');
             } else {
@@ -770,13 +812,31 @@
             renderer.domElement.addEventListener('mouseup', onPointerUp);
         }
 
-        // LIGHTING PRESETS
+        // ========== GRAPHICS LOGIC ==========
+
+        window.toggleDropdown = function() {
+            const list = document.getElementById('drop-list');
+            const header = document.getElementById('drop-header');
+            const arrow = document.getElementById('drop-arrow');
+            const isOpen = list.classList.toggle('open');
+            header.classList.toggle('open');
+            arrow.innerText = isOpen ? '▼' : '▲';
+        };
+
+        window.handlePresetSelection = function(level) {
+            applyLightingPreset(level);
+            toggleDropdown();
+        };
+
         window.applyLightingPreset = function(level) {
             if (!bloomPass || !ssaoPass || !renderer) return;
 
-            document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
-            const activeBtn = document.getElementById(`btn-${level}`);
-            if (activeBtn) activeBtn.classList.add('active');
+            // UI Elements update
+            const items = document.querySelectorAll('.dropdown-item');
+            items.forEach(it => {
+                it.classList.remove('active');
+                if(it.innerText.toLowerCase() === level) it.classList.add('active');
+            });
 
             switch(level) {
                 case 'low':
@@ -807,6 +867,9 @@
             draco.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
             loader.setDRACOLoader(draco);
             loader.setMeshoptDecoder(MeshoptDecoder);
+
+            const validObjects = sceneObjects.filter(item => !(isMobile && item.showOnMobile === false));
+            totalAssets = validObjects.length;
 
             sceneObjects.forEach(item => {
                 if (isMobile && item.showOnMobile === false) return;
