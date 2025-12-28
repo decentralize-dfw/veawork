@@ -338,7 +338,7 @@
 <body>
 
     <div id="loader">
-        <div class="loader-text">ARCHIVE LOADING</div>
+        <div class="loader-text">home</div>
         <div class="loader-bar-container"><div class="loader-bar"></div></div>
     </div>
 
@@ -429,247 +429,400 @@
         };
 
         const sceneObjects = [
-            {
-                type: 'model',
-                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/vea3d-v2-opt-v1.glb',
-                position: { x: 2400, y: 0, z: -1500 },
-                rotation: { x: 0, y: 180, z: 0 },
-                scale: 200,
-                modalContent: {
-                    name: "About",
-                    categories: { sub1: "2025", sub2: "ABOUT" },
-                    description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.",
-                    media: [ { type: "image", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png" } ],
-                    links: [ { text: "OPEN IN A NEW TAB", url: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png" } ]
-                }
-            },
-            {
-                type: 'model',
-                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/exhbt22-opt.glb',
-                position: { x: 0, y: -560, z: 0 },
-                scale: 400,
-                clickable: false, 
-                includeInFit: false
-            },
-            {
-                type: 'model',
-                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/tablelabael2.glb',
-                position: { x: -10, y: -560, z: -20 },
-                scale: 400,
-                clickable: false, 
-                includeInFit: false
-            },
-            {
-                type: 'model',
-                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main//daspieces1-opt-v6.glb',
-                position: { x: 0, y: 0, z: -750 },
-                rotation: { x: 0, y: 90, z: 0 },
-                scale: 500,
-                modalContent: {
-                    name: "DAS PIECES Book",
-                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
-                    description: "Item 01",
-                    media: [
-                        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_0dac59951f9c42efbf6b8a3a77951e00/1080p/mp4/file.mp4" },
-                        { type: "video", src: "https://video.wixstatic.com/video/bbd25a_ac3a4bd792a04e6ab5a9009dde170ea8/1080p/mp4/file.mp4" }
-                    ],
-                    links: [ { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQo4sq2iEaH/" } ]
-                }
-            },
-            {
-                type: 'model',
-                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/93book-opt-v10.glb',
-                position: { x: 0, y: 0, z: -1500 },
-                rotation: { x: 0, y: 90, z: 0 },
-                scale: 500,
-                modalContent: {
-                    name: "Novantatre",
-                    categories: { sub1: "2025", sub2: "Archive", sub3: "Vea" },
-                    description: "Item 02",
-                    media: [ { type: "video", src: "https://video.wixstatic.com/video/bbd25a_b443e8c0ed384e30bf532179d14769a8/1080p/mp4/file.mp4" } ],
-                    links: [ { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DSSBQPrjFkP/" } ]
-                }
-            },
-            {
-                type: 'model',
-                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/ipod-opt-v2.glb',
-                position: { x: 0, y: 255, z: 750 },
-                rotation: { x: 0, y: 180, z: 0 },
-                scale: 400,
-                modalContent: {
-                    name: "Acoustic Architecture System",
-                    categories: { sub1: "2025", sub2: "HTML", sub3: "kimse." },
-                    description: "Spectral Point Cloud Interpretation...",
-                    media: [ { type: "html", src: "https://raw.githubusercontent.com/decentralize-dfw/finder/refs/heads/main/birdsv10.html" } ],
-                    links: [ { text: "OPEN IN A NEW TAB", url: "https://www.virtuallyeverafter.work/sv" } ]
-                }
-            },
-            {
-                type: 'model',
-                src: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize-archives/main/celly-o.glb',
-                position: { x: 0, y: 250, z: 1500 },
-                rotation: { x: 0, y: 90, z: 0 },
-                scale: 500,
-                modalContent: {
-                    name: "decentralize*",
-                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
-                    description: "Item 06",
-                    media: [ { type: "html", src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/refs/heads/main/index.html" } ],
-                    links: [ { text: "OPEN IN A NEW TAB", url: "https://de-centralize.com/" } ]
-                }
-            },
-            {
-                type: 'model',
-                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/co-chair-opt-v1.glb',
-                position: { x: 0, y: 0, z: 0 },
-                rotation: { x: 0, y: 90, z: 0 },
-                scale: 600,
-                modalContent: {
-                    name: "status_CO",
-                    categories: { sub1: "2025-2026", sub2: "Brand Construction", sub3: "Vea" },
-                    description: "soon to be announced",
-                    media: [ { type: "model", src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/co-chair-opt-v1.glb" } ],
-                    links: []
-                }
-            },
-            {
-                type: 'model',
-                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/booth-opt-v9.glb',
-                position: { x: -2400, y: 0, z: 1500 },
-                rotation: { x: 0, y: 90, z: 0 },
-                scale: 600,
-                modalContent: {
-                    name: "booth-opt-v9.glb",
-                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
-                    description: "Item 03",
-                    media: [ { type: "video", src: "https://video.wixstatic.com/video/bbd25a_6230b7e092674b0d8f32b87103b3c920/720p/mp4/file.mp4" } ],
-                    links: [ { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DP3gbgpiKbS/" } ]
-                }
-            },
-            {
-                type: 'model',
-                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex1-opt-v8.glb',
-                position: { x: -2400, y: 0, z: -1500 },
-                rotation: { x: 0, y: 90, z: 0 },
-                scale: 500,
-                modalContent: {
-                    name: "cicex1-opt-v8.glb",
-                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
-                    description: "Item 04",
-                    media: [ { type: "video", src: "https://video.wixstatic.com/video/bbd25a_fba3080416b3426783eefde37e081efa/720p/mp4/file.mp4" } ],
-                    links: [ { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQHQ-3MCBkP/" } ]
-                }
-            },
-            {
-                type: 'model',
-                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/sandalye-opt-v5.glb',
-                position: { x: -1600, y: -600, z: 1200 },
-                scale: 1200,
-                modalContent: {
-                    name: "the waiting room no.1",
-                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
-                    description: "Item 07",
-                    media: [ { type: "video", src: "https://video.wixstatic.com/video/bbd25a_a98194f1174b434ea9f7f1ce355d6c81/1080p/mp4/file.mp4" } ],
-                    links: [ { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQmUnZkCHOl/" } ]
-                }
-            },
-            {
-                type: 'model',
-                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/facade-opt-v4.glb',
-                position: { x: -2400, y: 0, z: 750},
-                rotation: { x: 0, y: 90, z: 0 },
-                scale: 700,
-                modalContent: {
-                    name: "facade-opt-v4.glb",
-                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
-                    description: "Item 08",
-                    media: [ { type: "video", src: "https://video.wixstatic.com/video/bbd25a_cbec7d394bfd417193d86ba249c93d63/720p/mp4/file.mp4" } ],
-                    links: [ { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DP6cIwoCOFO/" } ]
-                }
-            },
-            {
-                type: 'model',
-                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/wireframe-opt-v2.glb',
-                position: { x: -2400, y: 0, z: -750},
-                scale: 400,
-                modalContent: {
-                    name: "wireframe-opt-v2.glb",
-                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
-                    description: "Item 10",
-                    media: [ { type: "video", src: "https://video.wixstatic.com/video/bbd25a_9bb1f95695fd4d83aa68eda3da571e47/1080p/mp4/file.mp4" } ],
-                    links: [ { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQUK0uOiORM/" } ]
-                }
-            },
-            {
-                type: 'model',
-                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/mektup-opt-v1.glb',
-                position: { x: 2400, y: 0, z: 750 },
-                rotation: { x: 0, y: -90, z: 0 },
-                scale: 500,
-                modalContent: {
-                    name: "Contact",
-                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
-                    description: "hello@virtuallyeverafter.xyz",
-                    media: [ { type: "video", src: "https://video.wixstatic.com/video/bbd25a_f47ac95a2e74487993200753805e8cee/1080p/mp4/file.mp4" } ],
-                    links: [ { text: "Follow on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQ6mGDAiELU/" } ]
-                }
-            },
-            {
-                type: 'model',
-                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex2-opt-v7.glb',
-                position: { x: -2400, y: 50, z: 0 },
-                scale: 500,
-                modalContent: {
-                    name: "virtually Grown",
-                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
-                    description: "Item 05",
-                    media: [ { type: "video", src: "https://video.wixstatic.com/video/bbd25a_1c655cbc2e58493ea6dd0f8ab6fc46e1/720p/mp4/file.mp4" } ],
-                    links: [ { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQEj6rJCMbS/" } ]
-                }
-            },
-            {
-                type: 'model',
-                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/serfvs-v3.glb',
-                position: { x: 2500, y: 150, z: 0 },
-                rotation: { x: 0, y: 180, z: 0 },
-                scale: 250,
-                modalContent: {
-                    name: "Servives",
-                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
-                    description: "Worldbuilding, Identity, Content",
-                    media: [ { type: "video", src: "https://video.wixstatic.com/video/bbd25a_9c4fa7997a654eb2b1fa56ac22155d27/1080p/mp4/file.mp4" } ],
-                    links: [ { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DSXgFb8iNB-/" } ]
-                }
-            },
-            {
-                type: 'model',
-                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/vea-iwwd-opt-v2.glb',
-                position: { x: 2500, y: 200, z: -750 },
-                rotation: { x: 0, y: 180, z: 0 },
-                scale: 250,
-                modalContent: {
-                    name: "What We Do",
-                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
-                    description: "Virtually ever after is a studio...",
-                    media: [ { type: "html", src: "https://raw.githubusercontent.com/decentralize-dfw/veawork/refs/heads/main/spherework.html" } ],
-                    links: [ { text: "OPEN IN A NEW TAB", url: "https://raw.githack.com/decentralize-dfw/veawork/refs/heads/main/spherework.html" } ]
-                }
-            },
-            {
-                type: 'model',
-                src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/telefon-opt-v3.glb',
-                position: { x: 2400, y: 0, z: 1500 },
-                rotation: { x: 0, y: 90, z: 0 },
-                scale: 500,
-                modalContent: {
-                    name: "Book a Meeting",
-                    categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
-                    description: "Item 09",
-                    media: [ { type: "video", src: "https://video.wixstatic.com/video/bbd25a_0347ca404afa45c7b59394ddad5370d0/720p/mp4/file.mp4" } ],
-                    links: [ { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DP03diJiMCw/" } ]
-                }
-            }
-        ];
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/vea3d-v2-opt-v1.glb',
+    width: 700,
+    position: { x: 2400, y: 0, z: -1500 },
+    rotation: { x: 0, y: 180, z: 0 },
+    scale: 200,
+    modalContent: {
+      name: "About",
+      categories: { sub1: "2025", sub2: "ABOUT" },
+      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\nMinimal, sculptural, futuristic aesthetic\n\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce",
+      media: [
+        { 
+          type: "image", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png"
+        }
+      ],
+      links: [
+        { text: "OPEN IN A NEW TAB", url: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png" }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/exhbt22-opt.glb',
+    width: 700,
+    position: { x: 0, y: -560, z: 0 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: 400,
+    clickable: false, 
+    includeInFit: false,
+    modalContent: {
+      name: "bldg",
+      categories: { sub1: "2025", sub2: "ABOUT" },
+      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",
+      media: [
+        { 
+          type: "image", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png"
+        }
+      ],
+      links: []
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/tablelabael2.glb',
+    width: 700,
+    position: { x: -10, y: -560, z: -20 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: 400,
+    clickable: false, 
+    includeInFit: false,
+    modalContent: {
+      name: "bldg",
+      categories: { sub1: "2025", sub2: "ABOUT" },
+      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",
+      media: [
+        { 
+          type: "image", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png"
+        }
+      ],
+      links: []
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main//daspieces1-opt-v6.glb',
+    position: { x: 0, y: 0, z: -750 },
+    rotation: { x: 0, y: 90, z: 0 },
+    scale: 500,
+    modalContent: {
+      name: "DAS PIECES Book",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 01",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_0dac59951f9c42efbf6b8a3a77951e00/1080p/mp4/file.mp4"
+        },
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_ac3a4bd792a04e6ab5a9009dde170ea8/1080p/mp4/file.mp4"
+        }
+      ],
+      links: [
+        { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQo4sq2iEaH/" }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/93book-opt-v10.glb',
+    position: { x: 0, y: 0, z: -1500 },
+    rotation: { x: 0, y: 90, z: 0 },
+    scale: 500,
+    modalContent: {
+      name: "Novantatre",
+      categories: { sub1: "2025", sub2: "Archive", sub3: "Vea" },
+      description: "Item 02",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_b443e8c0ed384e30bf532179d14769a8/1080p/mp4/file.mp4"
+        }
+      ],
+      links: [
+        { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DSSBQPrjFkP/" }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/ipod-opt-v2.glb',
+    width: 500,
+    position: { x: 0, y: 255, z: 750 },
+    rotation: { x: 0, y: 180, z: 0 },
+    scale: 400,
+    modalContent: {
+      name: "Acoustic Architecture System",
+      categories: { sub1: "2025", sub2: "HTML", sub3: "kimse." },
+      description: "Spectral Point Cloud Interpretation\n\nEach sound particle is positioned in 3D space according to its properties, mapping complex spectral data to a tangible, volumetric architecture.\n\n\n1. SPATIAL AXES (X, Y, Z)\n\nX-AXIS (Continuous Frequency): Defines the 'tonal space' from low notes (left/bass) to high notes (right/treble). This axis maintains a continuous log-frequency mapping, allowing for three-dimensional spatial distribution.\nY-AXIS (Amplitude): Defines the 'power' or 'volume' of the sound. Higher amplitude (loud) sounds move vertically up the Y-axis.\nZ-AXIS (Timbre/Harmonics): Defines the 'timbral richness.' Pure sounds (low Z) are near the front, while harmonically rich sounds (vocals, distortion, chords) are placed deeper along the Z-axis.\n\n\n2. VISUAL PROPERTIES\n\nCOLOR (Spectral Band Identity): Represents the sound's primary spectral range, allowing the viewer to instantly distinguish between core frequency categories regardless of the note's exact pitch:\nBASS (Red/Magenta):** < 250 Hz (Kicks, Sub-Bass)\nMID (Yellow/Orange):** 250 Hz - 1 kHz (Low instruments, Body)\nVOCAL (Green):** 1 kHz - 4 kHz (Vocals, Clarity, Leads)\nTREMBLE (Blue/Cyan):** > 4 kHz (Hi-Hats, Air, Sibilance)\nSCALE (Size): Reflects the instantaneous volume (Amplitude). Louder sounds create larger particles.\nBRIGHTNESS (Bloom): The sound's energy generates a glow effect, controlled via the 'Bloom' settings in the control panel.",
+      media: [
+        { 
+          type: "html", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/finder/refs/heads/main/birdsv10.html"
+        }
+      ],
+      links: [
+        { text: "OPEN IN A NEW TAB", url: "https://www.virtuallyeverafter.work/sv" }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize-archives/main/celly-o.glb',
+    position: { x: 0, y: 250, z: 1500 },
+    rotation: { x: 0, y: 90, z: 0 },
+    scale: 500,
+    modalContent: {
+      name: "decentralize*",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 06",
+      media: [
+        { 
+          type: "html", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/refs/heads/main/index.html"
+        }
+      ],
+      links: [
+        { text: "OPEN IN A NEW TAB", url: "https://de-centralize.com/" }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/co-chair-opt-v1.glb',
+    position: { x: 0, y: 0, z: 0 },
+    rotation: { x: 0, y: 90, z: 0 },
+    scale: 600,
+    modalContent: {
+      name: "status_CO",
+      categories: { sub1: "2025-2026", sub2: "Brand Construction", sub3: "Vea" },
+      description: "soon to be announced",
+      media: [
+        { 
+          type: "model", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/co-chair-opt-v1.glb"
+        }
+      ],
+      links: []
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/booth-opt-v9.glb',
+    position: { x: -2400, y: 0, z: 1500 },
+    rotation: { x: 0, y: 90, z: 0 },
+    scale: 600,
+    modalContent: {
+      name: "booth-opt-v9.glb",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 03",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_6230b7e092674b0d8f32b87103b3c920/720p/mp4/file.mp4"
+        }
+      ],
+      links: [
+        { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DP3gbgpiKbS/" }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex1-opt-v8.glb',
+    position: { x: -2400, y: 0, z: -1500 },
+    rotation: { x: 0, y: 90, z: 0 },
+    scale: 500,
+    modalContent: {
+      name: "cicex1-opt-v8.glb",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 04",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_fba3080416b3426783eefde37e081efa/720p/mp4/file.mp4"
+        }
+      ],
+      links: [
+        { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQHQ-3MCBkP/" }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/sandalye-opt-v5.glb',
+    position: { x: -1600, y: -600, z: 1200 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: 1200,
+    modalContent: {
+      name: "the waiting room no.1",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 07",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_a98194f1174b434ea9f7f1ce355d6c81/1080p/mp4/file.mp4"
+        }
+      ],
+      links: [
+        { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQmUnZkCHOl/" }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/facade-opt-v4.glb',
+    position: { x: -2400, y: 0, z: 750},
+    rotation: { x: 0, y: 90, z: 0 },
+    scale: 700,
+    modalContent: {
+      name: "facade-opt-v4.glb",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 08",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_cbec7d394bfd417193d86ba249c93d63/720p/mp4/file.mp4"
+        }
+      ],
+      links: [
+        { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DP6cIwoCOFO/" }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/wireframe-opt-v2.glb',
+    position: { x: -2400, y: 0, z: -750},
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: 400,
+    modalContent: {
+      name: "wireframe-opt-v2.glb",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 10",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_9bb1f95695fd4d83aa68eda3da571e47/1080p/mp4/file.mp4"
+        }
+      ],
+      links: [
+        { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQUK0uOiORM/" }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/mektup-opt-v1.glb',
+    position: { x: 2400, y: 0, z: 750 },
+    rotation: { x: 0, y: -90, z: 0 },
+    scale: 500,
+    modalContent: {
+      name: "Contact",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "hello@virtuallyeverafter.xyz\nLuxembourg\n+352 661953108",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_f47ac95a2e74487993200753805e8cee/1080p/mp4/file.mp4"
+        }
+      ],
+      links: [
+        { text: "Follow on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQ6mGDAiELU/" }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex2-opt-v7.glb',
+    position: { x: -2400, y: 50, z: 0 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: 500,
+    modalContent: {
+      name: "virtually Grown",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 05",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_1c655cbc2e58493ea6dd0f8ab6fc46e1/720p/mp4/file.mp4"
+        }
+      ],
+      links: [
+        { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQEj6rJCMbS/" }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/serfvs-v3.glb',
+    position: { x: 2500, y: 150, z: 0 },
+    rotation: { x: 0, y: 180, z: 0 },
+    scale: 250,
+    modalContent: {
+      name: "Servives",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "1) Worldbuilding\n\nDesigning the digital 'space' a brand lives in. \nWeb based 3D interactive experiences \nAtmospheric spatial interfaces \nCustom-designed architectural objects \n\n\n 2) Identity Building \n\nBuilding a brand's identity specifically for the digital realm. \nLogo design \nColor & typography systems \nWebsite  \n\n\n3) Digital Content \n\nTurning the world into visuals, motion and narrative. \nCinematic reels & videos \nVisual storytelling \nSocial media content in one consistent aesthetic",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_9c4fa7997a654eb2b1fa56ac22155d27/1080p/mp4/file.mp4"
+        }
+      ],
+      links: [
+        { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DSXgFb8iNB-/" }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/vea-iwwd-opt-v2.glb',
+    position: { x: 2500, y: 200, z: -750 },
+    rotation: { x: 0, y: 180, z: 0 },
+    scale: 250,
+    modalContent: {
+      name: "What We Do",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Virtually ever after is a digital architecture and aesthetic worldbuilding studio.\n\nWe merge space, objects, and storytelling to create minimal, sculptural, immersive digital realms for brands, designers, and cultural projects.\n\nTo explore how architecture transforms when it becomes digital.\n\nVEA craft environments where imagination, materiality, and motion converge into a new form of experience. \n\nImagination - Space - Sound - Emotion \n\nEvery project becomes its own world.\n\n",
+      media: [
+        { 
+          type: "html", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/veawork/refs/heads/main/spherework.html"
+        }
+      ],
+      links: [
+        { text: "OPEN IN A NEW TAB", url: "https://raw.githack.com/decentralize-dfw/veawork/refs/heads/main/spherework.html" }
+      ]
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/telefon-opt-v3.glb',
+    position: { x: 2400, y: 0, z: 1500 },
+    rotation: { x: 0, y: 90, z: 0 },
+    scale: 500,
+    modalContent: {
+      name: "Book a Meeting",
+      categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
+      description: "Item 09",
+      media: [
+        { 
+          type: "video", 
+          src: "https://video.wixstatic.com/video/bbd25a_0347ca404afa45c7b59394ddad5370d0/720p/mp4/file.mp4"
+        }
+      ],
+      links: [
+        { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DP03diJiMCw/" },
+         { text: "OPEN IN A NEW TAB", url: "https://raw.githack.com/decentralize-dfw/veawork/refs/heads/main/spherework.html" }
+      ]
+    }
+  }
+];
+
+// {type: 'model',    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/labsglb-v1.glb',    width: 700,    position: { x: 0, y: -100, z: 0 },    rotation: { x: 0, y: 0, z: 0 },    scale: 200,    clickable: false,              includeInFit: false,           modalContent: {      name: "bldg",      categories: { sub1: "2025", sub2: "ABOUT" },      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",  media: [   {   type: "image",   src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png",      linkUrl: null,      linkText: "OPEN IN A NEW TAB"   }  ] }  },
+
+//{type: 'model',    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/mm6s-opt.glb',    width: 700,    position: { x: 0, y: 0, z: 0 },    rotation: { x: 0, y: 0, z: 0 },    scale: 800,    clickable: false, includeInFit: false,   modalContent: {      name: "bldg",      categories: { sub1: "2025", sub2: "ABOUT" },      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",  media: [   {   type: "image",   src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png",      linkUrl: null,      linkText: "OPEN IN A NEW TAB"   }  ] }  },
+ //{type: 'model',    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/kutudeneme.glb',    width: 700,    position: { x: 0, y: 0, z: 0 },    rotation: { x: 0, y: 0, z: 0 },    scale: 80,    clickable: false,    modalContent: {      name: "bldg",      categories: { sub1: "2025", sub2: "ABOUT" },      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",  media: [   {   type: "image",   src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png",      linkUrl: null,      linkText: "OPEN IN A NEW TAB"   }  ] }  },
+  
+// {    type: 'image',    src: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg',    width: 4000,    position: { x: 0, y: -10, z: 0 },    rotation: { x: 90, y: 0, z: 0 },    scale: 1000,    clickable: false,    modalContent: {      name: "Atmosphere",      categories: { sub1: "2024", sub2: "Environment" },      description: "Void environment.",      media: [        {            type: "image",            src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg",          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg",          linkText: "OPEN IN A NEW TAB"        }      ]    }  },
+ 
 
         let camera, scene, renderer, controls, raycaster, mouse, composer, globalEnvMap;
         let bloomPass, ssaoPass;
