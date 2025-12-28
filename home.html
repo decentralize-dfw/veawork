@@ -101,13 +101,13 @@
 
         .toggle-group {
             display: flex;
-            gap: 10px;
+            gap: 6px;
         }
 
         .toggle-btn {
-            padding: 6px 14px;
+            padding: 6px 12px;
             font-family: var(--font-headers);
-            font-size: 10px;
+            font-size: 9px;
             cursor: pointer;
             text-transform: uppercase;
             transition: all 0.2s ease;
@@ -180,9 +180,8 @@
             scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
         }
 
-        /* Chrome, Safari, Edge için 5px içeride duran scroller */
         #side-panel::-webkit-scrollbar {
-            width: 8px; /* 3px scroller + 5px boşluk */
+            width: 8px;
         }
 
         #side-panel::-webkit-scrollbar-track {
@@ -191,12 +190,11 @@
 
         #side-panel::-webkit-scrollbar-thumb {
             background: rgba(0, 0, 0, 0.15);
-            background-clip: padding-box; /* Renklerin padding alanına taşmasını engeller */
-            border-right: 5px solid transparent; /* Çubuğu 5px sola iter */
+            background-clip: padding-box;
+            border-right: 5px solid transparent; 
             border-radius: 10px;
         }
 
-        /* Okları tamamen kaldırır */
         #side-panel::-webkit-scrollbar-button {
             display: none !important;
             height: 0;
@@ -344,11 +342,11 @@
         <div class="loader-bar-container"><div class="loader-bar"></div></div>
     </div>
 
-    <!-- COMPACT GRAPHICS SWITCHER -->
+    <!-- MODLARI SADECE MEDIUM VE HIGH YAPTIM -->
     <div id="graphics-switcher">
         <span class="graphics-label">graphics 🖳</span>
         <div class="toggle-group">
-            <button class="toggle-btn active" id="btn-mid" onclick="handlePresetSelection('mid')">MID</button>
+            <button class="toggle-btn active" id="btn-mid" onclick="handlePresetSelection('mid')">MEDIUM</button>
             <button class="toggle-btn" id="btn-high" onclick="handlePresetSelection('high')">HIGH</button>
         </div>
     </div>
@@ -393,7 +391,7 @@
         import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
         import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
         import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-        import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
+        // import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js'; // PASIFE ALINDI
         import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
         import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
         import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
@@ -708,7 +706,7 @@
             renderer.outputColorSpace = THREE.SRGBColorSpace;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
             renderer.toneMappingExposure = 0.85; 
-            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.enabled = true; 
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
             renderer.setClearAlpha(0);
@@ -742,8 +740,11 @@
                 tex.dispose(); pmrem.dispose();
             });
 
-            scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.5));
-            const sun = new THREE.DirectionalLight(0xffffff, 3.6);
+            // GÖLGELERİN DAHA SİYAH OLMASI İÇİN AMBİYANS IŞIĞINI DÜŞÜRDÜM
+            scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.8));
+            
+            // ANA IŞIK: Gölge belirginliği için şiddet artırıldı
+            const sun = new THREE.DirectionalLight(0xffffff, 2.8);
             sun.position.set(1200, 2400, 1200);
             sun.castShadow = true;
             sun.shadow.mapSize.set(2048, 2048);
@@ -751,28 +752,25 @@
             sun.shadow.camera.far = 16000;
             sun.shadow.camera.left = -5500; sun.shadow.camera.right = 5500;
             sun.shadow.camera.top = 5500; sun.shadow.camera.bottom = -5500;
-            sun.shadow.bias = -0.00012;
-            sun.shadow.normalBias = 0.02;
+            
+            // SHADOW ACNE (DOKU SIKINTISI) İÇİN BİAS AYARLARI
+            sun.shadow.bias = -0.0005; // Gölgenin yüzeyden biraz ayrılmasını sağlar
+            sun.shadow.normalBias = 0.2; // Yakın plandaki çizgilenmeleri (acne) tamamen yok eder
             scene.add(sun);
 
-            const fill1 = new THREE.PointLight(0xffffff, 1.4, 7000);
-            fill1.position.set(2000, 1200, 1800);
+            // DOLGU IŞIKLARI: Karanlık noktaları hafifçe aydınlatır ama gölgeyi bozmaz
+            const fill1 = new THREE.PointLight(0xffffff, 0.4, 10000);
+            fill1.position.set(3000, 1500, 3000);
             scene.add(fill1);
 
-            const fill2 = new THREE.PointLight(0xffffff, 1.2, 7000);
-            fill2.position.set(-1800, 1200, -2000);
+            const fill2 = new THREE.PointLight(0xffffff, 0.4, 10000);
+            fill2.position.set(-3000, 1500, -3000);
             scene.add(fill2);
 
             composer = new EffectComposer(renderer);
             const renderPass = new RenderPass(scene, camera);
             renderPass.clearAlpha = 0;
             composer.addPass(renderPass);
-
-            ssaoPass = new SSAOPass(scene, camera, window.innerWidth, window.innerHeight);
-            ssaoPass.kernelRadius = 32; 
-            ssaoPass.minDistance = 0.01; 
-            ssaoPass.maxDistance = 0.25;
-            composer.addPass(ssaoPass);
 
             bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.25, 0.35, 0.8);
             composer.addPass(bloomPass);
@@ -789,7 +787,7 @@
             const isMobile = window.innerWidth <= 768;
             buildScene(isMobile);
 
-            // DEFAULT MODE SELECTION
+            // DEFAULT PRESET: MEDIUM
             applyLightingPreset('mid');
 
             window.addEventListener('resize', onWindowResize);
@@ -798,31 +796,34 @@
             renderer.domElement.addEventListener('mouseup', onPointerUp);
         }
 
-        // ========== GRAPHICS LOGIC UPDATED ==========
+        // ========== SADECE MEDIUM VE HIGH MODLARI ==========
 
         window.handlePresetSelection = function(level) {
             applyLightingPreset(level);
         };
 
         window.applyLightingPreset = function(level) {
-            if (!bloomPass || !ssaoPass || !renderer) return;
+            if (!bloomPass || !renderer) return;
 
             const btnMid = document.getElementById('btn-mid');
             const btnHigh = document.getElementById('btn-high');
 
+            [btnMid, btnHigh].forEach(b => b?.classList.remove('active'));
+
             if (level === 'mid') {
                 btnMid.classList.add('active');
-                btnHigh.classList.remove('active');
-                bloomPass.enabled = false;
-                ssaoPass.enabled = false;
+                bloomPass.enabled = true;
+                bloomPass.strength = 0.05; // Çok minimal bloom
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFShadowMap; 
                 renderer.toneMappingExposure = 0.85;
-            } else if (level === 'high') {
+            } 
+            else if (level === 'high') {
                 btnHigh.classList.add('active');
-                btnMid.classList.remove('active');
                 bloomPass.enabled = true;
                 bloomPass.strength = 0.25;
-                ssaoPass.enabled = true;
-                ssaoPass.kernelRadius = 32;
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap; // En yumuşak ve siyah gölgeler
                 renderer.toneMappingExposure = 0.85;
             }
         };
