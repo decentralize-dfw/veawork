@@ -1,0 +1,127 @@
+VEA Render & Işık Motoru: Teknik Mimari ve Parametreler
+
+Bu doküman, VEA sanal galerisinde kullanılan Three.js tabanlı görüntü motorunun tüm bileşenlerini, ayarlarını ve fonksiyonel mantığını en ince ayrıntısına kadar açıklar.
+
+1. Çekirdek WebGL Renderer Yapılandırması
+
+Sistemin kalbi olan WebGLRenderer, modern PBR (Fiziksel Tabanlı Render) standartlarına göre kurulmuştur.
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+
+// Renk ve Işık Fiziği Ayarları
+renderer.outputColorSpace = THREE.SRGBColorSpace; // Renk doğruluğu için doğrusal olmayan renk uzayı
+renderer.toneMapping = THREE.ACESFilmicToneMapping; // Sinematik kontrast ve parlaklık dengesi
+renderer.toneMappingExposure = 0.85; // Sahnenin genel pozlama değeri
+renderer.physicallyCorrectLights = true; // Işık şiddetlerinin fiziksel birimlerle (lux/candela) hesaplanması
+
+// Gölge Motoru (Shadow Map)
+renderer.shadowMap.enabled = true; // Gölge hesaplamasını aktif et
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Kenarları yumuşatılmış, yüksek kaliteli gölge tipi
+
+
+2. Global Aydınlatma ve Çevresel Işıklandırma (IBL)
+
+Sahnenin gerçekçiliğini sağlayan HDR tabanlı çevre aydınlatması şu fonksiyonlar ve verilerle çalışır:
+
+HDR Yükleyici: RGBELoader ile yüksek dinamik aralıklı .hdr dosyası yüklenir.
+
+PMREM Generator: THREE.PMREMGenerator(renderer), HDR görüntüsünü önceden işleyerek (Prefiltered Mipmapped Radiance Environment Map) nesnelerin üzerinde pürüzsüz ve fiziksel olarak doğru yansımalar oluşturur.
+
+Haritalama: tex.mapping = THREE.EquirectangularReflectionMapping; ile 360 derecelik küresel yansıma sağlanır.
+
+Fonksiyonel Entegrasyon:
+
+scene.background = tex; // Gökyüzü görüntüsü
+scene.environment = pmrem.fromEquirectangular(tex).texture; // Işık ve yansıma kaynağı
+
+
+3. Dinamik Işık Kaynakları (Light Hierarchy)
+
+Sahnede hiyerarşik olarak yerleştirilmiş 4 farklı tipte ışık kaynağı bulunur:
+
+A. HemisphereLight (Gök kubbe Işığı)
+
+Sahnede zemin ve gökyüzü arasındaki genel aydınlık farkını yönetir.
+
+Sky Color: 0xffffff (Saf beyaz)
+
+Ground Color: 0x444444 (Koyu gri)
+
+Intensity: 0.5
+
+Position: (0, 20, 0)
+
+B. DirectionalLight (Güneş Işığı ve Gölge Motoru)
+
+En karmaşık ışık kaynağıdır, tüm gölgelerin ana kaynağıdır.
+
+Şiddet: 3.6
+
+Konum: (12, 24, 12)
+
+Gölge Kamerası (Shadow Camera Orthographic):
+
+near: 0.5, far: 160 (Hesaplama mesafesi)
+
+left: -55, right: 55, top: 55, bottom: -55 (Gölgenin kapsama alanı)
+
+Gölge Kalitesi:
+
+mapSize: (2048, 2048) (Yüksek çözünürlüklü shadow map)
+
+bias: -0.00012 (Gölgenin nesneden ayrılmasını önler)
+
+normalBias: 0.02 (Eğimli yüzeylerdeki gölge bozulmalarını engeller)
+
+C. PointLights (Lokal Dolgu Işıkları)
+
+Karanlıkta kalan alanları aydınlatmak için kullanılan noktasal ışıklar.
+
+Fill 1: Color: 0xffffff, Intensity: 1.4, Distance: 70, Pos: (20, 12, 18)
+
+Fill 2: Color: 0xffffff, Intensity: 1.2, Distance: 70, Pos: (-18, 12, -20)
+
+4. Post-Processing Pipeline (Art İşlem Hattı)
+
+Görüntü oluşturulduktan sonra EffectComposer aracılığıyla üzerine eklenen filtreler:
+
+A. SSAO (Screen Space Ambient Occlusion)
+
+Köşelerin ve nesne birleşim yerlerinin karanlık görünmesini sağlayarak derinlik hissini (AO) simüle eder.
+
+kernelRadius: 5 (AO'nun yayılma genişliği)
+
+minDistance: 0.003 (En yakın AO başlangıcı)
+
+maxDistance: 0.08 (AO'nun kesilme sınırı)
+
+B. Unreal Bloom (Parlama/Işıma)
+
+Parlak yüzeylerin ve ışıkların etrafında ışık hüzmesi oluşturur.
+
+Strength: 0.25 (Parlama gücü)
+
+Radius: 0.35 (Yarıçap)
+
+Threshold: 0.8 (Parlamanın başlaması için gereken minimum parlaklık eşiği)
+
+5. Geometri ve Materyal İşleme
+
+Motorun modelleri nasıl render ettiğine dair spesifik ayarlar:
+
+Shadow Casting: Tüm interaktif modeller ve statik mekan için ch.castShadow = true; ve ch.receiveShadow = true; aktif edilmiştir.
+
+BVH Raycasting: three-mesh-bvh kütüphanesi ile geometriler üzerinde computeBoundsTree() çalıştırılır. Bu, ışığın ve mouse raycast işlemlerinin milyarlarca poligon yerine optimize edilmiş ağaç yapıları üzerinden çok daha hızlı hesaplanmasını sağlar.
+
+6. Ana Render Döngüsü (Frame Loop)
+
+function frame() {
+  requestAnimationFrame(frame);
+  const dt = Math.min(0.033, clock.getDelta()); // Zaman farkı hesaplama
+  
+  // Animasyon Karıştırıcı Güncelleme
+  if(e.mixer && e.animated) e.mixer.update(dt);
+  
+  // Post-processing Render
+  composer.render(); 
+}
