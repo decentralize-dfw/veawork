@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>VEA | ARCHITECTURAL VISUALIZATION ENGINE</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <style>
+        @font-face {
+            font-family: 'Telegrama Render';
+            src: url('https://raw.githubusercontent.com/decentralize-dfw/font/main/vea.ttf') format('truetype');
+            font-display: block;
+        }
+
+        :root {
+            --ui-color: #000000;
+            --bg-color: #ffffff; 
+            --font-main: 'Telegrama Render', sans-serif;
+            --panel-bg-opacity: 0.03; 
+            --panel-blur: 12px; 
+            --radius-l: 24px;
+            --radius-s: 4px;
+            --line: 1px;
+            --color-grey: #d7d7d7;
+            --color-shadow: rgba(0,0,0,.08);
+            --accent-image: url('https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/menu2.jpg');
+        }
+
+        html { scroll-behavior: smooth; }
+
+        * {
+            box-sizing: border-box;
+            scrollbar-width: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        *::-webkit-scrollbar { display: none; }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            color: var(--ui-color);
+            margin: 0; padding: 0;
+            overflow: hidden; 
+            width: 100vw; height: 100vh;
+            text-transform: uppercase;
+        }
+
+        /* ========== LOADER ========== */
+        #loader {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: white;
+            z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 1s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+        .loader-text { font-size: 14px; letter-spacing: 4px; margin-bottom: 20px; }
+        .loader-bar-container { width: 200px; height: 1px; background: #eee; position: relative; overflow: hidden; }
+        .loader-bar { height: 100%; background: #000; width: 0%; transition: width 0.4s ease; }
+
+        /* ========== HEADER ========== */
+        header {
+            position: fixed;
+            top: 0; 
+            z-index: 1000;
+            padding: 30px 20px; 
+            display: flex;
+            align-items: center;
+            width: 100%;
+            background: rgba(255,255,255,0.4); 
+            backdrop-filter: blur(8px); 
+            -webkit-backdrop-filter: blur(8px);
+            border-bottom: var(--line) solid var(--color-grey);
+        }
+
+        @media (min-width: 769px) {
+            header {
+                left: 150px; 
+                width: calc(100% - 170px);
+            }
+        }
+
+        .marquee-wrapper { flex-grow: 1; overflow: hidden; }
+        .text--loop {
+            background: white;
+            overflow: hidden;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            height: 28px;
+            border: var(--line) solid var(--color-grey);
+            border-radius: var(--radius-s);
+            box-shadow: 1px 1px 1px var(--color-shadow);
+            width: 100%;
+        }
+        .marquee-content { display: inline-block; animation: marquee 35s linear infinite; font-size: 11px; letter-spacing: 1px; }
+        @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+
+        .mobile-nav {
+            display: none;
+            gap: 15px;
+            margin-left: auto;
+        }
+        .mobile-nav a { font-size: 10px; font-weight: bold; color: var(--ui-color); text-decoration: none; }
+
+        /* ========== MAIN CONTAINER ========== */
+        .main-container {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1vw;
+            padding: 110px 1vw 1vw 1vw; 
+            height: 100vh;
+            width: 100%;
+        }
+
+        .column {
+            height: calc(100vh - 120px);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-width: 0; 
+        }
+
+        .box--container {
+            background: rgba(0,0,0, var(--panel-bg-opacity));
+            border: var(--color-grey) solid var(--line);
+            border-radius: var(--radius-l);
+            padding: 1.8vw;
+            transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5vw;
+            width: 100%;
+        }
+
+        .box--container:hover { box-shadow: 0 10px 30px var(--color-shadow); background: rgba(0,0,0, 0.05); }
+
+        .media-wrapper {
+            width: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+            position: relative;
+        }
+
+        video, img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: cover;
+            pointer-events: none;
+        }
+
+        .square-wrapper {
+            width: 100%;
+            aspect-ratio: 1;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            background: #000;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+        }
+
+        .web-inner { width: 100%; height: 100%; position: relative; overflow: hidden; background: white; }
+        
+        .html-preview {
+            width: 200%; height: 200%; border: none; position: absolute; top: 0; left: 0;
+            transform: scale(0.5); transform-origin: top left; 
+            pointer-events: auto;
+        }
+
+        .glb-viewer { width: 100%; height: 100%; cursor: grab; background: #f4f4f4;}
+
+        /* TYPOGRAPHY */
+        .panel-title { font-size: clamp(1.1rem, 1.8vw, 1.8rem); line-height: 1.1; margin-bottom: 5px; }
+        .panel-meta { font-size: 0.7rem; opacity: 0.6; border-bottom: 1px solid rgba(0,0,0,0.1); padding-bottom: 8px; margin-bottom: 8px; display: flex; gap: 10px; }
+        .panel-desc { font-size: clamp(0.75rem, 0.9vw, 1rem); line-height: 1.6; text-transform: none; color: #444; }
+        
+        .tag-label { display: flex; align-items: center; gap: 8px; font-size: 9px; margin-bottom: 5px; }
+        .dot { width: 12px; height: 12px; border-radius: 50%; background-image: var(--accent-image); background-size: cover; background-position: center; }
+
+        .btn-accent {
+            background-image: var(--accent-image); background-size: cover; background-position: center;
+            color: white; padding: 12px; border-radius: 12px; text-align: center; font-size: 11px;
+            cursor: pointer; transition: opacity 0.2s, transform 0.2s; text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        .btn-accent:hover { transform: scale(0.98); opacity: 0.9; }
+        .btn-accent.sending { opacity: 0.5; cursor: wait; }
+        .btn-accent.success { background: #000; }
+
+        .info-link { text-decoration: none; color: inherit; border-bottom: 1px solid rgba(0,0,0,0.1); display: block; padding: 5px 0; transition: opacity 0.2s; }
+        .info-link:hover { opacity: 0.5; }
+
+        /* MOBILE OVERRIDES */
+        @media (max-width: 768px) {
+            header { left: 0; padding: 20px 15px; justify-content: flex-end; top: 0; border-bottom: var(--line) solid var(--color-grey); }
+            .marquee-wrapper { display: none; } 
+            .mobile-nav { display: flex; } 
+            .main-container { grid-template-columns: 1fr; padding: 80px 15px 15px 15px; overflow-y: auto; height: auto; gap: 20px; }
+            .column { height: auto; overflow-y: visible; scroll-margin-top: 100px; }
+            body { overflow-y: auto; }
+            .box--container { padding: 20px; gap: 20px; }
+        }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+    <!-- LOADER SCREEN -->
+    <div id="loader">
+        <div class="loader-text">EDITORIAL</div>
+        <div class="loader-bar-container"><div class="loader-bar" id="loader-bar"></div></div>
+    </div>
+
+    <header>
+        <div class="marquee-wrapper hidden md:block">
+            <div class="text--loop">
+                <div class="marquee-content">
+                    VEA | ARCHITECTURAL VISUALIZATION ENGINE — MINIMAL, SCULPTURAL, FUTURISTIC AESTHETIC — DESIGNED IN LUXEMBOURG — 2025 EDITION &nbsp;
+                </div>
+                <div class="marquee-content">
+                    VEA | ARCHITECTURAL VISUALIZATION ENGINE — MINIMAL, SCULPTURAL, FUTURISTIC AESTHETIC — DESIGNED IN LUXEMBOURG — 2025 EDITION &nbsp;
+                </div>
+            </div>
+        </div>
+
+        <nav class="mobile-nav">
+            <a href="#work-section">WORK</a>
+            <a href="#how-section">VIRTUAL_HOW?</a>
+            <a href="#info-section">INFO</a>
+        </nav>
+    </header>
+
+    <main class="main-container">
+        
+        <!-- COLUMN 1: WORK -->
+        <section class="column" id="work-section">
+            <div class="tag-label"><div class="dot"></div> WORK</div>
+            
+            <div class="box--container">
+                <div class="square-wrapper">
+                    <div class="glb-viewer" id="glb-container" data-model="https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/co-chair-opt-v1.glb"></div>
+                </div>
+                <div>
+                    <h2 class="panel-title">STATUS_CO CHAIR</h2>
+                    <div class="panel-meta"><span>2025</span><span>3D MODEL</span></div>
+                    <p class="panel-desc">Interactive seating architecture study. Real-time GLB rendering.</p>
+                </div>
+            </div>
+
+            <div class="box--container">
+                <div class="media-wrapper">
+                    <video src="https://video.wixstatic.com/video/bbd25a_0dac59951f9c42efbf6b8a3a77951e00/1080p/mp4/file.mp4" autoplay muted loop playsinline></video>
+                </div>
+                <div>
+                    <h2 class="panel-title">DAS PIECES</h2>
+                    <p class="panel-desc">A digital exploration of form and materiality through bound narratives.</p>
+                </div>
+            </div>
+
+            <div class="box--container">
+                <div class="media-wrapper">
+                    <video src="https://video.wixstatic.com/video/bbd25a_b443e8c0ed384e30bf532179d14769a8/1080p/mp4/file.mp4" autoplay muted loop playsinline></video>
+                </div>
+                <div>
+                    <h2 class="panel-title">NOVANTATRE</h2>
+                    <p class="panel-desc">Visual study of architectural fragments and memory.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- COLUMN 2: VIRTUAL_HOW? -->
+        <section class="column" id="how-section">
+            <div class="tag-label"><div class="dot"></div> VIRTUAL_HOW?</div>
+
+            <div class="box--container">
+                <div class="media-wrapper">
+                    <img src="https://static.wixstatic.com/media/bbd25a_3fabf155c43f44d2bd5b73577ad988ef~mv2.png">
+                </div>
+                <div>
+                    <h2 class="panel-title">Worldbuilding</h2>
+                    <p class="panel-desc">Designing the digital “space” an studio lives in. aka Metaverse, or Spatial Web, or a Website.</p>
+                </div>
+            </div>
+
+            <div class="box--container">
+                <div class="media-wrapper">
+                    <video src="https://video.wixstatic.com/video/bbd25a_242ed8b9e57049a993162d7d34edb645/1080p/mp4/file.mp4" autoplay muted loop playsinline></video>
+                </div>
+                <div>
+                    <h2 class="panel-title">(1.1) Atmospheric Spatial Interfaces</h2>
+                    <p class="panel-desc">A website that an user could walk inside, and interact with smart objects. Gamification</p>
+                </div>
+            </div>
+
+            <div class="box--container">
+                <div class="square-wrapper">
+                    <div class="web-inner">
+                        <iframe class="html-preview" src="https://raw.githack.com/decentralize-dfw/finder/main/vea_retaildemo.html" allow="autoplay 'none';"></iframe>
+                    </div>
+                </div>
+                <div>
+                    <h2 class="panel-title">(1.2) Web-based 3D Interactivity</h2>
+                    <p class="panel-desc">A framed narrative to showcase any design from various dimensions.</p>
+                </div>
+            </div>
+
+            <div class="box--container">
+                <div class="media-wrapper">
+                    <video src="https://video.wixstatic.com/video/bbd25a_1c655cbc2e58493ea6dd0f8ab6fc46e1/720p/mp4/file.mp4" autoplay muted loop playsinline></video>
+                </div>
+                <div>
+                    <h2 class="panel-title">(1.3) Hybrid Spatial Gallery</h2>
+                    <p class="panel-desc">A medium between 2 dimensional flat and interactive.</p>
+                </div>
+            </div>
+
+            <div class="box--container">
+                <div class="square-wrapper">
+                    <div class="web-inner">
+                        <iframe class="html-preview" src="https://de-centralize.com/3d-interface-v3" allow="autoplay 'none';"></iframe>
+                    </div>
+                </div>
+                <div>
+                    <h2 class="panel-title">(1.4) Index as Mapping</h2>
+                    <p class="panel-desc">Re-organisation of library, in a context, where all works could be seen in a single layout.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- COLUMN 3: NECESSARY INFORMATION -->
+        <section class="column" id="info-section">
+            <div class="tag-label"><div class="dot"></div> NECESSARY INFORMATION</div>
+
+            <!-- THE PLATFORM -->
+            <div class="box--container">
+                <div class="media-wrapper" style="background: transparent; box-shadow: none; border-radius: 0;">
+                    <img src="https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png" style="max-height: 80px; width: auto; object-fit: contain;">
+                </div>
+                <h2 class="panel-title">THE PLATFORM</h2>
+                <div class="panel-desc">
+                    <p class="mb-4">Virtually Ever After is a creative platform that reimagines how we experience architecture and space in the digital age.</p>
+                    <p class="mb-4">Founded in Luxembourg, the studio blends spatial design, real-time 3D environments, and emerging technologies like AI and VR to craft immersive, interactive experiences that go far beyond traditional visualizations.</p>
+                    <p class="mb-4">Our mission is to dissolve the boundaries between physical and digital spaces — turning static environments into living, navigable, and story-driven worlds.</p>
+                    <p class="mb-4">Whether you're exploring a private home, a fashion showroom, a cultural venue, or a commercial project, VEA transforms your screen into a gateway of presence, interaction, and imagination.</p>
+                    <p class="mb-4">From concept to execution, we combine design thinking with advanced technologies like Three.js, WebXR, and custom AI integrations to create flexible, scalable digital twins.</p>
+                    <p class="mb-4">Each project is treated as a unique narrative — developed through close collaboration with our clients.</p>
+                    <p class="mb-4">VEA works with architects, developers, curators, brands, and institutions ready to embrace the future of spatial storytelling.</p>
+                    <p>We believe architecture doesn’t end in construction, it continues as an evolving digital experience.</p>
+                </div>
+            </div>
+
+            <!-- VISION -->
+            <div class="box--container" style="background: #000; color: white;">
+                <h2 class="panel-title">VISION</h2>
+                <p class="panel-desc" style="color: #fff;">VEA combines architecture and storytelling into a multidimensional universe for each individual story.</p>
+            </div>
+
+            <!-- SERVICES -->
+            <div class="box--container">
+                <h2 class="panel-title">SERVICES</h2>
+                <div class="panel-desc" style="font-size: 11px;">1) WORLDBUILDING<br>2) IDENTITY BUILDING<br>3) DIGITAL CONTENT</div>
+            </div>
+
+            <!-- FOUNDER -->
+            <div class="box--container" style="background: rgba(0,0,0,0.02);">
+                <div class="media-wrapper">
+                    <img src="https://raw.githubusercontent.com/decentralize-dfw/vea-files/refs/heads/main/ElevenLabs_image_topaz-image-upscale_2025-12-28T21_22_14.png" alt="Deniz Agaoglu">
+                </div>
+                <h2 class="panel-title">FOUNDER</h2>
+                <div class="panel-desc">
+                    <p class="font-bold mb-2">Deniz Agaoglu</p>
+                    <p class="mb-4 italic opacity-75">Architect and digital designer exploring the intersection between physical spaces and virtual environments.</p>
+                    <p class="mb-4">Born in Alanya in 1995, she holds a Bachelor’s degree in Architecture from Istanbul Bilgi University and a Master’s degree in Architecture and Urban Design from Politecnico di Milano.</p>
+                    <p class="mb-4">Her professional journey began at co.arch studio in Milan, where she contributed to projects ranging from interior and furniture design to urban-scale interventions. In 2022, she relocated to Luxembourg, further expanding her experience within the European architectural scene and developing a strong interest in digital design and immersive storytelling.</p>
+                    <p class="mb-4">In 2025, Deniz founded Virtually Ever After, a design practice dedicated to crafting sensorial, narrative-driven virtual spaces. Through a multidisciplinary approach that merges architecture, technology, and visual culture, her work reimagines spatial experiences and bridges the gap between the tangible and the digital.</p>
+                    <p>She continues to collaborate internationally with architects, cultural institutions, and creatives — always seeking new ways to explore and narrate space.</p>
+                </div>
+            </div>
+
+            <!-- INQUIRIES -->
+            <div class="box--container">
+                <h2 class="panel-title">INQUIRIES</h2>
+                <div class="panel-desc" style="font-size: 11px;">
+                    <div class="mb-2">LUXEMBOURG</div>
+                    <a href="mailto:deniz@virtuallyeverafter.xyz" class="info-link">deniz@virtuallyeverafter.xyz</a>
+                    <a href="tel:352661953108" class="info-link">+352 661 953 108</a>
+                    <a href="https://www.instagram.com/virtually.ever.after/" target="_blank" class="info-link">INSTAGRAM</a>
+                    <a href="https://www.linkedin.com/in/deniz-agaoglu/" target="_blank" class="info-link">LINKEDIN</a>
+                    <a href="https://virtuallyeverafter.work/book" target="_blank" class="info-link">DIGITAL BOOKLET</a>
+                </div>
+            </div>
+
+            <!-- CONNECT (FORMSPREE INTEGRATION UPDATED) -->
+            <div class="box--container" id="subscribe-panel">
+                <h2 class="panel-title">CONNECT</h2>
+                <p style="font-size: 8px; opacity: 0.6; margin-bottom: 5px;">JOIN OUR DIGITAL ECOSYSTEM</p>
+                <form id="subscribe-form" action="https://formspree.io/f/mqekyznn" method="POST">
+                    <input type="email" name="email" id="subscriber-email" placeholder="YOUR EMAIL..." required style="background:transparent; border:1px solid #000; padding:12px; border-radius:8px; font-family:var(--font-main); font-size:10px; width:100%; outline: none; margin-bottom: 15px;">
+                    <button type="submit" class="btn-accent w-full" id="subscribe-btn">SUBSCRIBE</button>
+                </form>
+                <div id="status-message" style="font-size: 8px; text-align: center; display: none; margin-top: 10px;">TRANSMISSION COMPLETE.</div>
+            </div>
+
+            <div style="padding: 20px; text-align: center;">
+                 <h1 style="font-size: 40px; letter-spacing: -2px; margin: 0;">VEA</h1>
+                 <p style="font-size: 8px; opacity: 0.5;">© 2025 VIRTUALLY EVER AFTER</p>
+            </div>
+        </section>
+
+    </main>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
+        // LOADER
+        window.addEventListener('load', () => {
+            const bar = document.getElementById('loader-bar');
+            const loader = document.getElementById('loader');
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 25;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        loader.style.opacity = '0';
+                        setTimeout(() => loader.style.display = 'none', 1000);
+                        initGLBViewer();
+                        initSubscriptionLogic();
+                    }, 500);
+                }
+                bar.style.width = progress + '%';
+            }, 150);
+        });
+
+        // FORMSPREE LOGIC
+        function initSubscriptionLogic() {
+            const form = document.getElementById('subscribe-form');
+            const btn = document.getElementById('subscribe-btn');
+            const status = document.getElementById('status-message');
+            const input = document.getElementById('subscriber-email');
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const data = new FormData(form);
+                btn.classList.add('sending');
+                btn.innerText = 'CONNECTING...';
+
+                fetch(form.action, {
+                    method: 'POST',
+                    body: data,
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                }).then(response => {
+                    if (response.ok) {
+                        btn.innerText = 'SENT';
+                        btn.classList.remove('sending');
+                        btn.classList.add('success');
+                        status.style.display = 'block';
+                        form.reset();
+                        input.style.display = 'none';
+                        setTimeout(() => {
+                            btn.innerText = 'SUBSCRIBE';
+                            btn.classList.remove('success');
+                            status.style.display = 'none';
+                            input.style.display = 'block';
+                        }, 5000);
+                    } else {
+                        throw new Error('Form error');
+                    }
+                }).catch(error => {
+                    btn.innerText = 'ERROR';
+                    btn.classList.remove('sending');
+                    setTimeout(() => btn.innerText = 'SUBSCRIBE', 3000);
+                });
+            });
+        }
+
+        // GLB VIEWER
+        function initGLBViewer() {
+            const container = document.getElementById('glb-container');
+            if (!container) return;
+
+            const modelUrl = container.getAttribute('data-model');
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf4f4f4);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+            container.appendChild(renderer.domElement);
+
+            const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(4, 4, 4);
+
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 4.0;
+
+            scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+            const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
+            dirLight.position.set(5, 10, 7);
+            scene.add(dirLight);
+
+            const loader = new GLTFLoader();
+            const dracoLoader = new DRACOLoader();
+            dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+            loader.setDRACOLoader(dracoLoader);
+
+            loader.load(modelUrl, (gltf) => {
+                const model = gltf.scene;
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                model.position.sub(center);
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                camera.position.set(maxDim * 1.8, maxDim * 1.2, maxDim * 1.8);
+                camera.lookAt(0,0,0);
+                scene.add(model);
+            });
+
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            }
+
+            const resizeObserver = new ResizeObserver(() => {
+                const w = container.clientWidth;
+                const h = container.clientHeight;
+                if(w && h) {
+                    camera.aspect = w / h;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(w, h);
+                }
+            });
+            resizeObserver.observe(container);
+            animate();
+        }
+    </script>
+</body>
+</html>
