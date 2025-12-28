@@ -245,7 +245,7 @@
             color: #fff;
         }
 
-        /* YES butonu için mavi kaldırıldı, NO butonuyla aynı stil verildi */
+        /* YES butonu için stil düzenlemesi */
         .cookie-btn.yes {
             background: none;
             color: inherit;
@@ -254,58 +254,51 @@
         /* MOBİL TASARIM */
         @media (max-width: 576px) {
             #nav-container {
-                top: 0;
-                left: 0;
-                width: 100%;
-                flex-direction: row;
-                align-items: stretch;
-                background: var(--vea-white);
-                border-bottom: 1px solid var(--vea-border);
+                top: 10px;
+                left: 10px;
+                width: 100px; /* Genişlik masaüstü ile aynı (100px) */
+                flex-direction: column; /* Yatay dizilimden dikey dizilime geri dönüldü */
+                background: transparent;
+                border-bottom: none;
             }
             #logo-link {
-                width: 50%;
-                margin-bottom: 0;
-                display: flex;
-                align-items: center;
-                padding: 0 10px;
-                box-sizing: border-box;
+                width: 100px;
+                margin-bottom: 5px;
+                display: block;
             }
-            #logo-img { max-height: 20px; width: auto; }
+            #logo-img { max-height: none; width: 100%; }
             .custom-dropdown {
-                width: 50%;
-                border: none;
-                border-left: 1px solid var(--vea-border);
-                border-radius: 0 !important;
-                background: transparent;
+                width: 100%;
+                border: 1px solid var(--vea-border);
+                border-radius: 8px !important;
+                background: var(--vea-white);
             }
             
             .custom-dropdown.open { 
+                border-radius: 8px 8px 0 0 !important;
                 background-image: var(--menu-img);
-                background-size: 100% auto;
+                background-size: 100px auto;
                 background-position: top center;
-                color: #fff;
             }
             
             .dropdown-header { height: var(--header-h-mobile); font-size: 11px; padding-right: 44px; }
             .arrow-icons { 
-                width: 44px; 
-                border-radius: 0; 
-                background-size: 50vw auto;
+                width: 36px; 
+                border-radius: 0 7px 7px 0;
+                background-size: 100px auto;
                 background-position: right top;
             }
             
             .dropdown-list {
-                top: var(--header-h-mobile);
-                position: fixed;
-                left: 50%;
-                width: 50%;
-                border-radius: 0;
-                background-image: var(--menu-img);
-                background-size: 100% auto;
-                background-repeat: no-repeat;
+                top: calc(var(--header-h-mobile) - 1px);
+                position: absolute;
+                left: -1px;
+                width: calc(100% + 2px);
+                border-radius: 0 0 8px 8px;
+                background-size: 100px auto;
                 background-position: center calc(var(--header-h-mobile) * -1);
             }
-            .dropdown-list li { padding: 16px 10px; font-size: 13px; }
+            .dropdown-list li { padding: 12px 6px; font-size: 11px; }
 
             #legal-notice {
                 font-size: 7px;
@@ -315,13 +308,29 @@
 
             #cookie-consent {
                 bottom: 40px;
-                left: 5%;
-                width: 90%;
-                justify-content: space-between;
+                left: 10px;
+                width: auto;
+                max-width: 80%;
                 font-size: 7px;
             }
         }
     </style>
+
+    <!-- Google tag (gtag.js) - Botlar için görünür ve varsayılan olarak engelli -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-K3BPJJFP5C"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+
+      // Varsayılan olarak tüm izlemeleri 'denied' (reddedildi) olarak başlatın
+      gtag('consent', 'default', {
+        'ad_storage': 'denied',
+        'analytics_storage': 'denied'
+      });
+
+      gtag('js', new Date());
+      gtag('config', 'G-K3BPJJFP5C');
+    </script>
 </head>
 <body>
 
@@ -371,25 +380,19 @@
     </div>
 
     <script>
-        /** * GOOGLE ANALYTICS GLOBAL SETUP 
-         * Crawlerin gtag'i tanıması için window seviyesinde hemen tanımlıyoruz.
-         */
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){window.dataLayer.push(arguments);}
-        
-        const GA_MEASUREMENT_ID = 'G-K3BPJJFP5C';
         const dropdownToggle = document.getElementById('dropdown-toggle');
         const dropdownList = document.getElementById('dropdown-list');
         const headerText = document.getElementById('current-selection-header');
         const iframeWrapper = document.getElementById('iframe-wrapper');
         const cookieBanner = document.getElementById('cookie-consent');
+        const GA_MEASUREMENT_ID = 'G-K3BPJJFP5C';
 
         window.addEventListener('load', () => {
             const consent = localStorage.getItem('vea_cookie_consent');
             if (consent === null) {
                 cookieBanner.style.display = 'flex';
             } else if (consent === 'true') {
-                initAnalytics();
+                updateConsent(true); // Daha önce onay verilmişse izni güncelle
             }
         });
 
@@ -397,24 +400,20 @@
             localStorage.setItem('vea_cookie_consent', accepted);
             cookieBanner.style.display = 'none';
             if (accepted) {
-                initAnalytics();
+                updateConsent(true);
             }
         }
 
-        function initAnalytics() {
-            if (!document.getElementById('ga-script')) {
-                const script = document.createElement('script');
-                script.id = 'ga-script';
-                script.async = true;
-                script.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
-                document.head.appendChild(script);
-
-                gtag('js', new Date());
-                gtag('config', GA_MEASUREMENT_ID, {
-                    'page_path': window.location.pathname,
-                    'cookie_flags': 'SameSite=None;Secure'
+        /**
+         * Google'a iznin verildiğini bildirir
+         */
+        function updateConsent(accepted) {
+            if (accepted) {
+                gtag('consent', 'update', {
+                    'analytics_storage': 'granted'
                 });
-                console.log("Analytics (GA4) initialized.");
+                console.log("Analytics izni verildi.");
+                trackPageView("INIT");
             }
         }
 
