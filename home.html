@@ -250,11 +250,20 @@
         }
 
         .panel-link {
-            display: inline-block; margin-top: 1.5rem;
-            text-decoration: underline; text-underline-offset: 4px;
-            color: var(--ui-color); font-size: 0.8rem;
-            letter-spacing: 1px; text-transform: uppercase;
-        }
+    display: block; /* Alt alta gelmelerini sağlar */
+    margin-top: 1rem; /* Aralarında boşluk bırakır */
+    text-decoration: underline;
+    text-underline-offset: 4px;
+    color: var(--ui-color);
+    font-size: 0.8rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: opacity 0.2s;
+}
+
+.panel-link:hover {
+    opacity: 0.6;
+}
 
         @media (max-width: 768px) {
             #side-panel { 
@@ -351,7 +360,6 @@
 
         const sceneObjects = [
   {
-
     type: 'model',
     src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/vea3d-v2-opt-v1.glb',
     width: 700,
@@ -362,33 +370,64 @@
       name: "About",
       categories: { sub1: "2025", sub2: "ABOUT" },
       description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\nMinimal, sculptural, futuristic aesthetic\n\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce",
-      
       media: [
-
-        
         { 
           type: "image", 
-          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png",
-          linkUrl: null,
-          linkText: "OPEN IN A NEW TAB"
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png"
         }
+      ],
+      links: [
+        { text: "OPEN IN A NEW TAB", url: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png" }
       ]
     }
   },
-// {type: 'model',    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/labsglb-v1.glb',    width: 700,    position: { x: 0, y: -100, z: 0 },    rotation: { x: 0, y: 0, z: 0 },    scale: 200,    clickable: false,              includeInFit: false,           modalContent: {      name: "bldg",      categories: { sub1: "2025", sub2: "ABOUT" },      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",  media: [   {   type: "image",   src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png",      linkUrl: null,      linkText: "OPEN IN A NEW TAB"   }  ] }  },
-
-{type: 'model',    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/exhbt22-opt.glb',    width: 700,    position: { x: 0, y: -560, z: 0 },    rotation: { x: 0, y: 0, z: 0 },    scale: 400,    clickable: false, includeInFit: false,   modalContent: {      name: "bldg",      categories: { sub1: "2025", sub2: "ABOUT" },      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",  media: [   {   type: "image",   src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png",      linkUrl: null,      linkText: "OPEN IN A NEW TAB"   }  ] }  },
-
-{type: 'model',    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/tablelabael2.glb',    width: 700,    position: { x: -10, y: -560, z: -20 },    rotation: { x: 0, y: 0, z: 0 },    scale: 400,    clickable: false, includeInFit: false,   modalContent: {      name: "bldg",      categories: { sub1: "2025", sub2: "ABOUT" },      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",  media: [   {   type: "image",   src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png",      linkUrl: null,      linkText: "OPEN IN A NEW TAB"   }  ] }  },
-
-//{type: 'model',    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/mm6s-opt.glb',    width: 700,    position: { x: 0, y: 0, z: 0 },    rotation: { x: 0, y: 0, z: 0 },    scale: 800,    clickable: false, includeInFit: false,   modalContent: {      name: "bldg",      categories: { sub1: "2025", sub2: "ABOUT" },      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",  media: [   {   type: "image",   src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png",      linkUrl: null,      linkText: "OPEN IN A NEW TAB"   }  ] }  },
- //{type: 'model',    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/kutudeneme.glb',    width: 700,    position: { x: 0, y: 0, z: 0 },    rotation: { x: 0, y: 0, z: 0 },    scale: 80,    clickable: false,    modalContent: {      name: "bldg",      categories: { sub1: "2025", sub2: "ABOUT" },      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",  media: [   {   type: "image",   src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png",      linkUrl: null,      linkText: "OPEN IN A NEW TAB"   }  ] }  },
-  
-// {    type: 'image',    src: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg',    width: 4000,    position: { x: 0, y: -10, z: 0 },    rotation: { x: 90, y: 0, z: 0 },    scale: 1000,    clickable: false,    modalContent: {      name: "Atmosphere",      categories: { sub1: "2024", sub2: "Environment" },      description: "Void environment.",      media: [        {            type: "image",            src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg",          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg",          linkText: "OPEN IN A NEW TAB"        }      ]    }  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/exhbt22-opt.glb',
+    width: 700,
+    position: { x: 0, y: -560, z: 0 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: 400,
+    clickable: false, 
+    includeInFit: false,
+    modalContent: {
+      name: "bldg",
+      categories: { sub1: "2025", sub2: "ABOUT" },
+      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",
+      media: [
+        { 
+          type: "image", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png"
+        }
+      ],
+      links: []
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/tablelabael2.glb',
+    width: 700,
+    position: { x: -10, y: -560, z: -20 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: 400,
+    clickable: false, 
+    includeInFit: false,
+    modalContent: {
+      name: "bldg",
+      categories: { sub1: "2025", sub2: "ABOUT" },
+      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",
+      media: [
+        { 
+          type: "image", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png"
+        }
+      ],
+      links: []
+    }
+  },
   {
     type: 'model',
     src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main//daspieces1-opt-v6.glb',
-    //daspiecesbook-opt-v11.glb
     position: { x: 0, y: 0, z: -750 },
     rotation: { x: 0, y: 90, z: 0 },
     scale: 500,
@@ -399,17 +438,15 @@
       media: [
         { 
           type: "video", 
-          src: "https://video.wixstatic.com/video/bbd25a_0dac59951f9c42efbf6b8a3a77951e00/1080p/mp4/file.mp4",
-          linkUrl: "https://www.instagram.com/virtually.ever.after/reel/DQo4sq2iEaH/",
-          linkText: "Open REEL on Instagram"
+          src: "https://video.wixstatic.com/video/bbd25a_0dac59951f9c42efbf6b8a3a77951e00/1080p/mp4/file.mp4"
         },
-         { 
+        { 
           type: "video", 
-          src: "https://video.wixstatic.com/video/bbd25a_ac3a4bd792a04e6ab5a9009dde170ea8/1080p/mp4/file.mp4",
-          linkUrl: null,
-          linkText: "OPEN IN A NEW TAB"
+          src: "https://video.wixstatic.com/video/bbd25a_ac3a4bd792a04e6ab5a9009dde170ea8/1080p/mp4/file.mp4"
         }
-        
+      ],
+      links: [
+        { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQo4sq2iEaH/" }
       ]
     }
   },
@@ -426,16 +463,15 @@
       media: [
         { 
           type: "video", 
-          src: "https://video.wixstatic.com/video/bbd25a_b443e8c0ed384e30bf532179d14769a8/1080p/mp4/file.mp4",
-          linkUrl: "https://www.instagram.com/virtually.ever.after/reel/DSSBQPrjFkP/",
-          linkText: "Open REEL on Instagram"
+          src: "https://video.wixstatic.com/video/bbd25a_b443e8c0ed384e30bf532179d14769a8/1080p/mp4/file.mp4"
         }
+      ],
+      links: [
+        { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DSSBQPrjFkP/" }
       ]
     }
   },
-
-{
-   
+  {
     type: 'model',
     src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/ipod-opt-v2.glb',
     width: 500,
@@ -449,16 +485,15 @@
       media: [
         { 
           type: "html", 
-          src: "https://raw.githubusercontent.com/decentralize-dfw/finder/refs/heads/main/birdsv10.html",
-          linkUrl: "https://www.virtuallyeverafter.work/sv",
-          linkText: "OPEN IN A NEW TAB"
+          src: "https://raw.githubusercontent.com/decentralize-dfw/finder/refs/heads/main/birdsv10.html"
         }
+      ],
+      links: [
+        { text: "OPEN IN A NEW TAB", url: "https://www.virtuallyeverafter.work/sv" }
       ]
     }
   },
-
-
-{
+  {
     type: 'model',
     src: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize-archives/main/celly-o.glb',
     position: { x: 0, y: 250, z: 1500 },
@@ -471,18 +506,18 @@
       media: [
         { 
           type: "html", 
-          src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/refs/heads/main/index.html",
-          linkUrl: "https://de-centralize.com/",
-          linkText: "OPEN IN A NEW TAB"
+          src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/refs/heads/main/index.html"
         }
+      ],
+      links: [
+        { text: "OPEN IN A NEW TAB", url: "https://de-centralize.com/" }
       ]
     }
   },
-
   {
     type: 'model',
     src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/co-chair-opt-v1.glb',
-    position: { x: 0, y: 0, z:  0 },
+    position: { x: 0, y: 0, z: 0 },
     rotation: { x: 0, y: 90, z: 0 },
     scale: 600,
     modalContent: {
@@ -492,14 +527,12 @@
       media: [
         { 
           type: "model", 
-          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/co-chair-opt-v1.glb",
-          linkUrl: null,
-          linkText: "OPEN IN A NEW TAB"
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/co-chair-opt-v1.glb"
         }
-      ]
+      ],
+      links: []
     }
   },
-
   {
     type: 'model',
     src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/booth-opt-v9.glb',
@@ -513,10 +546,11 @@
       media: [
         { 
           type: "video", 
-          src: "https://video.wixstatic.com/video/bbd25a_6230b7e092674b0d8f32b87103b3c920/720p/mp4/file.mp4",
-          linkUrl: "https://www.instagram.com/virtually.ever.after/reel/DP3gbgpiKbS/",
-          linkText: "Open REEL on Instagram"
+          src: "https://video.wixstatic.com/video/bbd25a_6230b7e092674b0d8f32b87103b3c920/720p/mp4/file.mp4"
         }
+      ],
+      links: [
+        { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DP3gbgpiKbS/" }
       ]
     }
   },
@@ -533,15 +567,14 @@
       media: [
         { 
           type: "video", 
-          src: "https://video.wixstatic.com/video/bbd25a_fba3080416b3426783eefde37e081efa/720p/mp4/file.mp4",
-          linkUrl: "https://www.instagram.com/virtually.ever.after/reel/DQHQ-3MCBkP/",
-          linkText: "Open REEL on Instagram"
+          src: "https://video.wixstatic.com/video/bbd25a_fba3080416b3426783eefde37e081efa/720p/mp4/file.mp4"
         }
+      ],
+      links: [
+        { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQHQ-3MCBkP/" }
       ]
     }
   },
-  
-
   {
     type: 'model',
     src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/sandalye-opt-v5.glb',
@@ -555,10 +588,11 @@
       media: [
         { 
           type: "video", 
-          src: "https://video.wixstatic.com/video/bbd25a_a98194f1174b434ea9f7f1ce355d6c81/1080p/mp4/file.mp4",
-          linkUrl: "https://www.instagram.com/virtually.ever.after/reel/DQmUnZkCHOl/",
-          linkText: "Open REEL on Instagram"
+          src: "https://video.wixstatic.com/video/bbd25a_a98194f1174b434ea9f7f1ce355d6c81/1080p/mp4/file.mp4"
         }
+      ],
+      links: [
+        { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQmUnZkCHOl/" }
       ]
     }
   },
@@ -575,14 +609,14 @@
       media: [
         { 
           type: "video", 
-          src: "https://video.wixstatic.com/video/bbd25a_cbec7d394bfd417193d86ba249c93d63/720p/mp4/file.mp4",
-          linkUrl: "https://www.instagram.com/virtually.ever.after/reel/DP6cIwoCOFO/",
-          linkText: "Open REEL on Instagram"
+          src: "https://video.wixstatic.com/video/bbd25a_cbec7d394bfd417193d86ba249c93d63/720p/mp4/file.mp4"
         }
+      ],
+      links: [
+        { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DP6cIwoCOFO/" }
       ]
     }
   },
-  
   {
     type: 'model',
     src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/wireframe-opt-v2.glb',
@@ -596,17 +630,18 @@
       media: [
         { 
           type: "video", 
-          src: "https://video.wixstatic.com/video/bbd25a_9bb1f95695fd4d83aa68eda3da571e47/1080p/mp4/file.mp4",
-          linkUrl: "https://www.instagram.com/virtually.ever.after/reel/DQUK0uOiORM/",
-          linkText: "Open REEL on Instagram"
+          src: "https://video.wixstatic.com/video/bbd25a_9bb1f95695fd4d83aa68eda3da571e47/1080p/mp4/file.mp4"
         }
+      ],
+      links: [
+        { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQUK0uOiORM/" }
       ]
     }
   },
   {
     type: 'model',
     src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/mektup-opt-v1.glb',
-    position: { x: 2400, y: 0, z:  750 },
+    position: { x: 2400, y: 0, z: 750 },
     rotation: { x: 0, y: -90, z: 0 },
     scale: 500,
     modalContent: {
@@ -616,18 +651,18 @@
       media: [
         { 
           type: "video", 
-          src: "https://video.wixstatic.com/video/bbd25a_f47ac95a2e74487993200753805e8cee/1080p/mp4/file.mp4",
-          linkUrl: "https://www.instagram.com/virtually.ever.after/reel/DQ6mGDAiELU/",
-          linkText: "Follow on Instagram"
+          src: "https://video.wixstatic.com/video/bbd25a_f47ac95a2e74487993200753805e8cee/1080p/mp4/file.mp4"
         }
+      ],
+      links: [
+        { text: "Follow on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQ6mGDAiELU/" }
       ]
     }
   },
-  
   {
     type: 'model',
     src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/cicex2-opt-v7.glb',
-    position: { x: -2400, y: 50, z:  0 },
+    position: { x: -2400, y: 50, z: 0 },
     rotation: { x: 0, y: 0, z: 0 },
     scale: 500,
     modalContent: {
@@ -637,38 +672,39 @@
       media: [
         { 
           type: "video", 
-          src: "https://video.wixstatic.com/video/bbd25a_1c655cbc2e58493ea6dd0f8ab6fc46e1/720p/mp4/file.mp4",
-          linkUrl: "https://www.instagram.com/virtually.ever.after/reel/DQEj6rJCMbS/",
-          linkText: "Open REEL on Instagram"
+          src: "https://video.wixstatic.com/video/bbd25a_1c655cbc2e58493ea6dd0f8ab6fc46e1/720p/mp4/file.mp4"
         }
+      ],
+      links: [
+        { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DQEj6rJCMbS/" }
       ]
     }
   },
-  
   {
     type: 'model',
     src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/serfvs-v3.glb',
-    position: { x: 2500, y: 150, z:  0 },
+    position: { x: 2500, y: 150, z: 0 },
     rotation: { x: 0, y: 180, z: 0 },
     scale: 250,
     modalContent: {
       name: "Servives",
       categories: { sub1: "2024", sub2: "Archive", sub3: "Vea" },
-      description: "1) Worldbuilding\n\nDesigning the digital 'space' a brand lives in. \nWeb based 3D interactive experiences \nAtmospheric spatial interfaces \nCustom-designed architectural objects \n\n\n 2) Identity Building \n\nBuilding a brand's identity specifically for the digital realm. \nLogo design \nColor & typography systems \nWebsite  \n\n\n3) Digital Content \n\nTurning the world into visuals, motion and narrative. \nCinematic reels & videos \nVisual storytelling \nSocial media content in one consistent aesthetic",
+      description: "1) Worldbuilding\n\nDesigning the digital 'space' a brand lives in. \nWeb based 3D interactive experiences \nAtmospheric spatial interfaces \nCustom-designed architectural objects \n\n\n 2) Identity Building \n\nBuilding a brand's identity specifically for the digital realm. \nLogo design \nColor & typography systems \nWebsite  \n\n\n3) Digital Content \n\nTurning the world into visuals, motion and narrative. \nCinematic reels & videos \nVisual storytelling \nSocial media content in one consistent aesthetic",
       media: [
         { 
           type: "video", 
-          src: "https://video.wixstatic.com/video/bbd25a_9c4fa7997a654eb2b1fa56ac22155d27/1080p/mp4/file.mp4",
-          linkUrl: "https://www.instagram.com/virtually.ever.after/reel/DSXgFb8iNB-/",
-          linkText: "Open REEL on Instagram"
+          src: "https://video.wixstatic.com/video/bbd25a_9c4fa7997a654eb2b1fa56ac22155d27/1080p/mp4/file.mp4"
         }
+      ],
+      links: [
+        { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DSXgFb8iNB-/" }
       ]
     }
   },
   {
     type: 'model',
     src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/vea-iwwd-opt-v2.glb',
-    position: { x: 2500, y: 200, z:  -750 },
+    position: { x: 2500, y: 200, z: -750 },
     rotation: { x: 0, y: 180, z: 0 },
     scale: 250,
     modalContent: {
@@ -678,17 +714,18 @@
       media: [
         { 
           type: "html", 
-          src: "https://raw.githubusercontent.com/decentralize-dfw/veawork/refs/heads/main/spherework.html",
-          linkUrl: null,
-          linkText: "OPEN IN A NEW TAB"
+          src: "https://raw.githubusercontent.com/decentralize-dfw/veawork/refs/heads/main/spherework.html"
         }
+      ],
+      links: [
+        { text: "OPEN IN A NEW TAB", url: "https://raw.githack.com/decentralize-dfw/veawork/refs/heads/main/spherework.html" }
       ]
     }
   },
   {
     type: 'model',
     src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/telefon-opt-v3.glb',
-    position: { x: 2400, y: 0, z:  1500 },
+    position: { x: 2400, y: 0, z: 1500 },
     rotation: { x: 0, y: 90, z: 0 },
     scale: 500,
     modalContent: {
@@ -698,14 +735,24 @@
       media: [
         { 
           type: "video", 
-          src: "https://video.wixstatic.com/video/bbd25a_0347ca404afa45c7b59394ddad5370d0/720p/mp4/file.mp4",
-          linkUrl: "https://www.instagram.com/virtually.ever.after/reel/DP03diJiMCw/",
-          linkText: "Open REEL on Instagram"
+          src: "https://video.wixstatic.com/video/bbd25a_0347ca404afa45c7b59394ddad5370d0/720p/mp4/file.mp4"
         }
+      ],
+      links: [
+        { text: "Open REEL on Instagram", url: "https://www.instagram.com/virtually.ever.after/reel/DP03diJiMCw/" },
+         { text: "OPEN IN A NEW TAB", url: "https://raw.githack.com/decentralize-dfw/veawork/refs/heads/main/spherework.html" }
       ]
     }
   }
 ];
+
+// {type: 'model',    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/labsglb-v1.glb',    width: 700,    position: { x: 0, y: -100, z: 0 },    rotation: { x: 0, y: 0, z: 0 },    scale: 200,    clickable: false,              includeInFit: false,           modalContent: {      name: "bldg",      categories: { sub1: "2025", sub2: "ABOUT" },      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",  media: [   {   type: "image",   src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png",      linkUrl: null,      linkText: "OPEN IN A NEW TAB"   }  ] }  },
+
+//{type: 'model',    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/mm6s-opt.glb',    width: 700,    position: { x: 0, y: 0, z: 0 },    rotation: { x: 0, y: 0, z: 0 },    scale: 800,    clickable: false, includeInFit: false,   modalContent: {      name: "bldg",      categories: { sub1: "2025", sub2: "ABOUT" },      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",  media: [   {   type: "image",   src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png",      linkUrl: null,      linkText: "OPEN IN A NEW TAB"   }  ] }  },
+ //{type: 'model',    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/kutudeneme.glb',    width: 700,    position: { x: 0, y: 0, z: 0 },    rotation: { x: 0, y: 0, z: 0 },    scale: 80,    clickable: false,    modalContent: {      name: "bldg",      categories: { sub1: "2025", sub2: "ABOUT" },      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",  media: [   {   type: "image",   src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png",      linkUrl: null,      linkText: "OPEN IN A NEW TAB"   }  ] }  },
+  
+// {    type: 'image',    src: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg',    width: 4000,    position: { x: 0, y: -10, z: 0 },    rotation: { x: 90, y: 0, z: 0 },    scale: 1000,    clickable: false,    modalContent: {      name: "Atmosphere",      categories: { sub1: "2024", sub2: "Environment" },      description: "Void environment.",      media: [        {            type: "image",            src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg",          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg",          linkText: "OPEN IN A NEW TAB"        }      ]    }  },
+ 
 
         let camera, scene, rendererGL, controls, raycaster, mouse, composer, globalEnvMap;
         let loadedAssets = 0, totalAssets = 0;
@@ -936,67 +983,114 @@
         }
 
         function openPanel(content, obj) {
-            if(currentSelectedObject === obj && document.getElementById('side-panel').classList.contains('open')) return;
-            clearHover();
-            currentActiveVideos.forEach(v => { v.pause(); v.src = ""; v.load(); });
-            currentActiveVideos = [];
-            
-            if(!originalCameraState) originalCameraState = { position: camera.position.clone(), target: controls.target.clone(), zoom: camera.zoom };
-            
-            currentSelectedObject = obj;
-            const box = new THREE.Box3().setFromObject(obj);
-            const center = box.getCenter(new THREE.Vector3());
-            
-            // SELECTION ZOOM: Açıyı bozmadan zoom ve odaklanma
-            const targetZoom = PARAMS.initialCameraZoom / PARAMS.selectionZoomFactor;
-            new TWEEN(camera).to({ zoom: targetZoom }, PARAMS.zoomInAnimationDuration).start();
-            new TWEEN(controls.target).to({ x: center.x, y: center.y, z: center.z }, PARAMS.zoomInAnimationDuration).start();
+    // 1. Panel zaten açıksa ve aynı objeyse tekrar tetikleme
+    if(currentSelectedObject === obj && document.getElementById('side-panel').classList.contains('open')) return;
+    
+    // 2. Önceki durumu temizle
+    clearHover();
+    currentActiveVideos.forEach(v => { v.pause(); v.src = ""; v.load(); });
+    currentActiveVideos = [];
+    
+    // 3. Kamera durumunu kaydet ve objeye odaklan
+    if(!originalCameraState) originalCameraState = { position: camera.position.clone(), target: controls.target.clone(), zoom: camera.zoom };
+    
+    currentSelectedObject = obj;
+    const box = new THREE.Box3().setFromObject(obj);
+    const center = box.getCenter(new THREE.Vector3());
+    
+    const targetZoom = PARAMS.initialCameraZoom / PARAMS.selectionZoomFactor;
+    new TWEEN(camera).to({ zoom: targetZoom }, PARAMS.zoomInAnimationDuration).start();
+    new TWEEN(controls.target).to({ x: center.x, y: center.y, z: center.z }, PARAMS.zoomInAnimationDuration).start();
 
-            document.getElementById('panel-title').innerText = content.name;
-            const cats = content.categories || {};
-            document.getElementById('panel-year').innerText = cats.sub1 || '';
-            document.getElementById('panel-cats').innerText = Object.values(cats).slice(1).filter(v=>v && v!=='-').join(', ');
-            document.getElementById('panel-desc').innerText = content.description;
+    // 4. Metin İçeriklerini Doldur
+    document.getElementById('panel-title').innerText = content.name;
+    const cats = content.categories || {};
+    document.getElementById('panel-year').innerText = cats.sub1 || '';
+    document.getElementById('panel-cats').innerText = Object.values(cats).slice(1).filter(v=>v && v!=='-').join(', ');
+    document.getElementById('panel-desc').innerText = content.description;
+    
+    const linksContainer = document.getElementById('panel-links'); 
+    linksContainer.innerHTML = ''; 
+    const mediaContainer = document.getElementById('panel-media'); 
+    mediaContainer.innerHTML = '';
+    
+    // 5. Medya Öğelerini İşle
+    content.media?.forEach(m => {
+        const item = document.createElement('div'); 
+        item.className = 'panel-media-item';
+        
+        let wrapper = document.createElement('div');
+        wrapper.className = 'media-wrapper';
+
+        if(m.type === 'image') {
+            const img = document.createElement('img'); 
+            img.src = m.src; 
+            wrapper.appendChild(img);
+            item.appendChild(wrapper);
+        } 
+        else if(m.type === 'video') {
+            const v = document.createElement('video'); 
+            v.src = m.src; v.loop=true; v.playsInline=true;
+            const b = document.createElement('div'); 
+            b.className = 'media-play-button';
+            b.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="black"><path d="M8 5v14l11-7z"/></svg>`;
             
-            const links = document.getElementById('panel-links'); links.innerHTML = '';
-            const media = document.getElementById('panel-media'); media.innerHTML = '';
+            const toggleVideo = () => { 
+                if(v.paused) { v.play(); b.classList.add('playing'); } 
+                else { v.pause(); b.classList.remove('playing'); } 
+            };
+            v.onclick = toggleVideo; 
+            b.onclick = (e) => { e.stopPropagation(); toggleVideo(); };
             
-            content.media?.forEach(m => {
-                const item = document.createElement('div'); item.className = 'panel-media-item';
-                if(m.type === 'image') {
-                    const wrapper = document.createElement('div'); wrapper.className = 'media-wrapper';
-                    const img = document.createElement('img'); img.src = m.src; wrapper.appendChild(img);
-                    item.appendChild(wrapper);
-                } else if(m.type === 'video') {
-                    const wrapper = document.createElement('div'); wrapper.className = 'media-wrapper';
-                    const v = document.createElement('video'); v.src = m.src; v.loop=true; v.playsInline=true;
-                    const b = document.createElement('div'); b.className = 'media-play-button';
-                    b.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="black"><path d="M8 5v14l11-7z"/></svg>`;
-                    const toggleVideo = () => { if(v.paused) { v.play(); b.classList.add('playing'); } else { v.pause(); b.classList.remove('playing'); } };
-                    v.onclick = toggleVideo; b.onclick = (e) => { e.stopPropagation(); toggleVideo(); };
-                    wrapper.appendChild(v); wrapper.appendChild(b); item.appendChild(wrapper);
-                    currentActiveVideos.push(v);
-                } else if(m.type === 'model') {
-                    const wrapper = document.createElement('div'); 
-                    wrapper.className = 'w-full h-full relative rounded-[16px] overflow-hidden bg-[#f4f4f4]';
-                    item.appendChild(wrapper);
-                    setTimeout(() => initModal3D(wrapper, m.src), 50);
-                } else if(m.type === 'html') {
-                    const wrapper = document.createElement('div'); wrapper.className = 'web-wrapper';
-                    const ifr = document.createElement('iframe');
-                    ifr.src = m.src.replace('raw.githubusercontent.com', 'raw.githack.com');
-                    ifr.className = 'w-[200%] h-[200%] border-none origin-top-left scale-50 absolute top-0 left-0';
-                    wrapper.appendChild(ifr); item.appendChild(wrapper);
-                }
-                media.appendChild(item);
-                if(m.linkUrl) {
-                    const a = document.createElement('a'); a.href = m.linkUrl; a.target='_blank'; a.className='panel-link';
-                    a.innerText = m.linkText || "OPEN PROJECT"; links.appendChild(a);
-                }
-            });
-            document.getElementById('side-panel').classList.add('open');
+            wrapper.appendChild(v); 
+            wrapper.appendChild(b); 
+            item.appendChild(wrapper);
+            currentActiveVideos.push(v);
+        } 
+        else if(m.type === 'model') {
+            wrapper.className = 'w-full h-full relative rounded-[16px] overflow-hidden bg-[#f4f4f4]';
+            item.appendChild(wrapper);
+            setTimeout(() => initModal3D(wrapper, m.src), 50);
+        } 
+        else if(m.type === 'html') {
+            const webWrapper = document.createElement('div'); 
+            webWrapper.className = 'web-wrapper';
+            const ifr = document.createElement('iframe');
+            ifr.src = m.src.replace('raw.githubusercontent.com', 'raw.githack.com');
+            ifr.className = 'w-[200%] h-[200%] border-none origin-top-left scale-50 absolute top-0 left-0';
+            webWrapper.appendChild(ifr); 
+            item.appendChild(webWrapper);
         }
 
+        mediaContainer.appendChild(item);
+
+        // Eğer medyanın kendisine bağlı bir link varsa ekle
+        if(m.linkUrl) {
+            createLinkElement(m.linkUrl, m.linkText || "VIEW MEDIA", linksContainer);
+        }
+    });
+
+    // 6. Çoklu Link Yapısı (modalContent içindeki 'links' dizisi)
+    if (content.links && Array.isArray(content.links)) {
+        content.links.forEach(linkObj => {
+            createLinkElement(linkObj.url, linkObj.text, linksContainer);
+        });
+    }
+
+    // 7 Paneli Aç
+    document.getElementById('side-panel').classList.add('open');
+}
+
+// Link oluşturmayı kolaylaştıran yardımcı fonksiyon
+function createLinkElement(url, text, container) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.className = 'panel-link';
+    a.style.display = 'block'; // Linkleri alt alta dizer
+    a.innerText = text || "OPEN LINK";
+    container.appendChild(a);
+}
         function initModal3D(container, src) {
             const sceneM = new THREE.Scene(); 
             sceneM.background = new THREE.Color(0xf4f4f4); 
