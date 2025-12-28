@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VEA | BOOK A SESSION</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-auth.js";
+
+        // --- FIREBASE YAPILANDIRMASI ---
+        // Burayı Firebase Console'dan aldığın bilgilerle doldurabilirsin.
+        let firebaseConfig = null; 
+        try {
+            if (typeof __firebase_config !== 'undefined' && __firebase_config) {
+                firebaseConfig = JSON.parse(__firebase_config);
+            }
+        } catch (e) {
+            console.warn("Firebase yapılandırması eksik, veriler kaydedilmeyecek.");
+        }
+
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        let app, db, auth;
+
+        if (firebaseConfig && firebaseConfig.apiKey) {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+        }
+
+        // State Management
+        let user = null;
+        let bookedSlots = [];
+        let selectedDate = null;
+        let selectedTime = null;
+        let selectedServices = [];
+        let currentDisplayDate = new Date(); // Takvimde gösterilen mevcut ay/yıl
+
+        // DOM Elements
+        let daysContainer, timeSlotsContainer, monthHeader, proceedBtn, step1, step2;
+
+        // --- UI Functions ---
+
+        // Takvimi Belirli Bir Ay/Yıl İçin Oluşturma
+        function renderCalendar(date) {
+            if (!daysContainer) return;
+            const year = date.getFullYear();
+            const month = date.getMonth();
+            const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+            
+            monthHeader.innerText = `${monthNames[month]} ${year}`;
+            
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const startDay = firstDay === 0 ? 6 : firstDay - 1; // Pazartesi başlangıçlı
+
+            daysContainer.innerHTML = '';
+            
+            // Boş günler
+            for (let i = 0; i < startDay; i++) daysContainer.appendChild(document.createElement('div'));
+
+            const now = new Date();
+            now.setHours(0,0,0,0);
+
+            for (let d = 1; d <= daysInMonth; d++) {
+                const dayEl = document.createElement('div');
+                const checkDate = new Date(year, month, d);
+                dayEl.className = 'calendar-day';
+                dayEl.innerText = d;
+                
+                // Geçmiş günleri devre dışı bırak
+                if (checkDate < now) {
+                    dayEl.classList.add('disabled');
+                } else {
+                    // Eğer seçili gün ise işaretle
+                    if (selectedDate === `${d} ${monthNames[month]} ${year}`) {
+                        dayEl.classList.add('selected');
+                    }
+                    dayEl.onclick = () => selectDate(d, month, year, dayEl);
+                }
+                daysContainer.appendChild(dayEl);
+            }
+        }
+
+        async function selectDate(day, month, year, el) {
+            const monthNames = ["JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER"];
+            document.querySelectorAll('.calendar-day').forEach(cd => cd.classList.remove('selected'));
+            el.classList.add('selected');
+            selectedDate = `${day} ${monthNames[month]} ${year}`;
+            document.getElementById('finalDateInput').value = selectedDate;
+            
+            if (db) {
+                await fetchBookedSlots(selectedDate);
+            }
+            generateTimeSlots();
+            validateStep1();
+        }
+
+        async function fetchBookedSlots(dateString) {
+            if (!user || !db) return;
+            timeSlotsContainer.innerHTML = '<p class="text-[9px] opacity-40 uppercase">Checking availability...</p>';
+            
+            try {
+                // Kamu verisi yolu
+                const appointmentsRef = collection(db, 'artifacts', appId, 'public', 'data', 'appointments');
+                const querySnapshot = await getDocs(appointmentsRef);
+                
+                bookedSlots = [];
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (data.date === dateString) {
+                        bookedSlots.push(data.time);
+                    }
+                });
+            } catch (error) {
+                console.error("Dolu saatler alınamadı:", error);
+            }
+        }
+
+        function generateTimeSlots() {
+            timeSlotsContainer.innerHTML = '';
+            const hours = ["11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00", "20:00", "21:00"];
+            
+            hours.forEach(h => {
+                const isBooked = bookedSlots.includes(h);
+                const slot = document.createElement('div');
+                slot.className = `time-slot ${isBooked ? 'opacity-20 cursor-not-allowed bg-gray-100' : ''}`;
+                slot.innerText = isBooked ? `${h} (FULL)` : h;
+                
+                if (!isBooked) {
+                    if (selectedTime === h) slot.classList.add('selected');
+                    slot.onclick = () => {
+                        document.querySelectorAll('.time-slot').forEach(s => s.classList.remove('selected'));
+                        slot.classList.add('selected');
+                        selectedTime = h;
+                        document.getElementById('finalTimeInput').value = selectedTime;
+                        validateStep1();
+                    };
+                }
+                timeSlotsContainer.appendChild(slot);
+            });
+        }
+
+        function validateStep1() {
+            if (selectedDate && selectedTime) {
+                proceedBtn.disabled = false;
+                proceedBtn.classList.remove('opacity-30', 'cursor-not-allowed');
+            }
+        }
+
+        // --- Ay Değiştirme Fonksiyonları ---
+        window.changeMonth = (delta) => {
+            currentDisplayDate.setMonth(currentDisplayDate.getMonth() + delta);
+            renderCalendar(currentDisplayDate);
+        };
+
+        // --- Auth & Init ---
+        const initAuth = async () => {
+            if (!auth) return;
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Giriş hatası:", error);
+            }
+        };
+
+        if (auth) {
+            onAuthStateChanged(auth, (u) => {
+                user = u;
+                if (daysContainer) renderCalendar(currentDisplayDate);
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            daysContainer = document.getElementById('calendarDays');
+            timeSlotsContainer = document.getElementById('timeSlots');
+            monthHeader = document.getElementById('monthText');
+            proceedBtn = document.getElementById('proceedBtn');
+            step1 = document.getElementById('step1');
+            step2 = document.getElementById('step2');
+
+            if (!auth) renderCalendar(currentDisplayDate);
+            else initAuth();
+
+            // Duration selection
+            document.querySelectorAll('#durationSelection .option-chip').forEach(chip => {
+                chip.onclick = () => {
+                    document.querySelectorAll('#durationSelection .option-chip').forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+                    document.getElementById('durationInput').value = chip.getAttribute('data-val');
+                };
+            });
+
+            // Sliders
+            const budgetSlider = document.getElementById('budgetSlider');
+            const budgetVal = document.getElementById('budgetVal');
+            budgetSlider.oninput = function() {
+                budgetVal.innerText = `$${parseInt(this.value).toLocaleString()}`;
+            };
+
+            const timeSlider = document.getElementById('timeSlider');
+            const timeVal = document.getElementById('timeVal');
+            timeSlider.oninput = function() {
+                const weeks = parseInt(this.value);
+                if (weeks <= 4) {
+                    timeVal.innerText = `${weeks} Week${weeks > 1 ? 's' : ''}`;
+                } else {
+                    const months = Math.floor(weeks / 4);
+                    const remain = weeks % 4;
+                    timeVal.innerText = `${months} Month${months > 1 ? 's' : ''} ${remain > 0 ? remain + ' Week' + (remain > 1 ? 's' : '') : ''}`;
+                }
+            };
+
+            // Services
+            document.querySelectorAll('#serviceSelection .service-chip').forEach(chip => {
+                chip.onclick = () => {
+                    const val = chip.getAttribute('data-val');
+                    if (selectedServices.includes(val)) {
+                        selectedServices = selectedServices.filter(s => s !== val);
+                        chip.classList.remove('active');
+                    } else {
+                        selectedServices.push(val);
+                        chip.classList.add('active');
+                    }
+                    document.getElementById('servicesInput').value = selectedServices.join(', ');
+                };
+            });
+
+            // Form Submit
+            const form = document.getElementById('bookingForm');
+            form.onsubmit = async (e) => {
+                e.preventDefault();
+                const submitBtn = form.querySelector('.submit-btn');
+                submitBtn.innerText = "PROCESSING...";
+                submitBtn.disabled = true;
+
+                try {
+                    if (db && user) {
+                        const appointmentsRef = collection(db, 'artifacts', appId, 'public', 'data', 'appointments');
+                        await addDoc(appointmentsRef, {
+                            name: form.name.value,
+                            email: form.email.value,
+                            date: selectedDate,
+                            time: selectedTime,
+                            duration: form.duration.value,
+                            services: selectedServices,
+                            budget: budgetSlider.value,
+                            timeline: timeSlider.value,
+                            message: form.message.value,
+                            timestamp: new Date()
+                        });
+                    }
+                    const formData = new FormData(form);
+                    await fetch(form.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    document.getElementById('successOverlay').classList.remove('hidden');
+                } catch (error) {
+                    console.error("Gönderim hatası:", error);
+                    submitBtn.innerText = "CONFIRM APPOINTMENT";
+                    submitBtn.disabled = false;
+                }
+            };
+        });
+
+        window.goBack = () => {
+            step1.classList.remove('hidden');
+            step2.classList.add('hidden');
+            document.getElementById('nextAction').classList.remove('hidden');
+        };
+
+        window.proceedStep = () => {
+            step1.classList.add('hidden');
+            step2.classList.remove('hidden');
+            document.getElementById('nextAction').classList.add('hidden');
+        };
+    </script>
+    <style>
+        @font-face {
+            font-family: 'Telegrama Render';
+            src: url('https://raw.githubusercontent.com/decentralize-dfw/font/main/vea.ttf') format('truetype');
+            font-display: block;
+        }
+
+        :root {
+            --ui-color: #000000;
+            --bg-color: #ffffff;
+            --font-main: 'Telegrama Render', sans-serif;
+        }
+
+        body, html {
+            margin: 0; padding: 0;
+            font-family: var(--font-main);
+            background-color: var(--bg-color);
+            color: var(--ui-color);
+            min-height: 100%;
+            overflow-x: hidden;
+        }
+
+        .vea-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 24px;
+        }
+
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+
+        .calendar-day {
+            aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; cursor: pointer; font-size: 10px; transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .calendar-day:hover:not(.disabled) { background: #f0f0f0; border-color: var(--ui-color); }
+        .calendar-day.selected { background: var(--ui-color); color: white; }
+        .calendar-day.disabled { opacity: 0.1; cursor: not-allowed; }
+
+        .time-slot {
+            padding: 10px 5px; border: 1px solid rgba(0,0,0,0.1); border-radius: 12px;
+            text-align: center; cursor: pointer; font-size: 9px; transition: all 0.2s ease;
+        }
+
+        .time-slot:hover:not(.opacity-20) { border-color: var(--ui-color); background: #fafafa; }
+        .time-slot.selected { background: var(--ui-color); color: white; border-color: var(--ui-color); }
+
+        .option-chip {
+            border: 1px solid rgba(0,0,0,0.1); padding: 6px 10px; border-radius: 10px;
+            cursor: pointer; font-size: 9px; text-transform: uppercase; white-space: nowrap;
+        }
+        .option-chip.active { background: var(--ui-color); color: white; }
+
+        input, textarea {
+            background: transparent; border: 1px solid rgba(0,0,0,0.1); border-radius: 12px;
+            padding: 12px; width: 100%; font-family: inherit; outline: none; -webkit-appearance: none;
+        }
+
+        .service-chip {
+            border: 1px solid rgba(0,0,0,0.1); padding: 6px 12px; border-radius: 20px;
+            cursor: pointer; font-size: 8px; text-transform: uppercase;
+        }
+        .service-chip.active { background: var(--ui-color); color: white; }
+
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-runnable-track { height: 2px; background: #eee; }
+        input[type=range]::-webkit-slider-thumb { height: 16px; width: 16px; border-radius: 50%; background: var(--ui-color); -webkit-appearance: none; margin-top: -7px; }
+
+        .submit-btn {
+            background: var(--ui-color); color: white; padding: 15px; border-radius: 12px;
+            width: 100%; text-transform: uppercase; letter-spacing: 2px; font-size: 11px;
+        }
+
+        .nav-btn {
+            cursor: pointer; padding: 5px; opacity: 0.5; transition: opacity 0.2s;
+        }
+        .nav-btn:hover { opacity: 1; }
+
+        @media (max-width: 640px) {
+            .vea-panel { padding: 1.5rem !important; }
+            h1 { font-size: 1.8rem !important; }
+            .calendar-day { font-size: 9px; }
+            .time-slot { font-size: 8px; }
+        }
+
+        .fade-in { animation: fadeIn 0.8s ease forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 md:p-10">
+
+    <div class="max-w-6xl w-full grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-10 fade-in">
+        <!-- LEFT: INFO -->
+        <div class="md:col-span-4 flex flex-col justify-between py-2 md:py-6">
+            <div class="mb-6 md:mb-0">
+                <img src="https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/veacrop.png" class="w-20 md:w-24 mb-6 md:mb-10" alt="VEA">
+                <h1 class="text-2xl md:text-3xl font-bold leading-tight mb-4 uppercase">Book a <br class="hidden md:block">Consultation</h1>
+                <p class="text-[10px] md:text-xs opacity-60 leading-relaxed uppercase">Select your session details. Use arrows to navigate months.</p>
+            </div>
+            <div class="mt-4 md:mt-10">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                    <span class="text-[9px] md:text-[10px] uppercase font-bold tracking-widest">Luxembourg (GMT+1)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT: PANEL -->
+        <div class="md:col-span-8 vea-panel p-6 md:p-10">
+            <form id="bookingForm" action="https://formspree.io/f/mqakvjge" method="POST">
+                <!-- STEP 1 -->
+                <div id="step1" class="space-y-8 md:space-y-10">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 md:gap-10">
+                        <!-- Calendar Section -->
+                        <div class="w-full">
+                            <div class="flex justify-between items-center mb-4 md:mb-6">
+                                <span class="nav-btn" onclick="changeMonth(-1)">◀</span>
+                                <h3 id="monthText" class="text-[10px] font-bold uppercase tracking-widest"></h3>
+                                <span class="nav-btn" onclick="changeMonth(1)">▶</span>
+                            </div>
+                            <div class="calendar-grid mb-2 opacity-30 text-[7px] md:text-[8px] uppercase font-bold text-center">
+                                <div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div><div>Su</div>
+                            </div>
+                            <div id="calendarDays" class="calendar-grid"></div>
+                        </div>
+                        
+                        <!-- Details Section -->
+                        <div class="flex flex-col space-y-6 md:space-y-8">
+                            <div>
+                                <h3 class="text-[10px] font-bold uppercase mb-4 tracking-widest">Duration</h3>
+                                <div class="flex flex-wrap gap-2" id="durationSelection">
+                                    <div class="option-chip active" data-val="15 min">15 min</div>
+                                    <div class="option-chip" data-val="30 min">30 min</div>
+                                    <div class="option-chip" data-val="45 min">45 min</div>
+                                </div>
+                                <input type="hidden" name="duration" id="durationInput" value="15 min">
+                            </div>
+                            <div>
+                                <h3 class="text-[10px] font-bold uppercase mb-4 tracking-widest">Available Slots</h3>
+                                <div id="timeSlots" class="grid grid-cols-2 sm:grid-cols-2 gap-2 max-h-[180px] md:max-h-[220px] overflow-y-auto pr-1">
+                                    <p class="text-[9px] opacity-40 uppercase italic">Select a date...</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 2 -->
+                <div id="step2" class="hidden space-y-6 md:space-y-8 pt-2">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="text-[8px] md:text-[9px] uppercase font-bold opacity-40">Full Name *</label>
+                            <input type="text" name="name" placeholder="YOUR NAME" class="text-[10px]" required>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[8px] md:text-[9px] uppercase font-bold opacity-40">Email Address *</label>
+                            <input type="email" name="email" placeholder="YOUR EMAIL" class="text-[10px]" required>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <p class="text-[9px] md:text-[10px] uppercase font-bold tracking-widest">Requested Services</p>
+                        <div class="flex flex-wrap gap-2" id="serviceSelection">
+                            <div class="service-chip" data-val="Worldbuilding">Worldbuilding</div>
+                            <div class="service-chip" data-val="Spatial Interfaces">Spatial Interfaces</div>
+                            <div class="service-chip" data-val="Atmospheric Objects">Atmospheric Objects</div>
+                            <div class="service-chip" data-val="Identity Building">Identity Building</div>
+                            <div class="service-chip" data-val="Logo Design">Logo Design</div>
+                            <div class="service-chip" data-val="Website Design">Website Design</div>
+                            <div class="service-chip" data-val="Cinematic Reels">Cinematic Reels</div>
+                            <div class="service-chip" data-val="Visual Storytelling">Visual Storytelling</div>
+                            <div class="service-chip" data-val="Social Media">Social Media Content</div>
+                        </div>
+                        <input type="hidden" name="services" id="servicesInput">
+                    </div>
+
+                    <div class="space-y-2">
+                        <p class="text-[9px] md:text-[10px] uppercase font-bold tracking-widest">Message</p>
+                        <textarea name="message" rows="3" placeholder="TELL US ABOUT YOUR VIRTUAL DREAMS..." class="text-[10px] md:text-[11px]"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <p class="text-[9px] md:text-[10px] uppercase font-bold tracking-widest">Average Budget</p>
+                                <span id="budgetVal" class="text-[9px] md:text-[10px] font-bold">$1,000</span>
+                            </div>
+                            <input type="range" name="budget" id="budgetSlider" min="1000" max="50000" step="1000" value="1000">
+                        </div>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center">
+                                <p class="text-[9px] md:text-[10px] uppercase font-bold tracking-widest">Timeline</p>
+                                <span id="timeVal" class="text-[9px] md:text-[10px] font-bold">1 Week</span>
+                            </div>
+                            <input type="range" name="timeline" id="timeSlider" min="1" max="30" step="1" value="1">
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="appointment_date" id="finalDateInput">
+                    <input type="hidden" name="appointment_time" id="finalTimeInput">
+
+                    <div class="pt-2">
+                        <button type="submit" class="submit-btn mb-3">Confirm Appointment</button>
+                        <button type="button" onclick="goBack()" class="text-[8px] md:text-[9px] uppercase underline opacity-40 w-full text-center">Back to step 1</button>
+                    </div>
+                </div>
+
+                <div id="nextAction" class="mt-8 md:mt-10 flex justify-end">
+                    <button type="button" id="proceedBtn" onclick="proceedStep()" class="submit-btn max-w-[160px] md:max-w-[200px] opacity-30 cursor-not-allowed" disabled>Next Step</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="successOverlay" class="fixed inset-0 bg-white z-[100] flex flex-col items-center justify-center text-center p-6 hidden">
+        <h2 class="text-3xl md:text-4xl font-bold uppercase mb-4">SUCCESS</h2>
+        <p class="text-[10px] md:text-xs opacity-60 uppercase mb-8 leading-relaxed max-w-xs">Appointment saved and mail sent to hello@virtuallyeverafter.xyz.</p>
+        <button onclick="location.reload()" class="underline text-[10px] uppercase tracking-widest">Back</button>
+    </div>
+</body>
+</html>
