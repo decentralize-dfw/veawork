@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plaza 2023 — Capsule Replica</title>
+    <style>
+        :root {
+            --theme-color: #fc0000;
+            --color-blue: #0073cd;
+            --color-grey: #d7d7d7;
+            --color-black: #000;
+            --color-white: #fff;
+            --color-shadow: rgba(0,0,0,.1);
+            --radius: 4px;
+            --space-s: 10px;
+            --space-m: 60px;
+            --input-h: 20px;
+            --line: 1px;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--color-white);
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            color: var(--color-black);
+            font-size: 14px;
+            line-height: 1.3;
+        }
+
+        /* TYPOGRAPHY REPLICA */
+        h1, h2, h3 { margin: 0; font-weight: normal; text-transform: uppercase; }
+        .typo-maintitle { font-size: 42px; line-height: 0.95; letter-spacing: -1.5px; }
+        .typo-subtitle { font-size: 28px; line-height: 1.05; letter-spacing: -0.5px; }
+        .typo-body { font-size: 16px; font-weight: bold; }
+        .typo-nav { font-size: 12px; font-weight: normal; }
+
+        /* BOX STYLE */
+        .box--container {
+            background: var(--color-white);
+            border: var(--color-grey) solid var(--line);
+            border-radius: var(--radius);
+            box-shadow: 1px 1px 1px var(--color-shadow);
+            padding: 5px;
+            transition: box-shadow 0.2s ease;
+        }
+        .box--container:hover {
+            box-shadow: 1px 1px 1px var(--color-shadow) inset;
+        }
+
+        /* HEADER & MARQUEE */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 100;
+            padding: var(--space-s);
+            pointer-events: none;
+        }
+
+        .header-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: var(--space-s);
+            pointer-events: auto;
+        }
+
+        .menu-select {
+            appearance: none;
+            background: white;
+            border: var(--color-grey) solid var(--line);
+            border-radius: var(--radius);
+            height: var(--input-h);
+            width: 100%;
+            padding: 0 10px;
+            font-size: 12px;
+            cursor: pointer;
+            box-shadow: 1px 1px 1px var(--color-shadow);
+        }
+
+        .text--loop {
+            background: white;
+            overflow: hidden;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            height: var(--input-h);
+        }
+
+        .marquee-content {
+            display: inline-block;
+            animation: marquee 15s linear infinite;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+        }
+
+        /* MAIN 3-COLUMN GRID */
+        .main-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 2fr 1fr;
+            gap: var(--space-s);
+            padding: 50px var(--space-s) var(--space-s) var(--space-s); /* Top padding for fixed header */
+            min-height: 100vh;
+        }
+
+        .col {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-s);
+        }
+
+        /* STICKY BEHAVIOR FOR SIDE COLUMNS */
+        .side-col {
+            position: sticky;
+            top: 50px;
+            height: calc(100vh - 70px);
+            overflow-y: auto;
+            scrollbar-width: none; /* Firefox */
+        }
+        .side-col::-webkit-scrollbar { display: none; }
+
+        /* IMAGES & MEDIA */
+        img, video {
+            width: 100%;
+            display: block;
+            border-radius: 2px;
+        }
+
+        .media-wrapper {
+            margin-bottom: var(--space-s);
+        }
+
+        /* BUTTONS & LINKS */
+        .link-btn {
+            display: block;
+            background: var(--color-blue);
+            color: white;
+            text-decoration: none;
+            text-align: center;
+            padding: 4px;
+            border-radius: var(--radius);
+            font-size: 12px;
+            margin-top: 5px;
+            border: 1px solid var(--color-grey);
+            box-shadow: 1px 1px 1px var(--color-shadow);
+        }
+        .link-btn:hover { box-shadow: 1px 1px 1px var(--color-shadow) inset; }
+
+        /* MOBILE RESPONSIVENESS */
+        @media (max-width: 1024px) {
+            .main-wrapper {
+                grid-template-columns: 1fr;
+            }
+            .side-col {
+                position: static;
+                height: auto;
+            }
+            .typo-maintitle { font-size: 32px; }
+        }
+
+        /* FOOTER */
+        footer {
+            border-top: 1px solid var(--color-grey);
+            margin-top: var(--space-m);
+            padding: var(--space-s);
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: var(--space-s);
+        }
+
+        .tag-label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 10px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background: var(--color-blue);
+            border-radius: 50%;
+        }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-grid">
+            <div>
+                <select class="menu-select">
+                    <option>MENU</option>
+                    <option>HOME</option>
+                    <option>ABOUT</option>
+                    <option>SHOP</option>
+                    <option>PLAZA 2023</option>
+                </select>
+            </div>
+            <div class="text--loop box--container">
+                <div class="marquee-content">
+                    17–23 APRIL, SPAZIO MAIOCCHI MILAN. DESIGN, ENERGIZED. 17–23 APRIL, SPAZIO MAIOCCHI MILAN. DESIGN, ENERGIZED. &nbsp;
+                </div>
+                <div class="marquee-content">
+                    17–23 APRIL, SPAZIO MAIOCCHI MILAN. DESIGN, ENERGIZED. 17–23 APRIL, SPAZIO MAIOCCHI MILAN. DESIGN, ENERGIZED. &nbsp;
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-wrapper">
+        
+        <!-- LEFT COLUMN: Visitor Info (Sticky) -->
+        <aside class="col side-col">
+            <div class="box--container">
+                <div class="tag-label"><div class="dot"></div> VISITORS INFORMATION</div>
+                <div class="media-wrapper">
+                    <img src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=400&q=80" alt="Maiocchi">
+                </div>
+                <h3 class="typo-body">17–23 April, Spazio Maiocchi</h3>
+                <p>Read more about the daily programming of talks, presentations, workshops, and culinary events.</p>
+                <a href="#" class="link-btn">DOWNLOAD BROCHURE</a>
+            </div>
+
+            <div class="box--container">
+                <div class="tag-label"><div class="dot"></div> MAP</div>
+                <img src="https://images.unsplash.com/photo-1526778548025-fa2f459cd5c1?auto=format&fit=crop&w=400&q=80" style="filter: grayscale(1);">
+            </div>
+        </aside>
+
+        <!-- CENTER COLUMN: Main Content (Scrolls) -->
+        <section class="col">
+            <h2 class="typo-maintitle" style="padding: 10px 0;">Installations</h2>
+            
+            <!-- Installation Block 1 -->
+            <div class="box--container">
+                <div class="media-wrapper">
+                    <img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&w=800&q=80" alt="Tacchini">
+                </div>
+                <h2 class="typo-subtitle">TACCHINI FLOCK<br>by Formafantasma</h2>
+                <p style="margin-top:15px;">Tacchini teams up once again with Milan- and Rotterdam-based duo Formafantasma on a journey of sustainability. The project introduces a new, nature-based manufacturing process focusing on the circularity of materials.</p>
+                <p style="color: #666; font-size: 12px; margin-top: 10px;">18–23 April 10am-8pm<br>Via Achille Maiocchi 7</p>
+            </div>
+
+            <!-- Installation Block 2 -->
+            <div class="box--container">
+                <div class="media-wrapper">
+                    <img src="https://images.unsplash.com/photo-1513364238197-611e3bab1672?auto=format&fit=crop&w=800&q=80" alt="La Prairie">
+                </div>
+                <h2 class="typo-subtitle">LA PRAIRIE<br>THE COBALT ROOM</h2>
+                <p style="margin-top:15px;">An immersive dining space featuring Bauhaus-inspired pieces, characterized by clean lines and purity of forms, celebrating the skincare brand's signature cobalt blue.</p>
+                <p style="color: #666; font-size: 12px; margin-top: 10px;">Via Achille Maiocchi 7</p>
+            </div>
+
+            <!-- Installation Block 3 -->
+            <div class="box--container">
+                <div class="media-wrapper">
+                    <img src="https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=800&q=80" alt="Gufram">
+                </div>
+                <h2 class="typo-subtitle">GUFRAM<br>THE SCULPTED SERIES</h2>
+                <p style="margin-top:15px;">Gufram and long-standing collaborator Snarkitecture present a monumental family of five domestic sculptures available only in black and white.</p>
+            </div>
+        </section>
+
+        <!-- RIGHT COLUMN: Shop (Sticky) -->
+        <aside class="col side-col">
+            <div class="box--container">
+                <div class="tag-label"><div class="dot" style="background: var(--theme-color);"></div> SHOP</div>
+                <h3 class="typo-body">Capsule Issue #2</h3>
+                <p>An annual publication reinventing the notion of radical design for today.</p>
+                <div class="media-wrapper" style="margin-top: 10px;">
+                    <img src="https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=400&q=80" alt="Magazine">
+                </div>
+                <div style="display:flex; justify-content: space-between; align-items: center; padding: 5px 0;">
+                    <span>€48.00</span>
+                    <button class="link-btn" style="margin:0; width: 100px;">ADD TO CART</button>
+                </div>
+            </div>
+
+            <div class="box--container" style="background: #f9f9f9;">
+                <div class="tag-label"><div class="dot"></div> NEWSLETTER</div>
+                <input type="email" placeholder="Your Email..." style="width:100%; border:1px solid var(--color-grey); padding: 5px; border-radius: var(--radius);">
+                <button class="link-btn" style="width:100%; background: var(--color-black);">SEND</button>
+            </div>
+        </aside>
+
+    </main>
+
+    <footer>
+        <div>
+            <h1 style="color: var(--color-blue); font-weight: bold; font-size: 24px;">CAPSULE</h1>
+        </div>
+        <div>
+            <p>For inquiries:<br><a href="mailto:studio@capsule.global" style="color:var(--color-blue)">studio@capsule.global</a></p>
+        </div>
+        <div>
+            <p>Instagram:<br><a href="#" style="color:var(--color-blue)">@capsule.global</a></p>
+        </div>
+    </footer>
+
+</body>
+</html>
