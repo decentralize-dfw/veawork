@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>VEA | Walkable 3D Virtual Gallery (Rewritten)</title>
+  <style>
+    :root{--fg:#fff;--bg:#000;--muted:#9aa0a6;--accent:#e5e5e5;--panel:rgba(0,0,0,.55);--panelBlur:8px}
+    html,body{height:100%}
+    body{margin:0;overflow:hidden;background:#000;color:var(--fg);font-family:Helvetica,Arial,sans-serif}
+    canvas{display:block}
+    .panel{position:fixed;backdrop-filter:blur(var(--panelBlur));background:var(--panel);border:1px solid rgba(255,255,255,.08);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:10}
+    #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#000;z-index:1000}
+    #loading img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:brightness(.5)}
+    #loading .spinner{width:52px;height:52px;border:5px solid rgba(255,255,255,.25);border-top-color:#fff;border-radius:50%;animation:spin 1s linear infinite;z-index:2}
+    #loading .progress{position:absolute;bottom:18px;left:18px;font-size:12px;color:#fff;z-index:2}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    #hud{position:fixed;left:12px;top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;z-index:11}
+    #hud .btn,#hud .select,#hud .range{background:var(--panel);border:1px solid rgba(255,255,255,.08);color:#fff;border-radius:10px;padding:8px 10px;font-size:12px}
+    #instructions{inset:auto;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;padding:18px 22px;display:none}
+    #instructions h1{margin:0 0 8px 0;font-size:18px;font-weight:700}
+    #instructions p{margin:4px 0;font-size:13px;color:var(--accent)}
+    #resume{position:fixed;right:12px;top:12px;padding:8px 10px;font-size:12px;display:none}
+    #description{position:fixed;left:50px;right:50px;bottom:14px;text-align:center;font-size:11px;color:#fff;display:none;text-shadow:0 0 8px rgba(0,0,0,.5)}
+    #interactPanel{position:fixed;left:12px;bottom:12px;min-width:240px;max-width:360px;display:none;padding:10px 12px}
+    #interactPanel h3{margin:0 0 8px 0;font-size:12px;color:#fff;font-weight:700}
+    #interactPanel .item{font-size:12px;color:#fff;line-height:1.4;margin:6px 0}
+    #interactPanel .key{display:inline-block;min-width:18px;padding:2px 6px;border:1px solid rgba(255,255,255,.25);border-radius:6px;margin-right:8px;text-align:center;font-weight:700}
+    #interactPanel .muted{color:var(--muted)}
+    #toast{position:fixed;right:12px;bottom:12px;max-width:360px;padding:10px 12px;font-size:12px;display:none}
+  </style>
+  <script type="importmap">
+    {"imports":{
+      "three":"https://unpkg.com/three@0.158.0/build/three.module.js",
+      "three/addons/":"https://unpkg.com/three@0.158.0/examples/jsm/",
+      "three-mesh-bvh":"https://unpkg.com/three-mesh-bvh@0.7.0/build/index.module.js"
+    }}
+  </script>
+</head>
+<body>
+  <div id="loading">
+    <img src="https://raw.githubusercontent.com/decentralize-dfw/vea_001/main/VEADEMO1.jpg" alt="Loading" />
+    <div class="spinner"></div>
+    <div class="progress">Loading… 0%</div>
+  </div>
+
+  <div id="hud">
+    <button id="btnFullscreen" class="btn">Fullscreen</button>
+    <label for="selQuality">Quality</label>
+    <select id="selQuality" class="select">
+      <option value="high" selected>High</option>
+      <option value="low">Low</option>
+    </select>
+    <label for="rngVol">Volume</label>
+    <input id="rngVol" class="range" type="range" min="0" max="1" step="0.01" value="0.6" />
+    <button id="btnMute" class="btn">Mute</button>
+  </div>
+
+  <div id="instructions" class="panel">
+    <h1>Click to Enter</h1>
+    <p>WASD — Move &nbsp; | &nbsp; Space — Jump &nbsp; | &nbsp; Shift — Sprint</p>
+    <p>Mouse — Look &nbsp; | &nbsp; Numbers — Actions</p>
+  </div>
+
+  <div id="description"></div>
+  <div id="interactPanel" class="panel">
+    <h3>Interactions</h3>
+    <div id="interactList"></div>
+  </div>
+  <div id="toast" class="panel"></div>
+  <div id="resume" class="panel">Click to resume</div>
+
+<script type="module">
+    import * as THREE from 'three';
+    import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+    import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+    import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+    import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+    import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+    import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+    import { acceleratedRaycast, computeBoundsTree, disposeBoundsTree } from 'three-mesh-bvh';
+    // === BVH Raycast ===
+    THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+    THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
+    THREE.Mesh.prototype.raycast = acceleratedRaycast;
+    // === Globals / State ===
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias:true });
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.85;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.physicallyCorrectLights = true;
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setPixelRatio(Math.min(2, devicePixelRatio||1));
+    document.body.appendChild(renderer.domElement);
+    const composer = new EffectComposer(renderer);
+    const renderPass = new RenderPass(scene, camera); composer.addPass(renderPass);
+    const ssaoPass = new SSAOPass(scene, camera, innerWidth, innerHeight);
+    ssaoPass.kernelRadius = 5; ssaoPass.minDistance=0.003; ssaoPass.maxDistance=0.08;
+    composer.addPass(ssaoPass);
+    const bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.25, 0.35, 0.8);
+    composer.addPass(bloomPass);
+    // === Loading Manager (overlay once) ===
+    const mgr = new THREE.LoadingManager();
+    const loadingEl = document.getElementById('loading');
+    const progressEl = loadingEl.querySelector('.progress');
+    let bootShown = false;
+    mgr.onProgress = (url, loaded, total)=>{ progressEl.textContent = `Loading… ${Math.round((loaded/total)*100)}%`; };
+    mgr.onLoad = ()=> {
+      loadingEl.style.display = 'none';
+      if (!bootShown && !controls.isLocked) instructions.style.display = 'block';
+      bootShown = true; // never show again
+    };
+    // === Audio ===
+    const audioListener = new THREE.AudioListener(); camera.add(audioListener);
+    const audioLoader = new THREE.AudioLoader(mgr);
+    let masterVolume = 0.6, isMuted = false;
+    let bgSound=null, bgBuffer=null;
+    const activePositional = new Set();
+    function applyMasterVolume(){ const v=isMuted?0:masterVolume; if(bgSound) bgSound.setVolume(v); activePositional.forEach(s=> s.setVolume(Math.min(0.8,v))); }
+    audioLoader.load('https://raw.githubusercontent.com/decentralize-dfw/vea_001/main/retailthreejs.mp3', b=> bgBuffer=b);
+    function startBg(){ if(!bgSound && bgBuffer){ bgSound=new THREE.Audio(audioListener); bgSound.setBuffer(bgBuffer); bgSound.setLoop(true); applyMasterVolume(); bgSound.play(); } }
+    // === Controls ===
+    const controls = new PointerLockControls(camera, document.body);
+    scene.add(controls.getObject());
+    const instructions = document.getElementById('instructions');
+    const resume = document.getElementById('resume');
+    instructions.addEventListener('click', ()=> controls.lock());
+    document.addEventListener('click', ()=>{ if(!controls.isLocked && bootShown) controls.lock(); });
+    controls.addEventListener('lock', ()=>{ instructions.style.display='none'; resume.style.display='none'; startBg(); });
+    controls.addEventListener('unlock', ()=>{ resume.style.display='block'; });
+    // === Environment (HDR background & filtered env) ===
+    const pmrem = new THREE.PMREMGenerator(renderer); pmrem.compileEquirectangularShader();
+    new RGBELoader(mgr).load(
+      'https://raw.githubusercontent.com/decentralize-dfw/vea_001/main/RealismHDRI-_equirectangular-jpg_VR360_neon_drenched_skyscrapers_1656103290_10361044.hdr',
+      (tex)=>{
+        tex.mapping = THREE.EquirectangularReflectionMapping;
+        scene.background = tex;
+        scene.environment = pmrem.fromEquirectangular(tex).texture;
+        pmrem.dispose();
+      },
+      undefined,
+      ()=> toast('HDR failed to load')
+    );
+    // === Lights ===
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 0.5); hemi.position.set(0,20,0); scene.add(hemi);
+    const sun = new THREE.DirectionalLight(0xffffff, 3.6);
+    sun.position.set(12,24,12);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048,2048);
+    sun.shadow.camera.near=0.5; sun.shadow.camera.far=160;
+    sun.shadow.camera.left=-55; sun.shadow.camera.right=55; sun.shadow.camera.top=55; sun.shadow.camera.bottom=-55;
+    sun.shadow.bias=-0.00012; sun.shadow.normalBias=0.02;
+    scene.add(sun);
+    const fill1=new THREE.PointLight(0xffffff,1.4,70); fill1.position.set(20,12,18); scene.add(fill1);
+    const fill2=new THREE.PointLight(0xffffff,1.2,70); fill2.position.set(-18,12,-20); scene.add(fill2);
+    // === Loaders ===
+    const draco = new DRACOLoader(mgr);
+    draco.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+    draco.setDecoderConfig({type:'js'});
+    const gltf = new GLTFLoader(mgr);
+    gltf.setDRACOLoader(draco);
+    gltf.setMeshoptDecoder(MeshoptDecoder);
+    // === Space (static) ===
+    const staticMeshes = [];
+    const spaceUrl='https://raw.githubusercontent.com/decentralize-dfw/vea_001/main/conc-noroof-opt-v2.glb';
+    gltf.load(spaceUrl, (res)=>{
+      const root=res.scene;
+      root.traverse(ch=>{
+        if(ch.isMesh){ ch.castShadow=true; ch.receiveShadow=true; ch.geometry?.computeBoundsTree(); staticMeshes.push(ch); }
+      });
+      scene.add(root);
+    }, undefined, ()=> toast('Space failed to load'));
+    // === Interactive Models Config ===
+    const modelConfigs=[
+      {
+        url:'https://raw.githubusercontent.com/decentralize-dfw/c2w2-glb/main/curator-900-opt-v67.glb',
+        name:'NeueDojo', description:'Curator figure — ambient idle loop.',
+        position:{x:0,y:0.3,z:0}, rotation:{x:0,y:0,z:0}, scale:3,
+        animate:true, loop:true, withPress:false,
+        sound:null, offset:4, collider:false, multiple:true,
+        actions:[
+          { type:'animate', name:'Play Idle / Animate' },
+          { type:'link', name:'Open in a new tab', href:'https://digitalforgerywork.shop' },
+          { type:'glb', name:'See avatar in Inverted Colors', toggleName:'Reset to Original', url:'https://raw.githubusercontent.com/decentralize-dfw/c2w2-glb/main/squallo-900-opt-v101.glb' }
+        ]
+      },
+      {
+        url:'https://raw.githubusercontent.com/decentralize-dfw/c2w2-glb/main/mare-900-opt-v79.glb',
+        name:'Matisse Purple', description:'Mare mare',
+        position:{x:12,y:0,z:20}, rotation:{x:0,y:90,z:0}, scale:3,
+        animate:true, loop:true, withPress:true,
+        sound:null, offset:1, collider:false, multiple:false,
+        actions:[
+          { type:'animate', name:'Animate' },
+          { type:'link', name:'Artist Site', href:'https://example.com' }
+        ]
+      },
+      {
+  url: 'https://raw.githubusercontent.com/decentralize-dfw/c2w2-glb/main/frued-human-900-opt-v72.glb',
+  name: 'Bacon-Freud',
+  description: 'Model 3: Bacon-Freud, inspired by surrealist art.',
+  position: { x: -15, y: 0, z: -15 },
+  rotation: { x: 0, y: 0, z: 0 },
+  scale: 3,
+  animate: true,
+  loop: true,
+  withPress: false,
+  sound: 'https://raw.githubusercontent.com/decentralize-dfw/vea_001/main/backg-tunr1.mp3',
+  offset: 2,
+  collider: false,
+  multiple: false,
+  actions: [
+    { type: 'animate', name: 'Animate' }
+  ]
+},
+{
+  url: 'https://raw.githubusercontent.com/decentralize-dfw/c2w2-glb/main/squallo-900-opt-v101.glb',
+  name: 'Bacon Scene',
+  description: 'Squallor',
+  position: { x: 13, y: 1.2, z: -0.1 },
+  rotation: { x: 0, y: 180, z: 0 },
+  scale: 3,
+  animate: true,
+  loop: true,
+  withPress: false,
+  sound: null,
+  offset: 8,
+  collider: false,
+  multiple: false,
+  actions: [
+    { type: 'animate', name: 'Animate' }
+  ]
+},
+{
+  url: 'https://raw.githubusercontent.com/decentralize-dfw/c2w2-glb/main/bulkgelin-900-opt-v65.glb',
+  name: 'Memelegance Suit FUP',
+  description: 'Buşkgelin.',
+  position: { x: 0, y: 0, z: -20 },
+  rotation: { x: 0, y: 180, z: 0 },
+  scale: 3,
+  animate: true,
+  loop: true,
+  withPress: true,
+  sound: null,
+  offset: 2,
+  collider: false,
+  multiple: false,
+  actions: [
+    { type: 'animate', name: 'Animate' }
+  ]
+}
+      
+    ];
+    // === Load models ===
+    const models = [];
+    const deg = THREE.MathUtils.degToRad;
+    function loadModel(cfg, idx){
+      gltf.load(cfg.url, (res)=>{
+        const obj=res.scene;
+        obj.position.set(cfg.position.x,cfg.position.y,cfg.position.z);
+        obj.rotation.set(deg(cfg.rotation.x),deg(cfg.rotation.y),deg(cfg.rotation.z));
+        obj.scale.setScalar(cfg.scale);
+        obj.traverse(ch=>{ if(ch.isMesh){ ch.castShadow=true; ch.receiveShadow=true; ch.geometry?.computeBoundsTree(); } });
+        scene.add(obj);
+        let mixer=null, actions=[];
+        if(res.animations?.length){
+          mixer=new THREE.AnimationMixer(obj);
+          actions=res.animations.map(clip=>{
+            const a=mixer.clipAction(clip);
+            a.loop = cfg.loop?THREE.LoopRepeat:THREE.LoopOnce;
+            if(!cfg.loop) a.clampWhenFinished=true;
+            return a;
+          });
+        }
+        const box=new THREE.Box3().setFromObject(obj).expandByScalar(cfg.offset||3);
+        const interactionBox = new THREE.Box3().setFromObject(obj).expandByScalar(0.2);
+        const entry={ obj, mixer, actions, baseMixer:mixer, baseActions:[...actions], cfg, box, interactionBox, inside:false, animated:false, buffer:null, sound:null, toggledAlt:false, altObj:null, altMixer:null, altActions:[] };
+        if(cfg.sound){ audioLoader.load(cfg.sound, b=> entry.buffer=b); }
+        models[idx]=entry;
+      }, undefined, ()=> toast(`Model failed: ${cfg.name}`));
+    }
+    modelConfigs.forEach(loadModel);
+    // === Player & Movement (AABB probes + hover) ===
+    camera.position.set(0,1.8,5); camera.lookAt(0,1.8,0);
+    const keys={ f:false,b:false,l:false,r:false,jump:false,sprint:false, digits:new Set() };
+    const baseSpeed=5; let moveSpeed=baseSpeed; const jumpV=5; const gravity=9.8;
+    const player={ radius:0.25, eye:1.6, height:1.8, groundClearance:0 };
+    let velocityY=0; let onFloor=true;
+    const ray=new THREE.Raycaster(); const fwd=new THREE.Vector3(), right=new THREE.Vector3(), tmp=new THREE.Vector3(), up=new THREE.Vector3(0,1,0);
+    function handleKey(e,down){
+      if(!controls.isLocked) return;
+      const code=e.code;
+      if(code.startsWith('Digit')){ const n=parseInt(code.slice(5),10); if(!isNaN(n) && down && !e.repeat){ keys.digits.add(n); return; } }
+      switch(code){ case 'KeyW': keys.f=down; break; case 'KeyS': keys.b=down; break; case 'KeyA': keys.l=down; break; case 'KeyD': keys.r=down; break; case 'Space': if(down && onFloor) keys.jump=true; break; case 'ShiftLeft': keys.sprint=down; break; }
+    }
+    document.addEventListener('keydown', e=>{ if(controls.isLocked){ e.preventDefault(); } handleKey(e,true); }, {passive:false});
+    document.addEventListener('keyup', e=>{ if(controls.isLocked){ e.preventDefault(); } handleKey(e,false);}, {passive:false});
+    function collideHorizontal(dt){
+      camera.getWorldDirection(fwd); fwd.y=0; fwd.normalize(); right.crossVectors(fwd, camera.up).normalize();
+      moveSpeed = keys.sprint? baseSpeed*4 : baseSpeed; tmp.set(0,0,0);
+      if(keys.f) tmp.addScaledVector(fwd, moveSpeed*dt);
+      if(keys.b) tmp.addScaledVector(fwd,-moveSpeed*dt);
+      if(keys.l) tmp.addScaledVector(right,-moveSpeed*dt);
+      if(keys.r) tmp.addScaledVector(right, moveSpeed*dt);
+      if(tmp.lengthSq()===0) return;
+      const moveDir=tmp.clone().normalize(); const moveDist=tmp.length();
+      const perp=new THREE.Vector3().crossVectors(moveDir, up).normalize();
+      const offsets=[ new THREE.Vector3(0,0,0), perp.clone().multiplyScalar(player.radius), perp.clone().multiplyScalar(-player.radius) ];
+      const heights=[ -player.eye+0.01+player.groundClearance, -player.eye/2+player.groundClearance, player.groundClearance, (player.height-player.eye)-0.01+player.groundClearance ];
+      let blocked=false;
+      for(const off of offsets){ for(const h of heights){ const origin=camera.position.clone().add(off); origin.y+=h; ray.set(origin, moveDir); ray.far=moveDist+player.radius; const hits=ray.intersectObjects(staticMeshes,true); if(hits.length && hits[0].distance<moveDist){ blocked=true; break; } } if(blocked) break; }
+      if(!blocked) camera.position.add(tmp);
+    }
+    function collideVertical(dt){
+      if(keys.jump && onFloor){ velocityY=jumpV; onFloor=false; keys.jump=false; }
+      velocityY -= gravity*dt;
+      let dy = velocityY*dt;
+      if(velocityY < 0){
+        const probes=[ new THREE.Vector3(0,0,0), new THREE.Vector3(player.radius,0,0), new THREE.Vector3(-player.radius,0,0), new THREE.Vector3(0,0, player.radius), new THREE.Vector3(0,0,-player.radius) ];
+        let floorY=-Infinity; for(const p of probes){ const o=camera.position.clone().add(p); o.y+=0.1; ray.set(o,new THREE.Vector3(0,-1,0)); ray.far=player.eye+0.3 - dy; const hits=ray.intersectObjects(staticMeshes,true); if(hits.length){ floorY=Math.max(floorY, hits[0].point.y); } }
+        if(floorY>-Infinity){ const target=floorY + player.eye + player.groundClearance; const nextY=camera.position.y + dy; const diff=target - nextY; if(diff>=0){ camera.position.y = target; velocityY=0; onFloor=true; return; }
+          if(Math.abs(diff) < 0.002){ camera.position.y = target; velocityY=0; onFloor=true; return; }
+        }
+      }
+      if(velocityY > 0){
+        const probes=[ new THREE.Vector3(0,0,0), new THREE.Vector3(player.radius,0,0), new THREE.Vector3(-player.radius,0,0), new THREE.Vector3(0,0, player.radius), new THREE.Vector3(0,0,-player.radius) ];
+        let ceilY=Infinity; for(const p of probes){ const o=camera.position.clone().add(p); o.y-=0.1; ray.set(o,new THREE.Vector3(0,1,0)); ray.far=(player.height-player.eye)+0.3+dy; const hits=ray.intersectObjects(staticMeshes,true); if(hits.length){ ceilY=Math.min(ceilY, hits[0].point.y); } }
+        const headClear=(player.height-player.eye)+player.groundClearance; if(ceilY<Infinity && camera.position.y + dy >= ceilY - headClear){ camera.position.y = ceilY - headClear; velocityY=0; return; }
+      }
+      camera.position.y += dy;
+      if(camera.position.y < -100){ camera.position.y = player.eye + player.groundClearance; velocityY=0; onFloor=true; }
+    }
+    // === Interactions UI ===
+    const desc = document.getElementById('description');
+    const panel = document.getElementById('interactPanel');
+    const listEl= document.getElementById('interactList');
+    function actionLabel(entry, a){ return (a.type==='glb' && entry.toggledAlt) ? (a.toggleName||'Reset') : (a.name||a.type); }
+    function renderActions(entry){
+      listEl.innerHTML='';
+      const actions = entry.cfg.actions || [];
+      actions.forEach((a,i)=>{
+        if(!entry.cfg.withPress && a.type==='animate') return; // auto animate gösterme
+        const row=document.createElement('div'); row.className='item';
+        const key=document.createElement('span'); key.className='key'; key.textContent=String(i+1); row.appendChild(key);
+        const name=document.createElement('span'); name.textContent=actionLabel(entry,a); row.appendChild(name);
+        if(a.type==='glb' && entry.toggledAlt){ const t=document.createElement('span'); t.className='muted'; t.textContent=' '; row.appendChild(t); }
+        listEl.appendChild(row);
+      });
+      panel.style.display = listEl.children.length? 'block':'none';
+    }
+    function performAction(entry, index){
+      const a=(entry.cfg.actions||[])[index]; if(!a) return;
+      switch(a.type){
+        case 'animate':
+          if(entry.actions?.length){ entry.actions.forEach(x=>{ x.reset(); x.paused=false; x.play(); }); entry.animated=true; }
+          const targetObj = entry.toggledAlt ? entry.altObj : entry.obj;
+          if(entry.buffer && targetObj){
+            if(entry.sound){
+              entry.sound.stop();
+              activePositional.delete(entry.sound);
+              targetObj.remove(entry.sound);
+              entry.sound = null;
+            }
+            const s=new THREE.PositionalAudio(audioListener); s.setBuffer(entry.buffer); s.setRefDistance(6); s.setLoop(false); activePositional.add(s); targetObj.add(s); s.play(); s.addEventListener('ended', ()=> { activePositional.delete(s); if(entry.sound === s) entry.sound = null; }); entry.sound=s;
+          }
+          break;
+        case 'link':
+          if(a.href) window.open(a.href,'_blank','noopener');
+          break;
+        case 'glb':
+          if(!entry.toggledAlt){
+            if(!entry.altObj){
+              gltf.load(a.url, (res)=>{
+                entry.altObj = res.scene; entry.altObj.position.copy(entry.obj.position); entry.altObj.rotation.copy(entry.obj.rotation); entry.altObj.scale.copy(entry.obj.scale);
+                entry.altObj.traverse(ch=>{ if(ch.isMesh){ ch.castShadow=true; ch.receiveShadow=true; ch.geometry?.computeBoundsTree(); } });
+                scene.add(entry.altObj);
+                if(res.animations?.length){
+                  entry.altMixer = new THREE.AnimationMixer(entry.altObj);
+                  entry.altActions = res.animations.map(c=>{ const act=entry.altMixer.clipAction(c); act.loop=THREE.LoopRepeat; return act; });
+                  entry.altActions.forEach(act=>{ act.reset(); act.play(); });
+                  entry.mixer = entry.altMixer; entry.actions = entry.altActions; entry.animated=true;
+                }
+                entry.obj.visible=false; entry.toggledAlt=true; renderActions(entry);
+              }, undefined, ()=> toast('Alt GLB failed to load'));
+            } else {
+              entry.obj.visible=false; entry.altObj.visible=true;
+              entry.mixer = entry.altMixer || entry.mixer;
+              entry.actions = entry.altActions.length? entry.altActions : entry.actions;
+              entry.animated=true; entry.toggledAlt=true; renderActions(entry);
+            }
+          } else {
+            if(entry.altObj) entry.altObj.visible=false; entry.obj.visible=true; entry.toggledAlt=false;
+            entry.mixer = entry.baseMixer || entry.mixer; entry.actions = entry.baseActions.length? entry.baseActions : entry.actions;
+            if(entry.actions?.length){ entry.actions.forEach(act=>{ act.reset(); act.play(); }); entry.animated=true; }
+            renderActions(entry);
+          }
+          break;
+      }
+    }
+    // === Quality / LOD ===
+    let quality='high';
+    const LOW_LOD_DISTANCE = 12; // metres
+    const selQuality=document.getElementById('selQuality');
+    function applyQuality(q){
+      quality=q;
+      const high = q==='high';
+      // post fx
+      ssaoPass.enabled = high;
+      bloomPass.enabled = high;
+      // resolution
+      const pr = high ? Math.min(2, devicePixelRatio||1) : 1;
+      renderer.setPixelRatio(pr);
+      // shadows
+      renderer.shadowMap.enabled = high;
+      sun.castShadow = high;
+      staticMeshes.forEach(m=>{ m.castShadow = high; m.receiveShadow = high; });
+      // tone
+      renderer.toneMappingExposure = high ? 0.85 : 0.8;
+    }
+    selQuality.addEventListener('change', ()=> applyQuality(selQuality.value));
+    applyQuality('high');
+    // === HUD & misc ===
+    const rngVol=document.getElementById('rngVol'); rngVol.addEventListener('input', ()=>{ masterVolume=parseFloat(rngVol.value); applyMasterVolume(); });
+    document.getElementById('btnMute').addEventListener('click', ()=>{ isMuted=!isMuted; applyMasterVolume(); document.getElementById('btnMute').textContent=isMuted?'Unmute':'Mute'; });
+    const btnFs=document.getElementById('btnFullscreen');
+    btnFs.addEventListener('click', async ()=>{
+      try{
+        if(!document.fullscreenElement){ await document.documentElement.requestFullscreen(); btnFs.textContent='Exit Fullscreen'; controls.lock(); }
+        else { await document.exitFullscreen(); btnFs.textContent='Fullscreen'; }
+      }catch{ toast('Fullscreen failed.'); }
+    });
+    document.addEventListener('fullscreenchange', ()=>{ btnFs.textContent=document.fullscreenElement?'Exit Fullscreen':'Fullscreen'; });
+    document.addEventListener('visibilitychange', ()=>{ if(document.hidden){ bgSound?.pause(); } else { if(controls.isLocked) bgSound?.play(); } });
+    const toastEl=document.getElementById('toast'); let toastTimer=null;
+    function toast(msg){ toastEl.textContent=msg; toastEl.style.display='block'; clearTimeout(toastTimer); toastTimer=setTimeout(()=> toastEl.style.display='none', 3000); }
+    // === Main Loop ===
+    const clock = new THREE.Clock();
+    const panelEl = document.getElementById('interactPanel');
+    const tmpV = new THREE.Vector3();
+    const intersectPoint = new THREE.Vector3();
+    function frame(){
+      requestAnimationFrame(frame);
+      const dt=Math.min(0.033, clock.getDelta());
+      if(controls.isLocked){
+        collideHorizontal(dt);
+        collideVertical(dt);
+      }
+      // Interact panel & animation update
+      desc.style.display='none'; panelEl.style.display='none'; let current=null;
+      camera.getWorldDirection(fwd); fwd.normalize();
+      for(const e of models){
+        if(!e) continue;
+        const inside=e.box.containsPoint(camera.position);
+        if(inside !== e.inside){
+          if(inside){
+            if(e.cfg.animate && !e.cfg.withPress){ if(e.actions?.length){ e.actions.forEach(a=>{ a.reset(); a.paused=false; a.play(); }); e.animated=true; } }
+          } else {
+            if(e.animated){ if(e.actions) e.actions.forEach(a=> a.paused=true); e.animated=false; }
+            if(e.sound){ e.sound.stop(); activePositional.delete(e.sound); const targetObj = e.toggledAlt ? e.altObj : e.obj; if(targetObj) targetObj.remove(e.sound); e.sound=null; }
+          }
+          e.inside=inside;
+        }
+        if(inside){
+          const interactionRay = new THREE.Ray(camera.position, fwd);
+          if (interactionRay.intersectBox(e.interactionBox, intersectPoint) !== null) {
+            current = e;
+          }
+        }
+        if(e.mixer && e.animated) e.mixer.update(dt);
+      }
+      // Low quality LOD (hide > 7m)
+      if(quality==='low'){
+        for(const e of models){
+          if(!e) continue;
+          const obj = (e.toggledAlt && e.altObj) ? e.altObj : e.obj;
+          if(!obj) continue;
+          obj.getWorldPosition(tmpV);
+          const dist = tmpV.distanceTo(camera.position);
+          const visible = dist < LOW_LOD_DISTANCE;
+          obj.visible = visible;
+          if(e.actions?.length) e.actions.forEach(a=> a.paused = !visible);
+        }
+      } else {
+        // High: her şey görünür
+        for(const e of models){ if(!e) continue; const obj=(e.toggledAlt&&e.altObj)?e.altObj:e.obj; if(obj) obj.visible=true; }
+      }
+      if(current){
+        desc.textContent=current.cfg.description||current.cfg.name; desc.style.display='block';
+        renderActions(current);
+        if(keys.digits.size){ for(const n of keys.digits){ performAction(current, n-1); } keys.digits.clear(); }
+      }
+      composer.render();
+    }
+    frame();
+    // === Resize ===
+    function onResize(){
+      camera.aspect = innerWidth/innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+      const pr = (quality==='high') ? Math.min(2, devicePixelRatio||1) : 1;
+      renderer.setPixelRatio(pr);
+      composer.setSize(innerWidth, innerHeight);
+      ssaoPass.setSize(innerWidth, innerHeight);
+      bloomPass.setSize(innerWidth, innerHeight);
+    }
+    addEventListener('resize', onResize);
+  </script>
+
+
+
+</body>
+</html>
