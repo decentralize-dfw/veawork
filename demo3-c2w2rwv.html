@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>C2W2 GLB Viewer by DFW</title>
+    <style>
+        :root {
+            --fg: #fff;
+            --bg: #000;
+            --muted: #9aa0a6;
+            --accent: #e5e5e5;
+            --panel: rgba(0,0,0,.55);
+            --panelBlur: 8px;
+        }
+        body {
+            margin: 0;
+            overflow: hidden;
+            color: var(--fg);
+            background: var(--bg);
+            font-family: Helvetica, Arial, sans-serif;
+        }
+        canvas {
+            display: block;
+        }
+        .panel {
+            position: fixed;
+            backdrop-filter: blur(var(--panelBlur));
+            background: var(--panel);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.25);
+            z-index: 10;
+        }
+        #logo {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            width: 60px;
+            height: 60px;
+            z-index: 10;
+            border-radius: 8px;
+        }
+        #loading {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #000;
+            z-index: 1000;
+            font-size: 24px;
+        }
+        #loading img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(1);
+        }
+
+        /* --- Viewer Layout --- */
+        #avatar-list {
+            position: fixed;
+            left: 10px;
+            top: 10px;
+            width: 15%;
+            height: calc(100vh - 20px);
+            max-width: 250px;
+            overflow-y: auto; /* Değiştirildi: auto -> hidden */
+            padding: 10px;
+            box-sizing: border-box;
+            font-size: 12px;
+        }
+
+        #avatar-list::-webkit-scrollbar {
+            width: 6px; /* Çubuğun kalınlığı */
+            display: block; /* Görünür yapıyoruz */
+        }
+       #avatar-list::-webkit-scrollbar {
+            width: 6px; /* Çubuğun kalınlığı */
+            display: block; /* Görünür yapıyoruz */
+        }
+        #avatar-list::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05); /* Arka plan (ray) rengi */
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+#avatar-list::-webkit-scrollbar-thumb {
+            background: var(--muted); /* Tutacak rengi (gri) */
+            border-radius: 4px;
+        }
+
+        #avatar-list::-webkit-scrollbar-thumb:hover {
+            background: var(--fg); /* Üzerine gelince parlayan beyaz */
+            cursor: grab;
+        }
+        .avatar-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+        .avatar-item input[type="checkbox"] {
+            margin-right: 10px;
+            cursor: pointer;
+        }
+        .avatar-item label {
+            flex-grow: 1;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        #scene-container {
+            position: fixed;
+            left: calc(15% + 20px);
+            top: 0;
+            width: calc(85% - 20px);
+            height: 100vh;
+        }
+
+        #resetButton {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            backdrop-filter: blur(var(--panelBlur));
+            background: var(--panel);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.25);
+            z-index: 10;
+            padding: 8px 12px;
+            color: #fff;
+            font-size: 15px;
+            font-weight: 700;
+            text-align: center;
+            font-family: Helvetica, Arial, sans-serif;
+            cursor: pointer;
+        }
+
+        /* --- Camera Controls --- */
+        #cameraControls {
+            position: fixed;
+            left: calc(15% + 40px);
+            top: 18px;
+            z-index: 5;
+            height: 120px;
+        }
+        #cameraLabel {
+            position: absolute;
+            left: 0;
+            top: -11px;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        #cameraBtn1, #cameraBtn2, #cameraBtn3 {
+            position: absolute;
+            backdrop-filter: blur(8px);
+            background: rgba(0,0,0,.55);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 4px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.25);
+            z-index: 10;
+            padding: 2px 8px;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        #cameraBtn1 { left: 50px; top: 10; }
+        #cameraBtn2 { left: 80px; top: 10; }
+        #cameraBtn3 { left: 110px; top: 10; }
+
+        #lensLabel {
+            position: absolute;
+            left: 0;
+            top: 20px;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        #lensBtn1, #lensBtn2, #lensBtn3 {
+            position: absolute;
+            backdrop-filter: blur(8px);
+            background: rgba(0,0,0,.55);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 4px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.25);
+            z-index: 10;
+            padding: 2px 8px;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        #lensBtn1 { left: 50px; top: 30px; }
+        #lensBtn2 { left: 80px; top: 30px; }
+        #lensBtn3 { left: 110px; top: 30px; }
+        
+        /* --- Loop Controls --- */
+        #loopLabel {
+            position: absolute;
+            left: 0;
+            top: 50px;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        #loopBtnYes, #loopBtnNo {
+            position: absolute;
+            backdrop-filter: blur(8px);
+            background: rgba(0,0,0,.55);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 4px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.25);
+            z-index: 10;
+            padding: 2px 8px;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        #loopBtnYes { left: 50px; top: 60px; }
+        #loopBtnNo { left: 95px; top: 60px; }
+
+        /* --- Material Controls --- */
+        #materialLabel {
+            position: absolute;
+            left: 0;
+            top: 80px;
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        #matBtnRender, #matBtnWire, #matBtnNormal {
+            position: absolute;
+            backdrop-filter: blur(8px);
+            background: rgba(0,0,0,.55);
+            border: 1px solid rgba(255,255,255,.08);
+            border-radius: 4px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.25);
+            z-index: 10;
+            padding: 2px 8px;
+            color: #fff;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        #matBtnRender { left: 50px; top: 90px; }
+        #matBtnWire { left: 110px; top: 90px; }
+        #matBtnNormal { left: 155px; top: 90px; }
+
+        .selected {
+            background: rgba(255,255,255,0.4) !important;
+            border-color: rgba(255,255,255,0.5) !important;
+        }
+
+        /* --- Camera Mode Toggle (REMOVED) --- */
+    </style>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"
+            }
+        }
+    </script>
+</head>
+<body>
+    <img id="logo" src="https://raw.githubusercontent.com/decentralize-dfw/c2w2-thumb/main/0-MODELVIEWER2.png" alt="DFW Logo">
+    <!-- Main loading screen -->
+    <div id="loading">Loading Scene...<img src="https://raw.githubusercontent.com/decentralize-dfw/c2w2runway/main/c2w2background.jpg"></div>
+
+    <!-- Left panel for avatar selection -->
+    <div id="avatar-list" class="panel">
+        <!-- Avatar items will be injected here by JS -->
+    </div>
+
+    <!-- Right panel for 3D scene -->
+    <div id="scene-container">
+        <!-- Canvas will be injected here by JS -->
+    </div>
+
+    <!-- Camera and Lens controls -->
+    <div id="cameraControls">
+        <p id="cameraLabel">Camera</p>
+        <button id="cameraBtn1">1</button>
+        <button id="cameraBtn2">2</button>
+        <button id="cameraBtn3">3</button>
+        <p id="lensLabel">Lens</p>
+        <button id="lensBtn1">1</button>
+        <button id="lensBtn2">2</button>
+        <button id="lensBtn3">.5</button>
+        <p id="loopLabel">Loop</p>
+        <button id="loopBtnYes">Yes</button>
+        <button id="loopBtnNo">No</button>
+        <p id="materialLabel">Material</p>
+        <button id="matBtnRender">Render</button>
+        <button id="matBtnWire">Wire</button>
+        <button id="matBtnNormal">Normal</button>
+    </div>
+
+    <!-- Camera Mode Toggle (REMOVED) -->
+    
+    <!-- Reset button -->
+    <button id="resetButton">Reset Scene</button>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+        import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+        import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        // import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js'; // REMOVED
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+        // --- Core Scene Setup ---
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 0.3;
+        renderer.outputColorSpace = THREE.SRGBColorSpace;
+        renderer.physicallyCorrectLights = true;
+
+        const sceneContainer = document.getElementById('scene-container');
+        sceneContainer.appendChild(renderer.domElement);
+
+        const composer = new EffectComposer(renderer);
+        const renderPass = new RenderPass(scene, camera);
+        composer.addPass(renderPass);
+        const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.1, 0.4, 0.85);
+        composer.addPass(bloomPass);
+
+        const audioListener = new THREE.AudioListener();
+        camera.add(audioListener);
+
+        // --- Control Variables ---
+        let orbitControls;
+        // let pointerControls; // REMOVED
+        // let cameraMode = 'fixed'; // REMOVED (Always fixed)
+        let loopAnimations = true; // 'true' or 'false'
+        let materialMode = 'render'; // 'render', 'wire', 'normal'
+        const models = []; // Use as a sparse array with 1-based indexing
+        
+        // --- Store last selected camera/lens state ---
+        let lastFixedCameraBtn = null;
+        let lastFixedLensBtn = null;
+        
+        // --- Walk Mode Variables (REMOVED) ---
+
+        // --- Camera (Viewer) Controls Setup ---
+        function setupFixedControls() {
+            // This function is now ONLY for applying preset restrictions
+            // It assumes orbitControls is already initialized
+            
+            orbitControls.enabled = true;
+            
+            const dist = camera.position.distanceTo(orbitControls.target);
+            orbitControls.minDistance = dist;
+            orbitControls.maxDistance = dist;
+            
+            const polarAngle = Math.acos((camera.position.y - orbitControls.target.y) / dist);
+            orbitControls.minPolarAngle = polarAngle;
+            orbitControls.maxPolarAngle = polarAngle;
+            
+            orbitControls.enableZoom = false;
+            orbitControls.enablePan = false;
+            orbitControls.update();
+        }
+
+        // --- setupWalkControls (REMOVED) ---
+
+        // --- Camera/Lens Button Listeners ---
+        const cameraButtons = [document.getElementById('cameraBtn1'), document.getElementById('cameraBtn2'), document.getElementById('cameraBtn3')];
+        
+        function applyPresetForButton(btn) {
+            if (!orbitControls) {
+                orbitControls = new OrbitControls(camera, renderer.domElement);
+            }
+
+            if (btn.id === 'cameraBtn1') {
+                camera.position.set(25, 3, 0); 
+                camera.lookAt(0, 5, 0);
+                orbitControls.target.set(0, 5, 0);
+            } else if (btn.id === 'cameraBtn2') {
+                camera.position.set(30, 7, 0); 
+                camera.lookAt(0, 0, 0);
+                orbitControls.target.set(0, 5, 0);
+            } else if (btn.id === 'cameraBtn3') {
+                camera.position.set(10, 16, 0); 
+                camera.lookAt(0, 0, 0);
+                orbitControls.target.set(0, 7, 0);
+            }
+            
+            // Apply restrictions
+            setupFixedControls();
+        }
+
+        cameraButtons.forEach(btn => {
+            btn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                                
+                cameraButtons.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                lastFixedCameraBtn = btn; // Store last selected camera
+                
+                // Apply preset and restrictions
+                applyPresetForButton(btn);
+            });
+        });
+
+        const lensButtons = [document.getElementById('lensBtn1'), document.getElementById('lensBtn2'), document.getElementById('lensBtn3')];
+        
+        function applyLensForButton(btn) {
+            lensButtons.forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            
+            if (btn.id === 'lensBtn1') {
+                camera.fov = 80;
+            } else if (btn.id === 'lensBtn2') {
+                camera.fov = 50;
+            } else if (btn.id === 'lensBtn3') {
+                camera.fov = 100;
+            }
+            camera.updateProjectionMatrix();
+        }
+        
+        lensButtons.forEach(btn => {
+            btn.addEventListener('click', (event) => {
+                event.stopPropagation();
+                applyLensForButton(btn);
+                lastFixedLensBtn = btn; // Store last selected lens
+            });
+        });
+
+        // --- Loop Button Listeners ---
+        const loopBtnYes = document.getElementById('loopBtnYes');
+        const loopBtnNo = document.getElementById('loopBtnNo');
+
+        function setLoopMode(loop) {
+            loopAnimations = loop;
+            loopBtnYes.classList.toggle('selected', loop);
+            loopBtnNo.classList.toggle('selected', !loop);
+
+            // Update all currently active models
+            models.forEach(entry => {
+                if (entry && entry.mixer) {
+                    entry.mixer._actions.forEach(action => {
+                        action.loop = loopAnimations ? THREE.LoopRepeat : THREE.LoopOnce;
+                        if (!loopAnimations) {
+                            action.clampWhenFinished = true;
+                        } else {
+                            // If we re-enable looping and the action isn't running, play it
+                            if (!action.isRunning()) {
+                                action.reset().play();
+                            }
+                        }
+                    });
+                }
+            });
+        }
+        loopBtnYes.addEventListener('click', () => setLoopMode(true));
+        loopBtnNo.addEventListener('click', () => setLoopMode(false));
+
+        // --- Material Mode Listeners ---
+        const matBtnRender = document.getElementById('matBtnRender');
+        const matBtnWire = document.getElementById('matBtnWire');
+        const matBtnNormal = document.getElementById('matBtnNormal');
+
+        function applyMaterialMode(mesh) {
+            if (!mesh.isMesh) return;
+            
+            if (!mesh.userData.originalMaterial) {
+                mesh.userData.originalMaterial = mesh.material;
+            }
+
+            if (materialMode === 'render') {
+                mesh.material = mesh.userData.originalMaterial;
+                mesh.material.wireframe = false;
+            } else if (materialMode === 'wire') {
+                mesh.material = mesh.userData.originalMaterial;
+                mesh.material.wireframe = true;
+            } else if (materialMode === 'normal') {
+                if (!mesh.userData.normalMaterial) {
+                    mesh.userData.normalMaterial = new THREE.MeshNormalMaterial();
+                }
+                mesh.material = mesh.userData.normalMaterial;
+            }
+        }
+
+        function setMaterialMode(newMode) {
+            materialMode = newMode;
+            // Update button UI
+            matBtnRender.classList.toggle('selected', newMode === 'render');
+            matBtnWire.classList.toggle('selected', newMode === 'wire');
+            matBtnNormal.classList.toggle('selected', newMode === 'normal');
+
+            // Iterate over all active models and apply the new mode
+            models.forEach(entry => {
+                if (entry && entry.model) {
+                    entry.model.traverse((child) => {
+                        if (child.isMesh) {
+                            applyMaterialMode(child);
+                        }
+                    });
+                }
+            });
+        }
+
+        matBtnRender.addEventListener('click', () => setMaterialMode('render'));
+        matBtnWire.addEventListener('click', () => setMaterialMode('wire'));
+        matBtnNormal.addEventListener('click', () => setMaterialMode('normal'));
+        
+        // --- Camera Mode Toggle Listeners (REMOVED) ---
+        // --- setCameraMode function (REMOVED) ---
+        
+        // --- Helper functions to apply presets without triggering clicks ---
+        function applyLastFixedCameraPreset() {
+            if (!lastFixedCameraBtn) {
+                lastFixedCameraBtn = document.getElementById('cameraBtn1');
+            }
+            cameraButtons.forEach(b => b.classList.remove('selected'));
+            lastFixedCameraBtn.classList.add('selected');
+            
+            applyPresetForButton(lastFixedCameraBtn); 
+        }
+        
+        function applyLastFixedLensPreset() {
+            if (!lastFixedLensBtn) {
+                lastFixedLensBtn = document.getElementById('lensBtn1');
+            }
+            applyLensForButton(lastFixedLensBtn);
+        }
+
+        // --- Walk Mode Keyboard Listeners (REMOVED) ---
+
+        // --- Environment and Lighting ---
+        const pmremGenerator = new THREE.PMREMGenerator(renderer);
+        pmremGenerator.compileEquirectangularShader();
+        new RGBELoader().load('https://raw.githubusercontent.com/decentralize-dfw/c2w2/main/DARK-NEBULA.hdr', (texture) => {
+            const envMap = pmremGenerator.fromEquirectangular(texture).texture;
+            scene.environment = envMap;
+            scene.background = envMap;
+            texture.dispose();
+            pmremGenerator.dispose();
+        });
+        
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.1);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 5);
+        directionalLight.position.set(5, 10, 5);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 4096;
+        directionalLight.shadow.mapSize.height = 4096;
+        directionalLight.shadow.camera.near = 0.5;
+        directionalLight.shadow.camera.far = 500;
+        scene.add(directionalLight);
+        const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.1);
+        hemisphereLight.position.set(0, 20, 0);
+        scene.add(hemisphereLight);
+        const dramaticLight = new THREE.DirectionalLight(0xffffff, 100);
+        dramaticLight.position.set(0, 30, 0);
+        dramaticLight.castShadow = true;
+        dramaticLight.shadow.mapSize.width = 4096;
+        dramaticLight.shadow.mapSize.height = 4096;
+        dramaticLight.shadow.camera.near = 0.5;
+        dramaticLight.shadow.camera.far = 100;
+        dramaticLight.shadow.camera.left = -50;
+        dramaticLight.shadow.camera.right = 50;
+        dramaticLight.shadow.camera.top = 50;
+        dramaticLight.shadow.camera.bottom = -50;
+        dramaticLight.shadow.bias = -0.0001;
+        dramaticLight.shadow.normalBias = 0.05;
+        dramaticLight.shadow.radius = 4;
+        dramaticLight.shadow.blurSamples = 16;
+        scene.add(dramaticLight);
+
+        // --- Loaders ---
+        const dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath('https://www.gstatic.com/draco/versioned/decoders/1.5.7/');
+        dracoLoader.setDecoderConfig({ type: 'js' });
+        const gltfLoader = new GLTFLoader();
+        gltfLoader.setDRACOLoader(dracoLoader);
+        gltfLoader.setMeshoptDecoder(MeshoptDecoder);
+
+        // --- Load Scene (Runway) ---
+        const spaceUrl = 'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/space-rw-grfft-v2-opt-v3.glb';
+        document.getElementById('loading').style.display = 'flex';
+        gltfLoader.load(
+            spaceUrl,
+            (gltf) => {
+                const spaceModel = gltf.scene;
+                spaceModel.position.set(0, 0, 0);
+                spaceModel.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                    }
+                });
+                scene.add(spaceModel);
+                console.log('Space loaded!');
+                document.getElementById('loading').style.display = 'none';
+                
+                // --- Setup viewer controls and UI AFTER scene loads ---
+                createAvatarList();
+                // Apply default camera/lens/loop/material
+                applyLastFixedCameraPreset();
+                applyLastFixedLensPreset();
+                setLoopMode(true);
+                setMaterialMode('render');
+            },
+            (xhr) => {
+                document.getElementById('loading').textContent = `Loading Scene: ${(xhr.loaded / xhr.total * 100).toFixed(2)}%`;
+            },
+            (error) => {
+                console.error('Error loading space:', error);
+                document.getElementById('loading').textContent = 'Error: Failed to load space!';
+            }
+        );
+
+        // --- Model Data (Cleaned) ---
+        const modelUrls = [
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/bellicapelli-1000-opt-v9.glb', // Model 1
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/matisse-1000-coms-opt-v4.glb', // Model 2
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/frued-human-1000-coms-opt-v16.glb', // Model 3
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/baconscene-1000-coms-opt-v5.glb', // Model 4
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/mutantbacon-1000-coms-opt-v27.glb', // Model 5
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/squallo-1000-opt-v37.glb', // Model 6
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/curator-10000-threejs-opt-v3.glb', // Model 7
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/joker-1000-opt-v19.glb', // Model 8
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/bulkgelin-1000-opt-v10.glb', // Model 9
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/mare-1000-opt-v21.glb', // Model 10
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/memelegancedress-1000-opt-v23.glb', // Model 11
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/whitewearsdfw-1000-opt-v40.glb', // Model 12
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/invertmemelegancesuit-1000-opt-v18.glb', // Model 13
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/pile-1000-optopotooo-opt-v1.glb', // Model 14
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/redpunnnk-1000-opt-v1.glb', // Model 15
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/memelegancesuit-xoku-1000-opt-v25.glb', // Model 16
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/saturnweekend-900-v2-threejs-opt-v5.glb', // Model 17
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/6529memes-1000-opt-v1.glb', // Model 18
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/artdecc0-1000-opt-v3.glb', // Model 19
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/xcopy-1000--v2coms-opt-v6.glb', // Model 20
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/ailu-v2-1000-opt-v1.glb', // Model 21
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/gordon-1000-comms-opt-v17.glb', // Model 22
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/davicni-1000-opt-v13.glb', // Model 23
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/cozom-1000-c2-comms-opt-v2.glb', // Model 24
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/beeple-1000comms-opt-v8.glb', // Model 25
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/samspratt-1000-comms-opt-v34.glb', // Model 26
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/oy-asiye-asiyee-opt-v10.glb', // Model 27
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/baiencaigai-tigai-1000-opt-v6.glb', // Model 28
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/teddy-1000-opt-v39.glb', // Model 29
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/asian-1000-opt-v4.glb', // Model 30
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/mafiaclown-1000-opt-v20.glb', // Model 31
+            'httpss://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/samu-1000-opt-v35.glb', // Model 32
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/baienciagai-1000-opt-v7.glb', // Model 33
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/rabbit-1000-opt-v32.glb', // Model 34
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/neo-1000-opt-v28.glb', // Model 35
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/psyclown-1000-opt-v31.glb', // Model 36
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/xeu2-900--v2-threejs-opt-v7.glb', // Model 37
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/papaz-1000-threejs-opt-v29.glb', // Model 38
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/sleekrobobitchspikey-1000-opt-v36.glb', // Model 39
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/donmac-1000-opt-v15.glb', // Model 40
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/redwearsdfw-1000-opt-v33.glb', // Model 41
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/cybergesu-1000-opt-v12.glb', // Model 42
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/steve-1000com-opt-v38.glb', // Model 43
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/millefeuille-dobby-1000coms-opt-v26.glb', // Model 44
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/junya-1000-opt-v42.glb', // Model 45
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/electrogod-1000-threejs-opt-v43.glb', // Model 46
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/davicni-1000-threejs-opt-v14.glb', // Model 47
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runwayglbmodels1000/main/memelegancesuit-1000-fup-opt-v24.glb', // Model 48
+            'https://raw.githubusercontent.com/decentralize-dfw/c2w2runway/main/finale.glb' // Model 49
+        ];
+        const modelDescriptions = [
+            'Belli Capelli.', 'Lydia.', 'Lucien.', 'The Wrestler of Silence.', 'The Devoured Remnant.', 'Squallor Shark.',
+            'Neue²Dojo Curator.', 'Joker.', 'Bulky Bride.', 'Mare.', 'Vertical CT Feed Person.', 'Astral Kindergarten Teacher.',
+            'Invert Smiley.', 'Private Pile.', 'Uncle Red.', 'Xoku.', 'Weekend @ Saturn.', 'Seize.', 'Midemoiselle.',
+            'Ferryman.', 'Panda Boss.', 'Founder Ape.', 'Davicni.', 'Chromozom.', 'Can\'t See Beep Bop Crap.',
+            'Bone on Air.', 'Ashium.', 'RR-Tiger.', 'Teddyminator.', 'Bad Luck.', 'Mayhem Clown.', 'Samu.',
+            'Baincaigai.', 'exBunny.', 'Thomas_DT.', 'Bobo Delirium.', 'Xeu2.', 'Ya Bish Opps.',
+            'sleekrobobİtch/SPIKES.', 'Don Mac Don.', 'Call_2_Sim.', 'CYB0RG-E-xyz.', 'Steroive iObs.',
+            'Tobby Millefuille.', 'Junya.', 'Elextrogxd.', 'Davicni.', 'Xoqou.', 'FeLiNa.'
+        ];
+
+        // --- Model Management ---
+        function loadModel(index) {
+            return new Promise((resolve, reject) => {
+                let url = modelUrls[index - 1];
+                if (!url) {
+                    reject(new Error(`No URL for model index ${index}`));
+                    return;
+                }
+                
+                gltfLoader.load(
+                    url,
+                    (gltf) => {
+                        const modelScene = gltf.scene;
+                        modelScene.position.set(0, 0, 0);
+                        modelScene.traverse((child) => {
+                            if (child.isMesh) {
+                                child.castShadow = true;
+                                child.receiveShadow = true;
+
+                                // Store original material first
+                                if (!child.userData.originalMaterial) {
+                                    child.userData.originalMaterial = child.material;
+                                }
+                                
+                                // Apply special logic to the original material
+                                if (index === 49 && child.name === 'balls' && child.userData.originalMaterial.name === 'TT') {
+                                    child.userData.originalMaterial.emissiveIntensity = 100;
+                                } else {
+                                    if (child.userData.originalMaterial.emissive) {
+                                        child.userData.originalMaterial.emissiveIntensity = 1;
+                                    }
+                                }
+
+                                // NOW, apply the current viewing mode
+                                applyMaterialMode(child);
+                            }
+                        });
+                        scene.add(modelScene);
+                        
+                        let mixer = null;
+                        if (gltf.animations && gltf.animations.length > 0) {
+                            mixer = new THREE.AnimationMixer(modelScene);
+                            gltf.animations.forEach((clip) => {
+                                const action = mixer.clipAction(clip);
+                                // Set loop based on current toggle state
+                                action.loop = loopAnimations ? THREE.LoopRepeat : THREE.LoopOnce;
+                                if (!loopAnimations) {
+                                    action.clampWhenFinished = true;
+                                }
+                            });
+                        }
+                        
+                        models[index] = { model: modelScene, mixer, animated: false };
+                        console.log(`Model ${index} loaded`);
+                        resolve();
+                    },
+                    undefined, // onProgress
+                    (error) => {
+                        console.error(`Error loading model ${index} from URL: ${url}`, error);
+                        reject(error);
+                    }
+                );
+            });
+        }
+
+        function animateModel(index) {
+            const entry = models[index];
+            if (entry && entry.mixer && entry.mixer._actions.length > 0) {
+                entry.mixer.stopAllAction();
+                entry.animated = true;
+                entry.mixer.time = 0;
+                entry.mixer.update(0);
+                entry.mixer._actions.forEach(action => {
+                    action.reset();
+                    action.play();
+                });
+                console.log(`Model ${index} animation started`);
+            } else {
+                console.log(`No animation or mixer for model ${index}`);
+            }
+        }
+
+        function deleteModel(index) {
+            const entry = models[index];
+            if (entry) {
+                if (entry.mixer) entry.mixer.stopAllAction();
+                scene.remove(entry.model);
+                entry.model.traverse((child) => {
+                    if (child.isMesh) {
+                        child.geometry.dispose();
+                        // Dispose materials
+                        if (child.userData.originalMaterial) {
+                            child.userData.originalMaterial.dispose();
+                        }
+                        if (child.userData.normalMaterial) {
+                            child.userData.normalMaterial.dispose();
+                        }
+                        if(child.material && child.material.dispose) {
+                            child.material.dispose();
+                        }
+                    }
+                });
+                models[index] = null; // Clear the entry
+                console.log(`Model ${index} deleted`);
+            }
+        }
+
+        // --- UI and Event Listeners ---
+        function createAvatarList() {
+            const avatarList = document.getElementById('avatar-list');
+            modelDescriptions.forEach((desc, index) => {
+                const modelIndex = index + 1; // Models are 1-indexed
+                const item = document.createElement('div');
+                item.className = 'avatar-item';
+
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `avatar-check-${modelIndex}`;
+                checkbox.dataset.modelIndex = modelIndex;
+
+                const label = document.createElement('label');
+                label.htmlFor = `avatar-check-${modelIndex}`;
+                label.textContent = desc;
+
+                item.appendChild(checkbox);
+                item.appendChild(label);
+                avatarList.appendChild(item);
+
+                checkbox.addEventListener('change', (event) => {
+                    handleAvatarToggle(event.target);
+                });
+            });
+        }
+
+        async function handleAvatarToggle(checkbox) {
+            const modelIndex = parseInt(checkbox.dataset.modelIndex, 10);
+            const label = checkbox.nextElementSibling;
+            
+            if (checkbox.checked) {
+                label.textContent = "Loading...";
+                try {
+                    // Check if model needs loading
+                    if (!models[modelIndex]) {
+                        await loadModel(modelIndex);
+                    }
+                    // Start animation
+                    animateModel(modelIndex);
+                    label.textContent = modelDescriptions[modelIndex - 1]; // Reset label text
+                } catch (e) {
+                    console.error("Error loading model", modelIndex, e);
+                    label.textContent = "Load Failed";
+                    checkbox.checked = false; // Uncheck if load failed
+                    await new Promise(r => setTimeout(r, 1000)); // Show error for a sec
+                    label.textContent = modelDescriptions[modelIndex - 1];
+                }
+            } else {
+                // Unchecked - delete the model
+                deleteModel(modelIndex);
+            }
+        }
+
+        document.getElementById('resetButton').addEventListener('click', () => {
+            // Uncheck all boxes
+            document.querySelectorAll('#avatar-list input[type="checkbox"]').forEach(cb => {
+                cb.checked = false;
+            });
+            
+            // Delete all models
+            for (let i = 1; i <= modelUrls.length; i++) { // Iterate up to max model count
+                if (models[i]) {
+                    deleteModel(i);
+                }
+            }
+        });
+
+        // --- Resize ---
+        function onResize() {
+            const width = sceneContainer.clientWidth;
+            const height = sceneContainer.clientHeight;
+            camera.aspect = width / height;
+            camera.updateProjectionMatrix();
+            renderer.setSize(width, height);
+    
+            // Adjust composer size relative to the scene container, not window
+            composer.setSize(width, height);
+        }
+        window.addEventListener('resize', onResize);
+        
+        // Initial resize call
+        onResize(); 
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+        
+        function animate() {
+            const delta = clock.getDelta();
+
+            // Only update orbit controls
+            if (orbitControls) {
+                orbitControls.update();
+            }
+            
+            // Update all active model animations
+            models.forEach(entry => {
+                if (entry && entry.mixer && entry.animated) {
+                    entry.mixer.update(delta);
+                }
+            });
+
+            composer.render();
+        }
+
+        renderer.setAnimationLoop(animate);
+
+    </script>
+</body>
+</html>
