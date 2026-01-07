@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>status_co package design drop 1</title>
+    <title>VEA | ARCHITECTURAL VISUALIZATION ENGINE</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/meshoptimizer@0.19.0/meshopt_decoder.js"></script>
@@ -429,15 +429,16 @@
         };
 
         const sceneObjects = [
+  
   {
     type: 'model',
     src: 'https://raw.githubusercontent.com/decentralize-dfw/co/main/box1-opt.glb',
     width: 700,
-    position: { x: 200, y: 0, z: -100 },
+    position: { x: 400, y: 0, z: -100 },
     rotation: { x: 0, y: 180, z: 0 },
     scale: 300,
     modalContent: {
-      name: "BOX1",
+      name: "BOX0",
       categories: { sub1: "2026", sub2: "packaging" },
       description: "Contemporary Artifacts, 270 x 270 x 350",
       media: [
@@ -454,17 +455,164 @@
     type: 'model',
     src: 'https://raw.githubusercontent.com/decentralize-dfw/co/main/box1-nostrp-opt.glb',
     width: 700,
-    position: { x: 200, y: 0, z: 100 },
+    position: { x: 400, y: 0, z: 100 },
     rotation: { x: 0, y: 180, z: 0 },
     scale: 300,
     modalContent: {
-      name: "BOX1-no_stripe",
+      name: "BOX1",
       categories: { sub1: "2026", sub2: "packaging" },
       description: "Contemporary Artifacts, 270 x 270 x 350",
       media: [
         { 
           type: "image", 
           src: "https://raw.githubusercontent.com/decentralize-dfw/co/main/box1-noStrp.jpg"
+        }
+      ],
+      links: []
+    }
+  },
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co/main/box2-opt.glb',
+    width: 700,
+    position: { x: 200, y: 0, z: -100 },
+    rotation: { x: 0, y: 180, z: 0 },
+    scale: 300,
+    modalContent: {
+      name: "BOX2",
+      categories: { sub1: "2026", sub2: "packaging" },
+      description: "Contemporary Artifacts, 270 x 270 x 350",
+      media: [
+        { 
+          type: "image", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co/main/box2.jpg"
+        }
+      ],
+      //links: [        { text: "OPEN IN A NEW TAB", url: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png" }     ]
+    }
+  },
+  {
+
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co/main/box3-opt.glb',
+    width: 700,
+    position: { x: 200, y: 0, z: 100 },
+    rotation: { x: 0, y: 180, z: 0 },
+    scale: 300,
+    modalContent: {
+      name: "BOX3",
+      categories: { sub1: "2026", sub2: "packaging" },
+      description: "Contemporary Artifacts, 270 x 270 x 350",
+      media: [
+        { 
+          type: "image", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co/main/box3.jpg"
+        }
+      ],
+      links: []
+    }
+  },
+ 
+
+{
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co/main/box4-opt.glb',
+    width: 700,
+    position: { x: 0, y: 0, z: -100 },
+    rotation: { x: 0, y: 180, z: 0 },
+    scale: 300,
+    modalContent: {
+      name: "BOX4",
+      categories: { sub1: "2026", sub2: "packaging" },
+      description: "Contemporary Artifacts, 270 x 270 x 350",
+      media: [
+        { 
+          type: "image", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co/main/box4.jpg"
+        }
+      ],
+      //links: [        { text: "OPEN IN A NEW TAB", url: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png" }     ]
+    }
+  },
+  {
+
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co/main/box5-opt.glb',
+    width: 700,
+    position: { x: 0, y: 0, z: 100 },
+    rotation: { x: 0, y: 180, z: 0 },
+    scale: 300,
+    modalContent: {
+      name: "BOX5",
+      categories: { sub1: "2026", sub2: "packaging" },
+      description: "Contemporary Artifacts, 270 x 270 x 350",
+      media: [
+        { 
+          type: "image", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co/main/box5.jpg"
+        }
+      ],
+      links: []
+    }
+  },
+
+   {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co/main/box6-opt.glb',
+    width: 700,
+    position: { x: -200, y: 0, z: -100 },
+    rotation: { x: 0, y: 180, z: 0 },
+    scale: 300,
+    modalContent: {
+      name: "BOX6",
+      categories: { sub1: "2026", sub2: "packaging" },
+      description: "Contemporary Artifacts, 270 x 270 x 350",
+      media: [
+        { 
+          type: "image", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co/main/box6.jpg"
+        }
+      ],
+      //links: [        { text: "OPEN IN A NEW TAB", url: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png" }     ]
+    }
+  },
+  {
+
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co/main/box7-opt.glb',
+    width: 700,
+    position: { x: -200, y: 0, z: 100 },
+    rotation: { x: 0, y: 180, z: 0 },
+    scale: 300,
+    modalContent: {
+      name: "BOX7",
+      categories: { sub1: "2026", sub2: "packaging" },
+      description: "Contemporary Artifacts, 270 x 270 x 350",
+      media: [
+        { 
+          type: "image", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co/main/box7.jpg"
+        }
+      ],
+      links: []
+    }
+  },
+  {
+
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co/main/box8-opt.glb',
+    width: 700,
+    position: { x: -400, y: 0, z: 100 },
+    rotation: { x: 0, y: 180, z: 0 },
+    scale: 300,
+    modalContent: {
+      name: "BOX8",
+      categories: { sub1: "2026", sub2: "packaging" },
+      description: "Contemporary Artifacts, 270 x 270 x 350",
+      media: [
+        { 
+          type: "image", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co/main/box8.jpg"
         }
       ],
       links: []
@@ -491,91 +639,7 @@
       links: []
     }
   },
-
-{
-    type: 'model',
-    src: 'https://raw.githubusercontent.com/decentralize-dfw/co/main/box1-opt.glb',
-    width: 700,
-    position: { x: 0, y: 0, z: -100 },
-    rotation: { x: 0, y: 180, z: 0 },
-    scale: 300,
-    modalContent: {
-      name: "BOX1",
-      categories: { sub1: "2026", sub2: "packaging" },
-      description: "Contemporary Artifacts, 270 x 270 x 350",
-      media: [
-        { 
-          type: "image", 
-          src: "https://raw.githubusercontent.com/decentralize-dfw/co/main/box1.jpg"
-        }
-      ],
-      //links: [        { text: "OPEN IN A NEW TAB", url: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png" }     ]
-    }
-  },
-  {
-
-    type: 'model',
-    src: 'https://raw.githubusercontent.com/decentralize-dfw/co/main/box1-nostrp-opt.glb',
-    width: 700,
-    position: { x: 0, y: 0, z: 100 },
-    rotation: { x: 0, y: 180, z: 0 },
-    scale: 300,
-    modalContent: {
-      name: "BOX1-no_stripe",
-      categories: { sub1: "2026", sub2: "packaging" },
-      description: "Contemporary Artifacts, 270 x 270 x 350",
-      media: [
-        { 
-          type: "image", 
-          src: "https://raw.githubusercontent.com/decentralize-dfw/co/main/box1-noStrp.jpg"
-        }
-      ],
-      links: []
-    }
-  },
-
-   {
-    type: 'model',
-    src: 'https://raw.githubusercontent.com/decentralize-dfw/co/main/box1-opt.glb',
-    width: 700,
-    position: { x: -200, y: 0, z: -100 },
-    rotation: { x: 0, y: 180, z: 0 },
-    scale: 300,
-    modalContent: {
-      name: "BOX1",
-      categories: { sub1: "2026", sub2: "packaging" },
-      description: "Contemporary Artifacts, 270 x 270 x 350",
-      media: [
-        { 
-          type: "image", 
-          src: "https://raw.githubusercontent.com/decentralize-dfw/co/main/box1.jpg"
-        }
-      ],
-      //links: [        { text: "OPEN IN A NEW TAB", url: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png" }     ]
-    }
-  },
-  {
-
-    type: 'model',
-    src: 'https://raw.githubusercontent.com/decentralize-dfw/co/main/box1-nostrp-opt.glb',
-    width: 700,
-    position: { x: -200, y: 0, z: 100 },
-    rotation: { x: 0, y: 180, z: 0 },
-    scale: 300,
-    modalContent: {
-      name: "BOX1-no_stripe",
-      categories: { sub1: "2026", sub2: "packaging" },
-      description: "Contemporary Artifacts, 270 x 270 x 350",
-      media: [
-        { 
-          type: "image", 
-          src: "https://raw.githubusercontent.com/decentralize-dfw/co/main/box1-noStrp.jpg"
-        }
-      ],
-      links: []
-    }
-  },
- 
+  
   
  
 ];
@@ -647,7 +711,7 @@
             controls.enablePan = PARAMS.enablePan;
             controls.minDistance = PARAMS.cameraMinDist;
             controls.maxDistance = PARAMS.cameraMaxDist;
-            controls.maxPolarAngle = Math.PI / 2; 
+            controls.maxPolarAngle = Math.PI;
 
             const pmrem = new THREE.PMREMGenerator(renderer);
             new RGBELoader().load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr', (tex) => {
