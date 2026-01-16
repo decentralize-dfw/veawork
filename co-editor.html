@@ -1,0 +1,3537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>VEA | ARCHITECTURAL VISUALIZATION ENGINE</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/meshoptimizer@0.19.0/meshopt_decoder.js"></script>
+
+    <style>
+        @font-face {
+            font-family: 'Telegrama Render';
+            src: url('https://raw.githubusercontent.com/decentralize-dfw/font/main/vea.ttf') format('truetype');
+            font-display: block;
+        }
+
+        :root {
+            --ui-color: #000000;
+            --bg-color: #ffffff; 
+            --accent-color: #FF006A;
+            --font-headers: 'Telegrama Render', sans-serif;
+            --font-body: 'Telegrama Render', sans-serif;
+            --camera-type: ortho; 
+            --initial-camera-zoom: 2.0; 
+            --cam-pos-x: 5000;
+            --cam-pos-y: 5000;
+            --cam-pos-z: -5000;
+            --cam-lookat-x: 0;
+            --cam-lookat-y: 0;
+            --cam-lookat-z: 0;
+            --camera-fov: 10; 
+            --camera-min-distance: 1000;
+            --camera-max-distance: 45000;
+            --enable-pan: yes; 
+            --hover-lift-distance: 100px;
+            --hover-animation-duration: 0.3s;
+            --hover-label-font-size: 140px;
+            --hover-label-rotation-x: 0deg;
+            --hover-label-rotation-y: 90deg;
+            --hover-label-rotation-z: 0deg;
+            --hover-label-offset-y: 550px;
+            --panel-width: 480px;
+            --panel-right-offset: 20px;
+            --panel-top-offset: 80px;
+            --panel-bottom-offset: 20px;
+            --panel-border-radius: 24px;
+            --panel-bg-opacity: 0.4; 
+            --panel-blur: 8px; 
+            --panel-animation-duration: 0.8s;
+            --panel-media-padding-horizontal: 10%;
+            --panel-media-padding-top: 2rem;
+            --panel-media-spacing: 20px;
+            --panel-title-font-size: 2rem;
+            --panel-meta-font-size: 0.9rem;
+            --panel-desc-font-size: 0.95rem;
+            --panel-text-spacing: 1.5rem;
+            --panel-content-padding: 2rem;
+            --selection-zoom-factor: 0.2; 
+            --zoom-in-animation-duration: 1.0s;
+            --zoom-out-animation-duration: 1.2s;
+            --app-height: 100vh;
+        }
+
+        html, body {
+            font-family: var(--font-body);
+            background-color: var(--bg-color);
+            color: var(--ui-color);
+            margin: 0; padding: 0;
+            overflow: hidden;
+            width: 100vw; height: 100vh;
+            touch-action: none;
+        }
+
+        #scene-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 1;
+            background: #ffffff; 
+        }
+
+        /* ========== COMPACT GRAPHICS SWITCHER ========== */
+        #graphics-switcher {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            user-select: none;
+        }
+
+        .graphics-label {
+            font-family: var(--font-headers);
+            font-size: 10px;
+            color: #000;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .toggle-group {
+            display: flex;
+            gap: 6px;
+        }
+
+        .toggle-btn {
+            padding: 6px 12px;
+            font-family: var(--font-headers);
+            font-size: 9px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #000;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+        }
+
+        .toggle-btn.active {
+            background: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            border-color: rgba(0, 0, 0, 0.85);
+        }
+
+        #loader {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: white;
+            z-index: 9999;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        
+        .loader-text {
+            font-family: var(--font-headers);
+            font-size: 1.5rem;
+            color: #000;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+        }
+        
+        .loader-bar-container {
+            width: 200px; height: 2px;
+            background: #eee;
+            position: relative; overflow: hidden;
+        }
+
+        .loader-bar {
+            height: 100%;
+            background: #000;
+            width: 0%;
+            transition: width 0.3s ease-out;
+        }
+
+        /* ========== SIDE PANEL & MINIMAL SCROLLBAR ========== */
+        #side-panel {
+            position: fixed;
+            right: var(--panel-right-offset);
+            top: var(--panel-top-offset);
+            width: var(--panel-width);
+            max-height: calc(100vh - var(--panel-top-offset) - var(--panel-bottom-offset));
+            background: rgba(255, 255, 255, var(--panel-bg-opacity));
+            backdrop-filter: blur(var(--panel-blur));
+            -webkit-backdrop-filter: blur(var(--panel-blur));
+            border-radius: var(--panel-border-radius);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.1);
+            transform: translateY(50px);
+            opacity: 0; visibility: hidden;
+            transition: transform var(--panel-animation-duration) cubic-bezier(0.19, 1, 0.22, 1),
+                        opacity var(--panel-animation-duration) cubic-bezier(0.19, 1, 0.22, 1),
+                        visibility var(--panel-animation-duration) cubic-bezier(0.19, 1, 0.22, 1);
+            z-index: 100;
+            overflow-y: auto; overflow-x: hidden;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+        }
+
+        #side-panel::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        #side-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #side-panel::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.15);
+            background-clip: padding-box;
+            border-right: 5px solid transparent; 
+            border-radius: 10px;
+        }
+
+        #side-panel::-webkit-scrollbar-button {
+            display: none !important;
+            height: 0;
+            width: 0;
+        }
+        
+        #side-panel.open {
+            transform: translateY(0);
+            opacity: 1; visibility: visible;
+        }
+        
+        .panel-close-btn {
+            position: sticky;
+            top: 1.5rem; 
+            margin-left: auto;
+            margin-right: 1.5rem;
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(4px);
+            border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s ease;
+            z-index: 50;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .panel-close-btn:hover { background: rgba(0, 0, 0, 0.05); transform: rotate(90deg); }
+        
+        .panel-media-section {
+            padding: 0 var(--panel-media-padding-horizontal) var(--panel-media-spacing);
+            display: flex; flex-direction: column; align-items: center;
+        }
+        
+        .panel-media-item {
+            width: 100%;
+            aspect-ratio: 1;
+            margin-bottom: var(--panel-media-spacing);
+            position: relative;
+            display: flex; align-items: center; justify-content: center;
+            background: transparent;
+        }
+        
+        .media-wrapper {
+            position: relative;
+            max-width: 100%; max-height: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+            background: #fcfcfc;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        .web-wrapper {
+            width: 100%; height: 100%;
+            border-radius: 16px;
+            overflow: hidden;
+            background: white;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+        }
+
+        .panel-media-item img,
+        .panel-media-item video {
+            max-width: 100%; max-height: 100%;
+            width: auto; height: auto;
+            display: block; object-fit: contain;
+        }
+        
+        .media-play-button {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 54px; height: 54px;
+            border-radius: 50%; background: white;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: opacity 0.3s; z-index: 5;
+            pointer-events: none;
+        }
+
+        .media-play-button.playing { opacity: 0; }
+
+        .panel-text-section { padding: var(--panel-content-padding); padding-top: 0; }
+        
+        .panel-title {
+            font-family: var(--font-headers);
+            font-size: var(--panel-title-font-size);
+            line-height: 1.1; text-transform: uppercase;
+            margin-bottom: var(--panel-text-spacing); color: #000;
+        }
+
+        .panel-meta {
+            font-family: var(--font-body);
+            font-size: var(--panel-meta-font-size);
+            margin-bottom: var(--panel-text-spacing);
+            display: flex; flex-wrap: wrap; gap: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            text-transform: uppercase; color: black; letter-spacing: 0.5px;
+        }
+        
+        .panel-description {
+            font-family: var(--font-body);
+            font-size: var(--panel-desc-font-size);
+            line-height: 1.7; white-space: pre-line; color: black;
+        }
+
+        .panel-link {
+            display: block;
+            margin-top: 1rem;
+            text-decoration: underline;
+            text-underline-offset: 4px;
+            color: #000;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: opacity 0.2s;
+        }
+
+        .panel-link:hover { opacity: 0.6; }
+
+        /* ========== EDITOR PANEL (LEFT SIDE) - EXCEL STYLE ========== */
+        #editor-panel {
+            position: fixed;
+            left: 10px;
+            top: 60px;
+            max-width: calc(100vw - 520px);
+            max-height: calc(100vh - 80px);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 1000;
+            overflow: auto;
+            display: none;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.15) transparent;
+        }
+
+        #editor-panel::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        #editor-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        #editor-panel::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 3px;
+        }
+
+        #editor-panel.open {
+            display: block;
+        }
+
+        .editor-table {
+            border-collapse: collapse;
+            font-family: var(--font-body);
+            font-size: 12px;
+        }
+
+        .editor-table th {
+            background: rgba(0, 0, 0, 0.08);
+            padding: 4px 6px;
+            text-align: center;
+            font-weight: normal;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            border: 1px solid rgba(0, 0, 0, 0.15);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            white-space: nowrap;
+        }
+
+        .editor-table th.name-col {
+            text-align: left;
+            min-width: 100px;
+            max-width: 120px;
+        }
+
+        .editor-table td {
+            padding: 2px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .editor-table td.name-cell {
+            text-align: left;
+            padding: 2px 6px;
+            font-size: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 120px;
+            cursor: pointer;
+        }
+
+        .editor-table tr:hover {
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        .editor-table tr.selected {
+            background: rgba(0, 120, 255, 0.1);
+        }
+
+        .editor-table tr.selected td {
+            border-color: rgba(0, 120, 255, 0.3);
+        }
+
+        .editor-table input {
+            width: 40px;
+            padding: 2px 3px;
+            font-family: var(--font-body);
+            font-size: 12px;
+            border: none;
+            background: transparent;
+            text-align: right;
+        }
+
+        .editor-table input:focus {
+            outline: none;
+            background: rgba(0, 120, 255, 0.1);
+        }
+
+        .col-x { background: rgba(231, 76, 60, 0.1); }
+        .col-y { background: rgba(39, 174, 96, 0.1); }
+        .col-z { background: rgba(52, 152, 219, 0.1); }
+        .col-s { background: rgba(155, 89, 182, 0.1); }
+
+        .editor-footer {
+            padding: 6px;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            background: rgba(255, 255, 255, 0.95);
+            position: sticky;
+            bottom: 0;
+            display: flex;
+            gap: 6px;
+        }
+
+        .editor-footer-btn {
+            padding: 4px 10px;
+            font-family: var(--font-headers);
+            font-size: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .editor-footer-btn:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .editor-footer-btn.print-btn {
+            background: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            border-color: rgba(0, 0, 0, 0.85);
+        }
+
+        .editor-footer-btn.print-btn:hover {
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        /* Lock icon in table */
+        .lock-cell {
+            width: 20px;
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .lock-icon {
+            font-size: 10px;
+            opacity: 0.4;
+            transition: opacity 0.2s;
+        }
+
+        .lock-icon:hover {
+            opacity: 0.8;
+        }
+
+        .lock-icon.locked {
+            opacity: 1;
+            color: #e74c3c;
+        }
+
+        .editor-table tr.locked {
+            opacity: 0.5;
+        }
+
+        .editor-table tr.locked td {
+            background: rgba(0, 0, 0, 0.03);
+        }
+
+        /* Transform mode buttons */
+        .transform-group {
+            display: flex;
+            gap: 4px;
+            margin-left: 12px;
+        }
+
+        .transform-btn {
+            padding: 4px 8px;
+            font-family: var(--font-headers);
+            font-size: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(8px);
+            color: #000;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 8px;
+        }
+
+        .transform-btn.active {
+            background: rgba(0, 0, 0, 0.85);
+            color: #fff;
+        }
+
+        /* Camera parameters panel */
+        #camera-params {
+            position: fixed;
+            top: 50px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(8px);
+            border-radius: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            padding: 8px 10px;
+            z-index: 999;
+            display: none;
+            font-family: var(--font-body);
+            font-size: 8px;
+        }
+
+        #camera-params.open {
+            display: block;
+        }
+
+        .cam-param-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 4px;
+        }
+
+        .cam-param-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .cam-param-label {
+            width: 30px;
+            text-transform: uppercase;
+            color: #666;
+        }
+
+        .cam-param-input {
+            width: 50px;
+            padding: 2px 4px;
+            font-family: var(--font-body);
+            font-size: 8px;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+            text-align: right;
+        }
+
+        .cam-param-input:focus {
+            outline: none;
+            border-color: rgba(0, 0, 0, 0.3);
+        }
+
+        /* ========== EDITOR MODE & CAMERA BUTTONS ========== */
+        .editor-btn {
+            padding: 6px 12px;
+            font-family: var(--font-headers);
+            font-size: 9px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #000;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+        }
+
+        .editor-btn.active {
+            background: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            border-color: rgba(0, 0, 0, 0.85);
+        }
+
+        .camera-group {
+            display: flex;
+            gap: 4px;
+            margin-left: 12px;
+        }
+
+        .camera-btn {
+            padding: 6px 10px;
+            font-family: var(--font-headers);
+            font-size: 9px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            color: #000;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+        }
+
+        .camera-btn.active {
+            background: rgba(0, 0, 0, 0.85);
+            color: #fff;
+            border-color: rgba(0, 0, 0, 0.85);
+        }
+
+        @media (max-width: 768px) {
+            #side-panel { 
+                right: 0; bottom: 0; top: auto;
+                width: 100%; height: 85vh; max-height: 85vh;
+                border-radius: 32px 32px 0 0;
+                transform: translateY(100%);
+            }
+            #side-panel.open { transform: translateY(0); }
+            #graphics-switcher { display: none !important; }
+            :root {
+                --panel-media-padding-horizontal: 25%;
+                --panel-media-padding-top: 1rem;
+                --panel-media-spacing: 30px;
+                --panel-content-padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loader">
+        <div class="loader-text">home</div>
+        <div class="loader-bar-container"><div class="loader-bar"></div></div>
+    </div>
+
+    <!-- GRAPHICS MODES: LOW, MEDIUM, HIGH -->
+    <div id="graphics-switcher">
+        <span class="graphics-label">graphics</span>
+        <div class="toggle-group">
+            <button class="toggle-btn" id="btn-low" onclick="handlePresetSelection('low')">LOW</button>
+            <button class="toggle-btn active" id="btn-mid" onclick="handlePresetSelection('mid')">MEDIUM</button>
+            <button class="toggle-btn" id="btn-high" onclick="handlePresetSelection('high')">HIGH</button>
+        </div>
+        <button class="editor-btn" id="btn-editor" onclick="toggleEditorMode()">EDITOR</button>
+        <div class="transform-group" id="transform-group" style="display: none;">
+            <button class="transform-btn active" id="btn-translate" onclick="setTransformMode('translate')">T</button>
+            <button class="transform-btn" id="btn-rotate" onclick="setTransformMode('rotate')">R</button>
+            <button class="transform-btn" id="btn-scale" onclick="setTransformMode('scale')">S</button>
+        </div>
+        <div class="camera-group" id="camera-group" style="display: none;">
+            <button class="camera-btn active" id="btn-cam1" onclick="switchCamera(1)">1</button>
+            <button class="camera-btn" id="btn-cam2" onclick="switchCamera(2)">2</button>
+        </div>
+    </div>
+
+    <!-- CAMERA PARAMETERS PANEL -->
+    <div id="camera-params">
+        <div class="cam-param-row">
+            <span class="cam-param-label">FOV</span>
+            <input type="number" class="cam-param-input" id="cam-fov" value="60" min="10" max="120" step="5" onchange="updateCameraFOV(this.value)">
+        </div>
+        <div class="cam-param-row">
+            <span class="cam-param-label">X</span>
+            <input type="number" class="cam-param-input" id="cam-pos-x" value="0" step="100" onchange="updateCameraPosition()">
+        </div>
+        <div class="cam-param-row">
+            <span class="cam-param-label">Y</span>
+            <input type="number" class="cam-param-input" id="cam-pos-y" value="200" step="100" onchange="updateCameraPosition()">
+        </div>
+        <div class="cam-param-row">
+            <span class="cam-param-label">Z</span>
+            <input type="number" class="cam-param-input" id="cam-pos-z" value="0" step="100" onchange="updateCameraPosition()">
+        </div>
+    </div>
+
+    <!-- EDITOR PANEL (LEFT SIDE) - EXCEL STYLE -->
+    <div id="editor-panel">
+        <table class="editor-table">
+            <thead>
+                <tr>
+                    <th style="width:20px;"></th>
+                    <th class="name-col">NAME</th>
+                    <th class="col-x">X</th>
+                    <th class="col-y">Y</th>
+                    <th class="col-z">Z</th>
+                    <th class="col-x">RX</th>
+                    <th class="col-y">RY</th>
+                    <th class="col-z">RZ</th>
+                    <th class="col-s">S</th>
+                </tr>
+            </thead>
+            <tbody id="editor-table-body"></tbody>
+        </table>
+        <div class="editor-footer">
+            <button class="editor-footer-btn print-btn" onclick="printEditorData()">PRINT</button>
+        </div>
+    </div>
+
+    <div id="scene-container"></div>
+
+    <div id="side-panel">
+        <button class="panel-close-btn" onclick="closePanel()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                <path d="M19 6.41L17.59 5L12 10.59L6.41 5L5 6.41L10.59 12L5 17.59L6.41 19L12 13.41L17.59 19L19 17.59L13.41 12L19 6.41Z" fill="#000"/>
+            </svg>
+        </button>
+        <div class="panel-media-section" id="panel-media"></div>
+        <div class="panel-text-section">
+            <div class="panel-title" id="panel-title"></div>
+            <div class="panel-meta">
+                <span id="panel-year"></span>
+                <span id="panel-cats"></span>
+            </div>
+            <div class="panel-description" id="panel-desc"></div>
+            <div id="panel-links"></div>
+        </div>
+    </div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+                "three-mesh-bvh": "https://cdn.jsdelivr.net/npm/three-mesh-bvh@0.6.8/build/index.module.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+        import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+        import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+        // import { SSAOPass } from 'three/addons/postprocessing/SSAOPass.js'; // TALEP ÜZERİNE PASİF
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { FXAAShader } from 'three/addons/shaders/FXAAShader.js';
+        import { TransformControls } from 'three/addons/controls/TransformControls.js';
+        import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh';
+
+        THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree;
+        THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree;
+        THREE.Mesh.prototype.raycast = acceleratedRaycast;
+
+        const getParam = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+        const getParamNum = (name) => parseFloat(getParam(name));
+
+        const PARAMS = {
+            hoverLiftDistance: getParamNum('--hover-lift-distance'),
+            hoverAnimationDuration: parseFloat(getParam('--hover-animation-duration')) * 1000,
+            hoverLabelFontSize: getParamNum('--hover-label-font-size'),
+            hoverLabelRotationX: parseFloat(getParam('--hover-label-rotation-x')),
+            hoverLabelRotationY: parseFloat(getParam('--hover-label-rotation-y')),
+            hoverLabelRotationZ: parseFloat(getParam('--hover-label-rotation-z')),
+            hoverLabelOffsetY: getParamNum('--hover-label-offset-y'),
+            selectionZoomFactor: getParamNum('--selection-zoom-factor'),
+            zoomInAnimationDuration: parseFloat(getParam('--zoom-in-animation-duration')) * 1000,
+            zoomOutAnimationDuration: parseFloat(getParam('--zoom-out-animation-duration')) * 1000,
+            initialCameraZoom: getParamNum('--initial-camera-zoom'),
+            cameraType: getParam('--camera-type').toLowerCase(),
+            cameraFov: getParamNum('--camera-fov'),
+            cameraMinDist: getParamNum('--camera-min-distance'),
+            cameraMaxDist: getParamNum('--camera-max-distance'),
+            enablePan: getParam('--enable-pan') === 'yes',
+            camPosX: getParamNum('--cam-pos-x'),
+            camPosY: getParamNum('--cam-pos-y'),
+            camPosZ: getParamNum('--cam-pos-z'),
+            camLookX: getParamNum('--cam-lookat-x'),
+            camLookY: getParamNum('--cam-lookat-y'),
+            camLookZ: getParamNum('--cam-lookat-z')
+        };
+
+        const sceneObjects = [
+  
+  {
+    type: 'model',
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/exhbt22-opt.glb',
+    width: 700,
+    position: { x: 0, y: -560, z: 0 },
+    rotation: { x: 0, y: 0, z: 0 },
+    scale: 400,
+    clickable: false, 
+    includeInFit: false,
+    modalContent: {
+      name: "bldg",
+      categories: { sub1: "2025", sub2: "ABOUT" },
+      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",
+      media: [
+        { 
+          type: "image", 
+          src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png"
+        }      ],
+      links: []
+    }  },
+    
+     {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/01_1_bud_rrs_stool.glb',
+
+    width: 700,
+
+    position: { x: 400, y: 0, z: -700 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "RUG N ROLL STOOL",
+
+      categories: { sub1: "2025", sub2: "BUDDE" },
+
+      description: "BUDDE, 01_1_Bud_RRS_stool",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/01_1_bud_rrs_stool.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/01_2_bud_rrs_stool.glb',
+
+    width: 700,
+
+    position: { x: 200, y: 0, z: -700 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "RUG N ROLL STOOL",
+
+      categories: { sub1: "2025", sub2: "BUDDE" },
+
+      description: "BUDDE, 01_2_Bud_RRS_stool",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/01_2_bud_rrs_stool.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/01_3_bud_rrs_stool.glb',
+
+    width: 700,
+
+    position: { x: 0, y: 0, z: -700 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "RUG N ROLL STOOL",
+
+      categories: { sub1: "2025", sub2: "BUDDE" },
+
+      description: "BUDDE, 01_3_Bud_RRS_stool",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/01_3_bud_rrs_stool.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/02_1_gs_pv_i_vase.glb',
+
+    width: 700,
+
+    position: { x: -200, y: 0, z: -700 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "PUFFER VASE I",
+
+      categories: { sub1: "2025", sub2: "GAST STUDIO" },
+
+      description: "GAST STUDIO, 02_1_GS_PV_I_vase",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/02_1_gs_pv_i_vase.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/02_2_gs_pv_ii_s_vase.glb',
+
+    width: 700,
+
+    position: { x: -400, y: 0, z: -700 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "PUFFER VASE II SMALL",
+
+      categories: { sub1: "2025", sub2: "GAST STUDIO" },
+
+      description: "GAST STUDIO, 02_2_GS_PV_II_S_vase",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/02_2_gs_pv_ii_s_vase.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/02_3_gs_pv_ii_s_vase.glb',
+
+    width: 700,
+
+    position: { x: 400, y: 0, z: -500 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "PUFFER VASE II SMALL",
+
+      categories: { sub1: "2025", sub2: "GAST STUDIO" },
+
+      description: "GAST STUDIO, 02_3_GS_PV_II_S_vase",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/02_3_gs_pv_ii_s_vase.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/02_4_gs_pv_ii_s_vase.glb',
+
+    width: 700,
+
+    position: { x: 200, y: 0, z: -500 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "PUFFER VASE II SMALL",
+
+      categories: { sub1: "2025", sub2: "GAST STUDIO" },
+
+      description: "GAST STUDIO, 02_4_GS_PV_II_S_vase",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/02_4_gs_pv_ii_s_vase.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/02_5_gs_pv_ii_l_vase.glb',
+
+    width: 700,
+
+    position: { x: 0, y: 0, z: -500 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "PUFFER VASE II LARGE",
+
+      categories: { sub1: "2025", sub2: "GAST STUDIO" },
+
+      description: "GAST STUDIO, 02_5_GS_PV_II_L_vase",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/02_5_gs_pv_ii_l_vase.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/02_6_gs_pv_ii_l_vase.glb',
+
+    width: 700,
+
+    position: { x: -200, y: 0, z: -500 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "PUFFER VASE I LARGE",
+
+      categories: { sub1: "2025", sub2: "GAST STUDIO" },
+
+      description: "GAST STUDIO, 02_6_GS_PV_II_L_vase",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/02_6_gs_pv_ii_l_vase.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/02_7_gs_svg_vase.glb',
+
+    width: 700,
+
+    position: { x: -400, y: 0, z: -500 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "STEM VASE GREEN",
+
+      categories: { sub1: "2025", sub2: "GAST STUDIO" },
+
+      description: "GAST STUDIO, 02_7_GS_SVG_vase",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/02_7_gs_svg_vase.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/03_1_gj_mkn_chair.glb',
+
+    width: 700,
+
+    position: { x: 400, y: 0, z: -300 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "MINI KNOT CHAIR",
+
+      categories: { sub1: "2025", sub2: "GREEM JEONG" },
+
+      description: "GREEM JEONG, 03_1_GJ_MKn_chair",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/03_1_gj_mkn_chair.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/03_2_gj_knt_chair.glb',
+
+    width: 700,
+
+    position: { x: 200, y: 0, z: -300 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "KNOT CHAIR",
+
+      categories: { sub1: "2025", sub2: "GREEM JEONG" },
+
+      description: "GREEM JEONG, 03_2_GJ_Knt_chair",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/03_2_gj_knt_chair.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/03_3_gj_vase.glb',
+
+    width: 700,
+
+    position: { x: 0, y: 0, z: -300 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "VASE",
+
+      categories: { sub1: "2025", sub2: "GREEM JEONG" },
+
+      description: "GREEM JEONG, 03_3_GJ_vase",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/03_3_gj_vase.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/03_4_gj_pen_holder.glb',
+
+    width: 700,
+
+    position: { x: -200, y: 0, z: -300 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "PEN HOLDER",
+
+      categories: { sub1: "2025", sub2: "GREEM JEONG" },
+
+      description: "GREEM JEONG, 03_4_GJ_Pen_holder",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/03_4_gj_pen_holder.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/04_1_hl_ipc_chair.glb',
+
+    width: 700,
+
+    position: { x: -400, y: 0, z: -300 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "INVISIBLE PANTON CHAIR",
+
+      categories: { sub1: "2025", sub2: "HYEOK LEE" },
+
+      description: "HYEOK LEE, 04_1_HL_IPC_chair",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/04_1_hl_ipc_chair.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/05_1_mp_ecs_y3_stool.glb',
+
+    width: 700,
+
+    position: { x: 400, y: 0, z: -100 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "THE END OF CIVILIZATION STOOL",
+
+      categories: { sub1: "2025", sub2: "MILAN PEKAR" },
+
+      description: "MILAN PEKAR, 05_1_MP_ECS_Y3_stool",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/05_1_mp_ecs_y3_stool.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/06_1_nz_scb_chair.glb',
+
+    width: 700,
+
+    position: { x: 200, y: 0, z: -100 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "STRAT CHAIR BLUE",
+
+      categories: { sub1: "2025", sub2: "NICOLAS ZANONI" },
+
+      description: "NICOLAS ZANONI, 06_1_NZ_SCB_chair",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/06_1_nz_scb_chair.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_1_nj_et_cc_s_trs.glb',
+
+    width: 700,
+
+    position: { x: 0, y: 0, z: -100 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "EROS TORSO CLASSIC CLEAR - S",
+
+      categories: { sub1: "2025", sub2: "NIKO JUNE" },
+
+      description: "NIKO JUNE, 07_1_NJ_ET_cc_s_trs",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_1_nj_et_cc_s_trs.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_2_nj_et_cc_m_trs.glb',
+
+    width: 700,
+
+    position: { x: -200, y: 0, z: -100 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "EROS TORSO CLASSIC CLEAR - M",
+
+      categories: { sub1: "2025", sub2: "NIKO JUNE" },
+
+      description: "NIKO JUNE, 07_2_NJ_ET_cc_m_trs",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_2_nj_et_cc_m_trs.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_3_nj_et_cc_l_trs.glb',
+
+    width: 700,
+
+    position: { x: -400, y: 0, z: -100 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "EROS TORSO CLASSIC CLEAR - L",
+
+      categories: { sub1: "2025", sub2: "NIKO JUNE" },
+
+      description: "NIKO JUNE, 07_3_NJ_ET_cc_l_trs",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_3_nj_et_cc_l_trs.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_4_nj_et_cc_xl_trs.glb',
+
+    width: 700,
+
+    position: { x: 400, y: 0, z: 100 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "EROS TORSO CLASSIC CLEAR - XL",
+
+      categories: { sub1: "2025", sub2: "NIKO JUNE" },
+
+      description: "NIKO JUNE, 07_4_NJ_ET_cc_xl_trs",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_4_nj_et_cc_xl_trs.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_5_nj_et_brw_s_trs.glb',
+
+    width: 700,
+
+    position: { x: 200, y: 0, z: 100 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "EROS TORSO HUE - BROWN - S",
+
+      categories: { sub1: "2025", sub2: "NIKO JUNE" },
+
+      description: "NIKO JUNE, 07_5_NJ_ET_brw_s_trs",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_5_nj_et_brw_s_trs.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_6_nj_et_brw_m_trs.glb',
+
+    width: 700,
+
+    position: { x: 0, y: 0, z: 100 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "EROS TORSO HUE - BROWN - M",
+
+      categories: { sub1: "2025", sub2: "NIKO JUNE" },
+
+      description: "NIKO JUNE, 07_6_NJ_ET_brw_m_trs",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_6_nj_et_brw_m_trs.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_7_nj_et_brw_l_trs.glb',
+
+    width: 700,
+
+    position: { x: -200, y: 0, z: 100 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "EROS TORSO HUE - BROWN - L",
+
+      categories: { sub1: "2025", sub2: "NIKO JUNE" },
+
+      description: "NIKO JUNE, 07_7_NJ_ET_brw_l_trs",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_7_nj_et_brw_l_trs.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_8_nj_et_gre_s_trs.glb',
+
+    width: 700,
+
+    position: { x: -400, y: 0, z: 100 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "EROS TORSO HUE - GREEN - S",
+
+      categories: { sub1: "2025", sub2: "NIKO JUNE" },
+
+      description: "NIKO JUNE, 07_8_NJ_ET_gre_s_trs",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_8_nj_et_gre_s_trs.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_9_nj_et_gre_m_trs.glb',
+
+    width: 700,
+
+    position: { x: 400, y: 0, z: 300 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "EROS TORSO HUE - GREEN - M",
+
+      categories: { sub1: "2025", sub2: "NIKO JUNE" },
+
+      description: "NIKO JUNE, 07_9_NJ_ET_gre_m_trs",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_9_nj_et_gre_m_trs.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_10_nj_et_gre_l_trs.glb',
+
+    width: 700,
+
+    position: { x: 200, y: 0, z: 300 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "EROS TORSO HUE - GREEN - L",
+
+      categories: { sub1: "2025", sub2: "NIKO JUNE" },
+
+      description: "NIKO JUNE, 07_10_NJ_ET_gre_l_trs",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_10_nj_et_gre_l_trs.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_11_nj_et_pnk_s_trs.glb',
+
+    width: 700,
+
+    position: { x: 0, y: 0, z: 300 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "EROS TORSO HUE - PINK - S",
+
+      categories: { sub1: "2025", sub2: "NIKO JUNE" },
+
+      description: "NIKO JUNE, 07_11_NJ_ET_pnk_s_trs",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_11_nj_et_pnk_s_trs.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_12_nj_et_pnk_m_trs.glb',
+
+    width: 700,
+
+    position: { x: -200, y: 0, z: 300 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "EROS TORSO HUE - PINK - M",
+
+      categories: { sub1: "2025", sub2: "NIKO JUNE" },
+
+      description: "NIKO JUNE, 07_12_NJ_ET_pnk_m_trs",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_12_nj_et_pnk_m_trs.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_13_nj_et_pnk_l_trs.glb',
+
+    width: 700,
+
+    position: { x: -400, y: 0, z: 300 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "EROS TORSO HUE - PINK - L",
+
+      categories: { sub1: "2025", sub2: "NIKO JUNE" },
+
+      description: "NIKO JUNE, 07_13_NJ_ET_pnk_l_trs",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_13_nj_et_pnk_l_trs.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_14_nj_et_prp_s_trs.glb',
+
+    width: 700,
+
+    position: { x: 400, y: 0, z: 500 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "EROS TORSO HUE - PURPLE - S",
+
+      categories: { sub1: "2025", sub2: "NIKO JUNE" },
+
+      description: "NIKO JUNE, 07_14_NJ_ET_prp_s_trs",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_14_nj_et_prp_s_trs.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_15_nj_et_prp_m_trs.glb',
+
+    width: 700,
+
+    position: { x: 200, y: 0, z: 500 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "EROS TORSO HUE - PURPLE - M",
+
+      categories: { sub1: "2025", sub2: "NIKO JUNE" },
+
+      description: "NIKO JUNE, 07_15_NJ_ET_prp_m_trs",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_15_nj_et_prp_m_trs.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_16_nj_et_prp_l_trs.glb',
+
+    width: 700,
+
+    position: { x: 0, y: 0, z: 500 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "EROS TORSO HUE - PURPLE - L",
+
+      categories: { sub1: "2025", sub2: "NIKO JUNE" },
+
+      description: "NIKO JUNE, 07_16_NJ_ET_prp_l_trs",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/07_16_nj_et_prp_l_trs.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/08_3_ds-ss_tat_teapot.glb',
+
+    width: 700,
+
+    position: { x: -200, y: 0, z: 500 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "The Tea is Alive - Teapot",
+
+      categories: { sub1: "2025", sub2: "DAVID SHRIGLEY" },
+
+      description: "DAVID SHRIGLEY, 08_3_ds-ss_TAT_teapot",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/08_3_ds-ss_tat_teapot.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/09_1_6dot_sc_cand.glb',
+
+    width: 700,
+
+    position: { x: -400, y: 0, z: 500 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "Small Candelabra",
+
+      categories: { sub1: "2025", sub2: "DOTS DESIGN" },
+
+      description: "DOTS DESIGN, 09_1_6dot_SC_cand",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/09_1_6dot_sc_cand.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/09_2_6dot_st_tray.glb',
+
+    width: 700,
+
+    position: { x: 400, y: 0, z: 700 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "Serving Tray",
+
+      categories: { sub1: "2025", sub2: "DOTS DESIGN" },
+
+      description: "DOTS DESIGN, 09_2_6dot_ST_tray",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/09_2_6dot_st_tray.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/11_1_ee_ds0c0_chair.glb',
+
+    width: 700,
+
+    position: { x: 200, y: 0, z: 700 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "Disguise Series - Chair 01",
+
+      categories: { sub1: "2025", sub2: "ESTO estudio" },
+
+      description: "ESTO estudio, 11_1_EE_DS0C0_chair",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/11_1_ee_ds0c0_chair.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/12_1_st_sm_mirror.glb',
+
+    width: 700,
+
+    position: { x: 0, y: 0, z: 700 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "Spinning Mirror",
+
+      categories: { sub1: "2025", sub2: "SOPHIA TAILLET" },
+
+      description: "SOPHIA TAILLET, 12_1_ST_SM_mirror",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/12_1_st_sm_mirror.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/13_1_sy_osucr_cabinet.glb',
+
+    width: 700,
+
+    position: { x: -200, y: 0, z: 700 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "Ova' Sof Cabinet (Red)",
+
+      categories: { sub1: "2025", sub2: "STUDIO YELLOWDOT" },
+
+      description: "STUDIO YELLOWDOT, 13_1_SY_OSUCR_cabinet",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/13_1_sy_osucr_cabinet.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  },
+
+  {
+
+    type: 'model',
+
+    src: 'https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/13_2_sy_ecla_sculpture.glb',
+
+    width: 700,
+
+    position: { x: -400, y: 0, z: 700 },
+
+    rotation: { x: 0, y: 0, z: 0 },
+
+    scale: 400,
+
+    modalContent: {
+
+      name: "Icing Eclair Sculpture",
+
+      categories: { sub1: "2025", sub2: "STUDIO YELLOWDOT" },
+
+      description: "STUDIO YELLOWDOT, 13_2_SY_Ecla_sculpture",
+
+      media: [
+
+        { 
+
+          type: "model", 
+
+          src: "https://raw.githubusercontent.com/decentralize-dfw/co-contemporaryartifacts-glb/main/13_2_sy_ecla_sculpture.glb"
+
+        }
+
+      ],
+
+      links: []
+
+    }
+
+  }
+
+
+
+
+];
+
+// {type: 'model',    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/labsglb-v1.glb',    width: 700,    position: { x: 0, y: -100, z: 0 },    rotation: { x: 0, y: 0, z: 0 },    scale: 200,    clickable: false,              includeInFit: false,           modalContent: {      name: "bldg",      categories: { sub1: "2025", sub2: "ABOUT" },      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",  media: [   {   type: "image",   src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png",      linkUrl: null,      linkText: "OPEN IN A NEW TAB"   }  ] }  },
+
+//{type: 'model',    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/mm6s-opt.glb',    width: 700,    position: { x: 0, y: 0, z: 0 },    rotation: { x: 0, y: 0, z: 0 },    scale: 800,    clickable: false, includeInFit: false,   modalContent: {      name: "bldg",      categories: { sub1: "2025", sub2: "ABOUT" },      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",  media: [   {   type: "image",   src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png",      linkUrl: null,      linkText: "OPEN IN A NEW TAB"   }  ] }  },
+ //{type: 'model',    src: 'https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/kutudeneme.glb',    width: 700,    position: { x: 0, y: 0, z: 0 },    rotation: { x: 0, y: 0, z: 0 },    scale: 80,    clickable: false,    modalContent: {      name: "bldg",      categories: { sub1: "2025", sub2: "ABOUT" },      description: "VEA combine architecture, art direction, and digital storytelling to create a multidimensional universe for each individual story.\n\n\nMinimal, sculptural, futuristic aesthetic\nArchitectural thinking applied to digital worlds\n\nCustom-made digital atmospheres (no templates)\n\nCohesive language across space, object, motion and identity\n\nA sensorial, immersive feeling in everything we produce\n\n**NOT**traditional design studio.",  media: [   {   type: "image",   src: "https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png",      linkUrl: null,      linkText: "OPEN IN A NEW TAB"   }  ] }  },
+  
+// {    type: 'image',    src: 'https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg',    width: 4000,    position: { x: 0, y: -10, z: 0 },    rotation: { x: 90, y: 0, z: 0 },    scale: 1000,    clickable: false,    modalContent: {      name: "Atmosphere",      categories: { sub1: "2024", sub2: "Environment" },      description: "Void environment.",      media: [        {            type: "image",            src: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg",          linkUrl: "https://raw.githubusercontent.com/decentralize-dfw/decentralize/main/backg.jpg",          linkText: "OPEN IN A NEW TAB"        }      ]    }  },
+ 
+
+        let camera, scene, renderer, controls, raycaster, mouse, composer, globalEnvMap;
+        let bloomPass, ssaoPass;
+        let loadedAssets = 0, totalAssets = 0;
+        let currentHoveredObject = null, hoverLabel = null, currentSelectedObject = null;
+        let originalCameraState = null, currentActiveVideos = [];
+        let modalAnimationFrameId;
+        const clickableObjects = [];
+
+        // Editor mode variables
+        let editorModeActive = false;
+        let transformControls = null;
+        let selectedEditorObject = null;
+        let loadedObjectsMap = new Map(); // Maps sceneObject index to THREE.Object3D
+        let currentCameraMode = 1;
+        let savedCameraState = null;
+        let currentTransformMode = 'translate';
+        const lockedObjects = new Set(); // Locked object indices
+
+        // Camera 2 - Perspective fixed position with 360 rotation
+        let camera2 = null;
+        let controls2 = null;
+
+        // Undo/Redo system
+        let undoStack = [];
+        let redoStack = [];
+        const MAX_UNDO_STEPS = 50;
+
+        // Original materials backup for LOW mode
+        let originalMaterials = new Map();
+
+        async function startEngine() {
+            try {
+                const font = new FontFace('Telegrama Render', 'url(https://raw.githubusercontent.com/decentralize-dfw/font/main/vea.ttf)');
+                await font.load();
+                document.fonts.add(font);
+                init(); animate();
+            } catch (err) { init(); animate(); }
+        }
+
+        startEngine();
+
+        function init() {
+            const container = document.getElementById('scene-container');
+            
+            renderer = new THREE.WebGLRenderer({ 
+                antialias: true, 
+                alpha: true, 
+                powerPreference: "high-performance",
+                precision: "highp",
+                logarithmicDepthBuffer: true
+            });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 0.85; 
+            renderer.shadowMap.enabled = true; 
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            renderer.setClearAlpha(0);
+            renderer.setClearColor(0xffffff, 0);
+
+            container.appendChild(renderer.domElement);
+
+            const aspect = window.innerWidth / window.innerHeight;
+            if (PARAMS.cameraType === 'ortho') {
+                camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100000);
+            } else {
+                camera = new THREE.PerspectiveCamera(PARAMS.cameraFov, aspect, 10, 100000);
+            }
+            
+            scene = new THREE.Scene();
+            scene.background = null;
+
+            // Add TransformControls to scene (will be initialized later)
+            setTimeout(() => {
+                if (transformControls) scene.add(transformControls);
+            }, 100); 
+
+            controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.enablePan = PARAMS.enablePan;
+            controls.minDistance = PARAMS.cameraMinDist;
+            controls.maxDistance = PARAMS.cameraMaxDist;
+            controls.maxPolarAngle = Math.PI / 2;
+
+            // Initialize TransformControls for editor mode
+            transformControls = new TransformControls(camera, renderer.domElement);
+            transformControls.setMode('translate');
+            transformControls.setSize(0.8);
+            transformControls.visible = false;
+            transformControls.enabled = false;
+
+            transformControls.addEventListener('dragging-changed', (event) => {
+                controls.enabled = !event.value;
+            });
+
+            transformControls.addEventListener('change', () => {
+                if (selectedEditorObject && editorModeActive) {
+                    updateEditorPanelValues();
+                }
+            });
+
+            transformControls.addEventListener('mouseDown', () => {
+                if (selectedEditorObject && editorModeActive) {
+                    saveUndoState();
+                }
+            });
+
+            // Camera 2 - Perspective camera for 360 view from fixed point
+            camera2 = new THREE.PerspectiveCamera(60, aspect, 10, 100000);
+            camera2.position.set(0, 200, 0);
+
+            controls2 = new OrbitControls(camera2, renderer.domElement);
+            controls2.enableDamping = true;
+            controls2.dampingFactor = 0.05;
+            controls2.enablePan = false;
+            controls2.enableZoom = false; // Fixed position, no zoom
+            controls2.target.set(0, 200, 100); // Look forward initially
+            controls2.enabled = false; // Disabled until camera 2 is active
+
+            // Add keyboard listener for undo/redo
+            window.addEventListener('keydown', handleKeyDown);
+
+            const pmrem = new THREE.PMREMGenerator(renderer);
+            new RGBELoader().load('https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/equirectangular/venice_sunset_1k.hdr', (tex) => {
+                tex.mapping = THREE.EquirectangularReflectionMapping;
+                globalEnvMap = pmrem.fromEquirectangular(tex).texture;
+                scene.environment = globalEnvMap;
+                tex.dispose(); pmrem.dispose();
+            });
+
+            // GÖLGELERİ SİYAHLATMAK İÇİN ORTAM IŞIĞINI (AMBIENT/HEMI) MİNİMUMA İNDİRDİM
+            // Bu, gölgelerin "içini" aydınlatan sekmeyi azaltır.
+            scene.add(new THREE.HemisphereLight(0xffffff, 0x000000, 0.3));
+            
+            // ANA IŞIK: Kontrastı patlatmak ve gölgeyi koyulaştırmak için şiddet artırıldı
+            const sun = new THREE.DirectionalLight(0xffffff, 3.5);
+            sun.position.set(1200, 2400, 1200);
+            sun.castShadow = true;
+            sun.shadow.mapSize.set(2048, 2048);
+            sun.shadow.camera.near = 0.5;
+            sun.shadow.camera.far = 16000;
+            sun.shadow.camera.left = -5500; sun.shadow.camera.right = 5500;
+            sun.shadow.camera.top = 5500; sun.shadow.camera.bottom = -5500;
+            
+            // SHADOW ACNE ÖNLEYİCİ AYARLAR
+            sun.shadow.bias = -0.0005; 
+            sun.shadow.normalBias = 0.2; 
+            scene.add(sun);
+
+            // DOLGU IŞIKLARI: Gölgeyi "bozmayacak" kadar düşürüldü (Sadece siyahlığı kırmayacak seviyede)
+            const fill1 = new THREE.PointLight(0xffffff, 0.1, 10000);
+            fill1.position.set(3000, 1500, 3000);
+            scene.add(fill1);
+
+            const fill2 = new THREE.PointLight(0xffffff, 0.1, 10000);
+            fill2.position.set(-3000, 1500, -3000);
+            scene.add(fill2);
+
+            composer = new EffectComposer(renderer);
+            const renderPass = new RenderPass(scene, camera);
+            renderPass.clearAlpha = 0;
+            composer.addPass(renderPass);
+
+            bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.25, 0.35, 0.8);
+            composer.addPass(bloomPass);
+
+            composer.addPass(new OutputPass());
+
+            const fxaaPass = new ShaderPass(FXAAShader);
+            fxaaPass.material.uniforms['resolution'].value.set(1/(window.innerWidth*window.devicePixelRatio), 1/(window.innerHeight*window.devicePixelRatio));
+            composer.addPass(fxaaPass);
+
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+            
+            const isMobile = window.innerWidth <= 768;
+            buildScene(isMobile);
+
+            // DEFAULT PRESET: MEDIUM
+            applyLightingPreset('mid');
+
+            window.addEventListener('resize', onWindowResize);
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+            renderer.domElement.addEventListener('mousedown', onPointerDown);
+            renderer.domElement.addEventListener('mouseup', onPointerUp);
+            renderer.domElement.addEventListener('click', handleEditorClick);
+        }
+
+        // ========== SADECE MEDIUM VE HIGH MODLARI ==========
+
+        window.handlePresetSelection = function(level) {
+            applyLightingPreset(level);
+        };
+
+        window.applyLightingPreset = function(level) {
+            if (!bloomPass || !renderer) return;
+
+            const btnLow = document.getElementById('btn-low');
+            const btnMid = document.getElementById('btn-mid');
+            const btnHigh = document.getElementById('btn-high');
+
+            [btnLow, btnMid, btnHigh].forEach(b => b?.classList.remove('active'));
+
+            if (level === 'low') {
+                btnLow.classList.add('active');
+                bloomPass.enabled = false;
+                renderer.shadowMap.enabled = false;
+                renderer.toneMappingExposure = 1.0;
+                renderer.toneMapping = THREE.NoToneMapping;
+                scene.environment = null;
+
+                // Apply flat/unlit materials
+                applyLowModeMaterials(true);
+            }
+            else if (level === 'mid') {
+                btnMid.classList.add('active');
+                bloomPass.enabled = true;
+                bloomPass.strength = 0.05;
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFShadowMap;
+                renderer.toneMappingExposure = 0.75;
+                renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                scene.environment = globalEnvMap;
+
+                // Restore original materials
+                applyLowModeMaterials(false);
+            }
+            else if (level === 'high') {
+                btnHigh.classList.add('active');
+                bloomPass.enabled = true;
+                bloomPass.strength = 0.25;
+                renderer.shadowMap.enabled = true;
+                renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+                renderer.toneMappingExposure = 0.75;
+                renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                scene.environment = globalEnvMap;
+
+                // Restore original materials
+                applyLowModeMaterials(false);
+            }
+        };
+
+        function applyLowModeMaterials(enableLow) {
+            clickableObjects.forEach(obj => {
+                obj.traverse(child => {
+                    if (child.isMesh && child.material) {
+                        if (enableLow) {
+                            // Save original material
+                            if (!originalMaterials.has(child.uuid)) {
+                                originalMaterials.set(child.uuid, child.material);
+                            }
+
+                            // Create flat unlit material
+                            const origMat = originalMaterials.get(child.uuid);
+                            let color = new THREE.Color(0x888888);
+
+                            if (origMat.color) {
+                                color = origMat.color.clone();
+                            } else if (origMat.map) {
+                                color = new THREE.Color(0xaaaaaa);
+                            }
+
+                            child.material = new THREE.MeshBasicMaterial({
+                                color: color,
+                                transparent: origMat.transparent || false,
+                                opacity: origMat.opacity || 1,
+                                side: origMat.side || THREE.FrontSide
+                            });
+                        } else {
+                            // Restore original material
+                            if (originalMaterials.has(child.uuid)) {
+                                child.material = originalMaterials.get(child.uuid);
+                            }
+                        }
+                    }
+                });
+            });
+        }
+
+        function buildScene(isMobile) {
+            const loader = new GLTFLoader();
+            const draco = new DRACOLoader();
+            draco.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+            loader.setDRACOLoader(draco);
+            loader.setMeshoptDecoder(MeshoptDecoder);
+
+            const validObjects = sceneObjects.filter(item => !(isMobile && item.showOnMobile === false));
+            totalAssets = validObjects.length;
+
+            sceneObjects.forEach((item, index) => {
+                if (isMobile && item.showOnMobile === false) return;
+
+                loader.load(item.src, (gltf) => {
+                    const m = gltf.scene;
+                    m.position.set(item.position.x, item.position.y || 0, item.position.z);
+                    if (item.rotation) m.rotation.set(item.rotation.x*Math.PI/180, item.rotation.y*Math.PI/180, item.rotation.z*Math.PI/180);
+                    m.scale.setScalar(item.scale);
+
+                    m.userData = {
+                        modalContent: item.modalContent,
+                        clickable: item.clickable !== false,
+                        includeInFit: item.includeInFit !== false,
+                        originalPosition: m.position.clone(),
+                        sceneObjectIndex: index,
+                        originalScale: item.scale
+                    };
+
+                    m.traverse(c => {
+                        if(c.isMesh) {
+                            c.castShadow = true;
+                            c.receiveShadow = true;
+                            if(c.geometry.computeBoundsTree) c.geometry.computeBoundsTree();
+                        }
+                    });
+
+                    scene.add(m);
+                    clickableObjects.push(m);
+                    loadedObjectsMap.set(index, m);
+                    loadedAssets++; updateLoader();
+                    if(loadedAssets === totalAssets) {
+                        fitCameraToScene();
+                        buildEditorPanel();
+                    }
+                });
+            });
+        }
+
+        function updateLoader() {
+            const p = Math.round((loadedAssets/totalAssets)*100);
+            document.querySelector('.loader-bar').style.width = p+'%';
+            if(loadedAssets>=totalAssets) setTimeout(()=> { 
+                document.getElementById('loader').style.opacity='0';
+                setTimeout(()=>document.getElementById('loader').style.display='none', 800);
+            }, 500);
+        }
+
+        function onMouseMove(e) {
+            if (document.getElementById('side-panel').classList.contains('open')) return;
+            if (editorModeActive) return; // Disable hover effects in editor mode
+            mouse.x = (e.clientX/window.innerWidth)*2-1;
+            mouse.y = -(e.clientY/window.innerHeight)*2+1;
+            raycaster.setFromCamera(mouse, camera);
+            const hits = raycaster.intersectObjects(clickableObjects, true);
+            if(hits.length>0) {
+                let obj = hits[0].object;
+                while(obj.parent && !obj.userData.modalContent) obj = obj.parent;
+                if(obj.userData.modalContent && obj.userData.clickable && currentHoveredObject !== obj) {
+                    clearHover();
+                    applyHover(obj);
+                } else if (!obj.userData.clickable) {
+                    clearHover();
+                }
+            } else clearHover();
+        }
+
+        function applyHover(obj) {
+            currentHoveredObject = obj;
+            new TWEEN(obj.position).to({ y: obj.userData.originalPosition.y + PARAMS.hoverLiftDistance }, PARAMS.hoverAnimationDuration).start();
+            
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const fs = PARAMS.hoverLabelFontSize;
+            ctx.font = `bold ${fs}px "Telegrama Render"`;
+            const textWidth = ctx.measureText(obj.userData.modalContent.name).width;
+            canvas.width = textWidth + 100;
+            canvas.height = fs + 80;
+
+            ctx.font = `bold ${fs}px "Telegrama Render"`;
+            ctx.fillStyle = '#000000';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(obj.userData.modalContent.name, canvas.width / 2, canvas.height / 2);
+            
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.needsUpdate = true;
+            tex.anisotropy = renderer.capabilities.getMaxAnisotropy(); 
+
+            const mat = new THREE.MeshBasicMaterial({ 
+                map: tex, 
+                transparent: true, 
+                depthTest: false,
+                depthWrite: false,
+                side: THREE.DoubleSide,
+                toneMapped: false
+            });
+
+            hoverLabel = new THREE.Mesh(new THREE.PlaneGeometry(canvas.width, canvas.height), mat);
+            hoverLabel.renderOrder = 9999;
+            hoverLabel.position.copy(obj.position).y += PARAMS.hoverLabelOffsetY;
+            hoverLabel.rotation.set(
+                PARAMS.hoverLabelRotationX * Math.PI / 180, 
+                PARAMS.hoverLabelRotationY * Math.PI / 180, 
+                PARAMS.hoverLabelRotationZ * Math.PI / 180
+            );
+            
+            scene.add(hoverLabel);
+        }
+
+        function clearHover() {
+            if(currentHoveredObject) {
+                new TWEEN(currentHoveredObject.position).to({ y: currentHoveredObject.userData.originalPosition.y }, PARAMS.hoverAnimationDuration).start();
+                currentHoveredObject = null;
+            }
+            if(hoverLabel) { scene.remove(hoverLabel); hoverLabel=null; }
+        }
+
+        let sX, sY;
+        function onPointerDown(e) { sX=e.clientX; sY=e.clientY; }
+        function onPointerUp(e) {
+            if (editorModeActive) return; // Don't open panel in editor mode
+            if(Math.abs(e.clientX-sX)<5 && Math.abs(e.clientY-sY)<5) {
+                mouse.x = (e.clientX/window.innerWidth)*2-1;
+                mouse.y = -(e.clientY/window.innerHeight)*2+1;
+                raycaster.setFromCamera(mouse, camera);
+                const hits = raycaster.intersectObjects(clickableObjects, true);
+                if(hits.length>0) {
+                    let obj = hits[0].object;
+                    while(obj.parent && !obj.userData.modalContent) obj = obj.parent;
+                    if(obj.userData.modalContent && obj.userData.clickable) {
+                        openPanel(obj.userData.modalContent, obj);
+                    }
+                }
+            }
+        }
+
+        function openPanel(content, obj) {
+            if(currentSelectedObject === obj && document.getElementById('side-panel').classList.contains('open')) return;
+            clearHover();
+            currentActiveVideos.forEach(v => { v.pause(); v.src = ""; v.load(); });
+            currentActiveVideos = [];
+            
+            if(!originalCameraState) originalCameraState = { position: camera.position.clone(), target: controls.target.clone(), zoom: camera.zoom };
+            
+            currentSelectedObject = obj;
+            const box = new THREE.Box3().setFromObject(obj);
+            const center = box.getCenter(new THREE.Vector3());
+            
+            const targetZoom = PARAMS.initialCameraZoom / PARAMS.selectionZoomFactor;
+            new TWEEN(camera).to({ zoom: targetZoom }, PARAMS.zoomInAnimationDuration).start();
+            new TWEEN(controls.target).to({ x: center.x, y: center.y, z: center.z }, PARAMS.zoomInAnimationDuration).start();
+
+            document.getElementById('panel-title').innerText = content.name;
+            const cats = content.categories || {};
+            document.getElementById('panel-year').innerText = cats.sub1 || '';
+            document.getElementById('panel-cats').innerText = Object.values(cats).slice(1).filter(v=>v && v!=='-').join(', ');
+            document.getElementById('panel-desc').innerText = content.description;
+            
+            const linksContainer = document.getElementById('panel-links'); 
+            linksContainer.innerHTML = ''; 
+            const mediaContainer = document.getElementById('panel-media'); 
+            mediaContainer.innerHTML = '';
+            
+            content.media?.forEach(m => {
+                const item = document.createElement('div'); 
+                item.className = 'panel-media-item';
+                let wrapper = document.createElement('div');
+                wrapper.className = 'media-wrapper';
+
+                if(m.type === 'image') {
+                    const img = document.createElement('img'); 
+                    img.src = m.src; 
+                    wrapper.appendChild(img);
+                    item.appendChild(wrapper);
+                } 
+                else if(m.type === 'video') {
+                    const v = document.createElement('video'); 
+                    v.src = m.src; v.loop=true; v.playsInline=true;
+                    const b = document.createElement('div'); 
+                    b.className = 'media-play-button';
+                    b.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="black"><path d="M8 5v14l11-7z"/></svg>`;
+                    const toggleVideo = () => { 
+                        if(v.paused) { v.play(); b.classList.add('playing'); } 
+                        else { v.pause(); b.classList.remove('playing'); } 
+                    };
+                    v.onclick = toggleVideo; 
+                    b.onclick = (e) => { e.stopPropagation(); toggleVideo(); };
+                    wrapper.appendChild(v); 
+                    wrapper.appendChild(b); 
+                    item.appendChild(wrapper);
+                    currentActiveVideos.push(v);
+                } 
+                else if(m.type === 'model') {
+                    wrapper.className = 'w-full h-full relative rounded-[16px] overflow-hidden bg-[#f4f4f4]';
+                    item.appendChild(wrapper);
+                    setTimeout(() => initModal3D(wrapper, m.src), 50);
+                } 
+                else if(m.type === 'html') {
+                    const webWrapper = document.createElement('div'); 
+                    webWrapper.className = 'web-wrapper';
+                    const ifr = document.createElement('iframe');
+                    ifr.src = m.src.replace('raw.githubusercontent.com', 'raw.githack.com');
+                    ifr.className = 'w-[200%] h-[200%] border-none origin-top-left scale-50 absolute top-0 left-0';
+                    webWrapper.appendChild(ifr); 
+                    item.appendChild(webWrapper);
+                }
+                mediaContainer.appendChild(item);
+                if(m.linkUrl) createLinkElement(m.linkUrl, m.linkText || "VIEW MEDIA", linksContainer);
+            });
+
+            if (content.links && Array.isArray(content.links)) {
+                content.links.forEach(linkObj => createLinkElement(linkObj.url, linkObj.text, linksContainer));
+            }
+
+            document.getElementById('side-panel').classList.add('open');
+            document.getElementById('side-panel').scrollTop = 0;
+        }
+
+        function createLinkElement(url, text, container) {
+            const a = document.createElement('a');
+            a.href = url; a.target = '_blank';
+            a.className = 'panel-link';
+            a.innerText = text || "OPEN LINK";
+            container.appendChild(a);
+        }
+
+        function initModal3D(container, src) {
+            const sceneM = new THREE.Scene(); 
+            sceneM.background = new THREE.Color(0xf4f4f4); 
+            if (globalEnvMap) sceneM.environment = globalEnvMap;
+
+            const renM = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renM.setPixelRatio(window.devicePixelRatio);
+            renM.toneMapping = THREE.ACESFilmicToneMapping;
+            renM.toneMappingExposure = 1.3;
+            container.appendChild(renM.domElement);
+
+            const camM = new THREE.PerspectiveCamera(45, 1, 0.1, 10000);
+            sceneM.add(new THREE.HemisphereLight(0xffffff, 0xffffff, 1.2));
+            const dirLight = new THREE.DirectionalLight(0xffffff, 3.5); 
+            dirLight.position.set(5, 10, 7); 
+            sceneM.add(dirLight);
+
+            const ctrlM = new OrbitControls(camM, renM.domElement); 
+            ctrlM.autoRotate = true; ctrlM.autoRotateSpeed = 2.5; 
+            ctrlM.enableDamping = true;
+
+            const loader = new GLTFLoader();
+            const draco = new DRACOLoader();
+            draco.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+            loader.setDRACOLoader(draco);
+            loader.setMeshoptDecoder(MeshoptDecoder);
+
+            loader.load(src, (gltf) => {
+                const model = gltf.scene;
+                model.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+                sceneM.add(model);
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                ctrlM.target.copy(center);
+                camM.position.set(center.x, center.y + maxDim * 0.2, center.z + maxDim * 2.5);
+                
+                const w = container.offsetWidth || 300;
+                renM.setSize(w, w);
+                camM.aspect = 1;
+                camM.updateProjectionMatrix();
+                ctrlM.update();
+            });
+
+            function loop() { 
+                if (!document.getElementById('side-panel').classList.contains('open')) { renM.dispose(); return; }
+                modalAnimationFrameId = requestAnimationFrame(loop); 
+                ctrlM.update(); 
+                renM.render(sceneM, camM); 
+            }
+            loop();
+        }
+
+        window.closePanel = function() {
+            currentActiveVideos.forEach(v => { v.pause(); v.src = ""; v.load(); v.remove(); });
+            currentActiveVideos = [];
+            document.getElementById('panel-media').innerHTML = "";
+            if(originalCameraState) {
+                new TWEEN(camera).to({ zoom: originalCameraState.zoom }, PARAMS.zoomOutAnimationDuration).start();
+                new TWEEN(controls.target).to({ x: originalCameraState.target.x, y: originalCameraState.target.y, z: originalCameraState.target.z }, PARAMS.zoomOutAnimationDuration).start();
+            }
+            originalCameraState = null; currentSelectedObject=null;
+            if(modalAnimationFrameId) { cancelAnimationFrame(modalAnimationFrameId); modalAnimationFrameId = null; }
+            document.getElementById('side-panel').classList.remove('open');
+        }
+
+        function fitCameraToScene() {
+            camera.position.set(PARAMS.camPosX, PARAMS.camPosY, PARAMS.camPosZ);
+            controls.target.set(PARAMS.camLookX, PARAMS.camLookY, PARAMS.camLookZ);
+            if (camera.isOrthographicCamera) updateOrthoFrustum();
+            camera.zoom = PARAMS.initialCameraZoom;
+            camera.updateProjectionMatrix();
+            controls.update();
+        }
+
+        function updateOrthoFrustum() {
+            if (!camera.isOrthographicCamera) return;
+            const aspect = window.innerWidth / window.innerHeight;
+            const box = new THREE.Box3();
+            const fitTargets = clickableObjects.filter(o => o.userData.includeInFit);
+            (fitTargets.length > 0 ? fitTargets : clickableObjects).forEach(o => box.expandByObject(o));
+            const size = box.getSize(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y);
+            camera.left = -maxDim * aspect; camera.right = maxDim * aspect;
+            camera.top = maxDim; camera.bottom = -maxDim;
+        }
+
+        function onWindowResize() {
+            const aspect = window.innerWidth / window.innerHeight;
+            if (camera.isOrthographicCamera) updateOrthoFrustum();
+            else camera.aspect = aspect;
+            camera.updateProjectionMatrix();
+
+            // Also update camera2
+            if (camera2) {
+                camera2.aspect = aspect;
+                camera2.updateProjectionMatrix();
+            }
+
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Update the correct controls based on camera mode
+            if (currentCameraMode === 2) {
+                controls2.update();
+                camera2.updateProjectionMatrix();
+                // Render with camera 2
+                composer.passes[0].camera = camera2;
+            } else {
+                controls.update();
+                camera.updateProjectionMatrix();
+                // Render with camera 1
+                composer.passes[0].camera = camera;
+            }
+
+            if(hoverLabel && currentHoveredObject) {
+                hoverLabel.position.copy(currentHoveredObject.position).y += PARAMS.hoverLabelOffsetY;
+            }
+            composer.render();
+        }
+
+        function TWEEN(obj) {
+            this.target = obj;
+            this.to = (dest, dur) => { this.dest = dest; this.dur = dur; return this; };
+            this.start = () => {
+                const start = {}; for(let k in this.dest) start[k] = this.target[k];
+                const startTime = Date.now();
+                const tick = () => {
+                    const p = Math.min((Date.now()-startTime)/this.dur, 1);
+                    const e = p*(2-p);
+                    for(let k in this.dest) this.target[k] = start[k]+(this.dest[k]-start[k])*e;
+                    if(p<1) requestAnimationFrame(tick);
+                }; tick();
+            };
+        }
+
+        // ========== EDITOR MODE FUNCTIONS ==========
+
+        window.toggleEditorMode = function() {
+            editorModeActive = !editorModeActive;
+            const btnEditor = document.getElementById('btn-editor');
+            const editorPanel = document.getElementById('editor-panel');
+            const cameraGroup = document.getElementById('camera-group');
+            const transformGroup = document.getElementById('transform-group');
+            const cameraParams = document.getElementById('camera-params');
+
+            if (editorModeActive) {
+                btnEditor.classList.add('active');
+                editorPanel.classList.add('open');
+                cameraGroup.style.display = 'flex';
+                transformGroup.style.display = 'flex';
+                cameraParams.classList.add('open');
+                transformControls.visible = true;
+                transformControls.enabled = true;
+
+                // Update camera params display
+                updateCameraParamsDisplay();
+
+                // Select first unlocked object by default if none selected
+                if (!selectedEditorObject && clickableObjects.length > 0) {
+                    for (let i = 0; i < clickableObjects.length; i++) {
+                        const idx = clickableObjects[i].userData.sceneObjectIndex;
+                        if (!lockedObjects.has(idx)) {
+                            selectEditorObject(clickableObjects[i]);
+                            break;
+                        }
+                    }
+                }
+            } else {
+                btnEditor.classList.remove('active');
+                editorPanel.classList.remove('open');
+                cameraGroup.style.display = 'none';
+                transformGroup.style.display = 'none';
+                cameraParams.classList.remove('open');
+                transformControls.visible = false;
+                transformControls.enabled = false;
+                transformControls.detach();
+                selectedEditorObject = null;
+                // Reset camera to mode 1 if in mode 2
+                if (currentCameraMode === 2) {
+                    switchCamera(1);
+                }
+            }
+        };
+
+        // Set transform mode (translate, rotate, scale)
+        window.setTransformMode = function(mode) {
+            currentTransformMode = mode;
+            transformControls.setMode(mode);
+
+            // Update button states
+            document.getElementById('btn-translate').classList.toggle('active', mode === 'translate');
+            document.getElementById('btn-rotate').classList.toggle('active', mode === 'rotate');
+            document.getElementById('btn-scale').classList.toggle('active', mode === 'scale');
+        };
+
+        // Update camera parameters display
+        function updateCameraParamsDisplay() {
+            const activeCamera = currentCameraMode === 2 ? camera2 : camera;
+            const fovInput = document.getElementById('cam-fov');
+            const posX = document.getElementById('cam-pos-x');
+            const posY = document.getElementById('cam-pos-y');
+            const posZ = document.getElementById('cam-pos-z');
+
+            if (activeCamera.isPerspectiveCamera) {
+                fovInput.value = activeCamera.fov.toFixed(0);
+            }
+            posX.value = activeCamera.position.x.toFixed(0);
+            posY.value = activeCamera.position.y.toFixed(0);
+            posZ.value = activeCamera.position.z.toFixed(0);
+        }
+
+        // Update camera FOV
+        window.updateCameraFOV = function(value) {
+            const fov = parseFloat(value) || 60;
+            const activeCamera = currentCameraMode === 2 ? camera2 : camera;
+
+            if (activeCamera.isPerspectiveCamera) {
+                activeCamera.fov = fov;
+                activeCamera.updateProjectionMatrix();
+            }
+        };
+
+        // Update camera position
+        window.updateCameraPosition = function() {
+            const x = parseFloat(document.getElementById('cam-pos-x').value) || 0;
+            const y = parseFloat(document.getElementById('cam-pos-y').value) || 0;
+            const z = parseFloat(document.getElementById('cam-pos-z').value) || 0;
+
+            const activeCamera = currentCameraMode === 2 ? camera2 : camera;
+            activeCamera.position.set(x, y, z);
+            activeCamera.updateProjectionMatrix();
+        };
+
+        function buildEditorPanel() {
+            const tbody = document.getElementById('editor-table-body');
+            tbody.innerHTML = '';
+
+            sceneObjects.forEach((item, index) => {
+                const obj = loadedObjectsMap.get(index);
+                if (!obj) return;
+
+                const name = item.modalContent?.name || `Object ${index + 1}`;
+                const pos = obj.position;
+                const rot = obj.rotation;
+                const scl = obj.scale.x;
+                const isLocked = lockedObjects.has(index);
+
+                const tr = document.createElement('tr');
+                tr.dataset.index = index;
+                if (isLocked) tr.classList.add('locked');
+
+                tr.onclick = (e) => {
+                    if (e.target.tagName !== 'INPUT' && !e.target.classList.contains('lock-icon')) {
+                        selectEditorObjectByIndex(index);
+                    }
+                };
+
+                tr.innerHTML = `
+                    <td class="lock-cell"><span class="lock-icon ${isLocked ? 'locked' : ''}" data-index="${index}" onclick="toggleLock(${index}, event)">${isLocked ? '🔒' : '🔓'}</span></td>
+                    <td class="name-cell" title="${name}">${name}</td>
+                    <td class="col-x"><input type="number" data-prop="posX" data-index="${index}" value="${pos.x.toFixed(0)}" step="10" ${isLocked ? 'disabled' : ''}></td>
+                    <td class="col-y"><input type="number" data-prop="posY" data-index="${index}" value="${pos.y.toFixed(0)}" step="10" ${isLocked ? 'disabled' : ''}></td>
+                    <td class="col-z"><input type="number" data-prop="posZ" data-index="${index}" value="${pos.z.toFixed(0)}" step="10" ${isLocked ? 'disabled' : ''}></td>
+                    <td class="col-x"><input type="number" data-prop="rotX" data-index="${index}" value="${(rot.x * 180 / Math.PI).toFixed(0)}" step="5" ${isLocked ? 'disabled' : ''}></td>
+                    <td class="col-y"><input type="number" data-prop="rotY" data-index="${index}" value="${(rot.y * 180 / Math.PI).toFixed(0)}" step="5" ${isLocked ? 'disabled' : ''}></td>
+                    <td class="col-z"><input type="number" data-prop="rotZ" data-index="${index}" value="${(rot.z * 180 / Math.PI).toFixed(0)}" step="5" ${isLocked ? 'disabled' : ''}></td>
+                    <td class="col-s"><input type="number" data-prop="scale" data-index="${index}" value="${scl.toFixed(0)}" step="10" ${isLocked ? 'disabled' : ''}></td>
+                `;
+
+                tbody.appendChild(tr);
+            });
+
+            // Add event listeners to all inputs
+            tbody.querySelectorAll('input').forEach(input => {
+                input.addEventListener('focus', () => saveUndoState());
+                input.addEventListener('change', handleEditorInputChange);
+                input.addEventListener('input', handleEditorInputChange);
+            });
+        }
+
+        // Toggle lock for an object
+        window.toggleLock = function(index, event) {
+            event.stopPropagation();
+
+            if (lockedObjects.has(index)) {
+                lockedObjects.delete(index);
+            } else {
+                lockedObjects.add(index);
+                // Deselect if currently selected
+                if (selectedEditorObject && selectedEditorObject.userData.sceneObjectIndex === index) {
+                    transformControls.detach();
+                    selectedEditorObject = null;
+                }
+            }
+
+            // Rebuild panel to update UI
+            buildEditorPanel();
+
+            // Re-select current object if any
+            if (selectedEditorObject) {
+                selectEditorObject(selectedEditorObject);
+            }
+        };
+
+        function handleEditorInputChange(e) {
+            const input = e.target;
+            const index = parseInt(input.dataset.index);
+            const prop = input.dataset.prop;
+            const value = parseFloat(input.value) || 0;
+            const obj = loadedObjectsMap.get(index);
+
+            if (!obj) return;
+
+            switch(prop) {
+                case 'posX': obj.position.x = value; break;
+                case 'posY': obj.position.y = value; break;
+                case 'posZ': obj.position.z = value; break;
+                case 'rotX': obj.rotation.x = value * Math.PI / 180; break;
+                case 'rotY': obj.rotation.y = value * Math.PI / 180; break;
+                case 'rotZ': obj.rotation.z = value * Math.PI / 180; break;
+                case 'scale': obj.scale.setScalar(value); break;
+            }
+
+            // Update original position for hover effect
+            obj.userData.originalPosition = obj.position.clone();
+        }
+
+        function selectEditorObjectByIndex(index) {
+            // Check if object is locked
+            if (lockedObjects.has(index)) return;
+
+            const obj = loadedObjectsMap.get(index);
+            if (obj) {
+                selectEditorObject(obj);
+            }
+        }
+
+        function selectEditorObject(obj) {
+            // Check if object is locked
+            if (lockedObjects.has(obj.userData.sceneObjectIndex)) return;
+
+            selectedEditorObject = obj;
+
+            // Update visual selection in panel (table rows)
+            document.querySelectorAll('#editor-table-body tr').forEach(row => {
+                row.classList.remove('selected');
+                if (parseInt(row.dataset.index) === obj.userData.sceneObjectIndex) {
+                    row.classList.add('selected');
+                }
+            });
+
+            // Attach transform controls
+            if (transformControls && editorModeActive) {
+                transformControls.attach(obj);
+            }
+        }
+
+        function updateEditorPanelValues() {
+            if (!selectedEditorObject) return;
+
+            const index = selectedEditorObject.userData.sceneObjectIndex;
+            const pos = selectedEditorObject.position;
+            const rot = selectedEditorObject.rotation;
+            const scl = selectedEditorObject.scale.x;
+
+            // Find inputs for this object and update their values
+            const inputs = document.querySelectorAll(`#editor-table-body input[data-index="${index}"]`);
+            inputs.forEach(input => {
+                const prop = input.dataset.prop;
+                let value;
+                switch(prop) {
+                    case 'posX': value = pos.x.toFixed(0); break;
+                    case 'posY': value = pos.y.toFixed(0); break;
+                    case 'posZ': value = pos.z.toFixed(0); break;
+                    case 'rotX': value = (rot.x * 180 / Math.PI).toFixed(0); break;
+                    case 'rotY': value = (rot.y * 180 / Math.PI).toFixed(0); break;
+                    case 'rotZ': value = (rot.z * 180 / Math.PI).toFixed(0); break;
+                    case 'scale': value = scl.toFixed(0); break;
+                }
+                if (document.activeElement !== input) {
+                    input.value = value;
+                }
+            });
+
+            // Update original position for hover effect
+            selectedEditorObject.userData.originalPosition = selectedEditorObject.position.clone();
+        }
+
+        // ========== CAMERA SWITCHING FUNCTIONS ==========
+
+        window.switchCamera = function(mode) {
+            const btnCam1 = document.getElementById('btn-cam1');
+            const btnCam2 = document.getElementById('btn-cam2');
+
+            if (mode === 1) {
+                btnCam1.classList.add('active');
+                btnCam2.classList.remove('active');
+
+                // Disable camera 2 controls, enable camera 1 controls
+                controls2.enabled = false;
+                controls.enabled = true;
+
+                // Update transform controls to use camera 1
+                if (transformControls) {
+                    transformControls.camera = camera;
+                }
+
+                currentCameraMode = 1;
+            } else if (mode === 2) {
+                btnCam1.classList.remove('active');
+                btnCam2.classList.add('active');
+
+                // Disable camera 1 controls, enable camera 2 controls
+                controls.enabled = false;
+                controls2.enabled = true;
+
+                // Reset camera 2 to fixed position (perspective, 360 rotation only)
+                camera2.position.set(0, 200, 0);
+                controls2.target.set(0, 200, 100);
+                camera2.updateProjectionMatrix();
+                controls2.update();
+
+                // Update transform controls to use camera 2
+                if (transformControls) {
+                    transformControls.camera = camera2;
+                }
+
+                currentCameraMode = 2;
+            }
+        };
+
+        // Get active camera based on mode
+        function getActiveCamera() {
+            return currentCameraMode === 2 ? camera2 : camera;
+        }
+
+        // Get active controls based on mode
+        function getActiveControls() {
+            return currentCameraMode === 2 ? controls2 : controls;
+        }
+
+        // Handle click in editor mode to select objects
+        function handleEditorClick(e) {
+            if (!editorModeActive) return;
+
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            const activeCamera = getActiveCamera();
+            raycaster.setFromCamera(mouse, activeCamera);
+
+            const hits = raycaster.intersectObjects(clickableObjects, true);
+            if (hits.length > 0) {
+                let obj = hits[0].object;
+                while (obj.parent && !obj.userData.modalContent) obj = obj.parent;
+                if (obj.userData.sceneObjectIndex !== undefined) {
+                    selectEditorObject(obj);
+                }
+            }
+        }
+
+        // ========== PRINT FUNCTION ==========
+
+        window.printEditorData = function() {
+            let output = "NAME\tX\tY\tZ\tRX\tRY\tRZ\tS\n";
+
+            sceneObjects.forEach((item, index) => {
+                const obj = loadedObjectsMap.get(index);
+                if (!obj) return;
+
+                const name = item.modalContent?.name || `Object ${index + 1}`;
+                const pos = obj.position;
+                const rot = obj.rotation;
+                const scl = obj.scale.x;
+
+                output += `${name}\t${pos.x.toFixed(0)}\t${pos.y.toFixed(0)}\t${pos.z.toFixed(0)}\t`;
+                output += `${(rot.x * 180 / Math.PI).toFixed(0)}\t${(rot.y * 180 / Math.PI).toFixed(0)}\t${(rot.z * 180 / Math.PI).toFixed(0)}\t`;
+                output += `${scl.toFixed(0)}\n`;
+            });
+
+            // Copy to clipboard
+            navigator.clipboard.writeText(output).then(() => {
+                alert('Data copied to clipboard!\nPaste into Excel or any spreadsheet.');
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                // Fallback: show in console
+                console.log(output);
+                alert('Copy failed. Check console for data.');
+            });
+        };
+
+        // ========== UNDO/REDO SYSTEM ==========
+
+        function saveUndoState() {
+            const state = {};
+            loadedObjectsMap.forEach((obj, index) => {
+                state[index] = {
+                    position: obj.position.clone(),
+                    rotation: obj.rotation.clone(),
+                    scale: obj.scale.x
+                };
+            });
+
+            undoStack.push(state);
+            if (undoStack.length > MAX_UNDO_STEPS) {
+                undoStack.shift();
+            }
+
+            // Clear redo stack on new action
+            redoStack = [];
+        }
+
+        function undo() {
+            if (undoStack.length === 0) return;
+
+            // Save current state to redo stack
+            const currentState = {};
+            loadedObjectsMap.forEach((obj, index) => {
+                currentState[index] = {
+                    position: obj.position.clone(),
+                    rotation: obj.rotation.clone(),
+                    scale: obj.scale.x
+                };
+            });
+            redoStack.push(currentState);
+
+            // Restore previous state
+            const prevState = undoStack.pop();
+            applyState(prevState);
+        }
+
+        function redo() {
+            if (redoStack.length === 0) return;
+
+            // Save current state to undo stack
+            const currentState = {};
+            loadedObjectsMap.forEach((obj, index) => {
+                currentState[index] = {
+                    position: obj.position.clone(),
+                    rotation: obj.rotation.clone(),
+                    scale: obj.scale.x
+                };
+            });
+            undoStack.push(currentState);
+
+            // Restore redo state
+            const nextState = redoStack.pop();
+            applyState(nextState);
+        }
+
+        function applyState(state) {
+            for (const index in state) {
+                const obj = loadedObjectsMap.get(parseInt(index));
+                if (obj) {
+                    obj.position.copy(state[index].position);
+                    obj.rotation.copy(state[index].rotation);
+                    obj.scale.setScalar(state[index].scale);
+                    obj.userData.originalPosition = obj.position.clone();
+                }
+            }
+
+            // Update panel values
+            buildEditorPanel();
+
+            // Re-select current object if any
+            if (selectedEditorObject) {
+                selectEditorObject(selectedEditorObject);
+            }
+        }
+
+        function handleKeyDown(e) {
+            if (!editorModeActive) return;
+
+            // Ctrl+Z for undo
+            if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                undo();
+            }
+
+            // Ctrl+Y or Ctrl+Shift+Z for redo
+            if ((e.ctrlKey && e.key === 'y') || (e.ctrlKey && e.shiftKey && e.key === 'z')) {
+                e.preventDefault();
+                redo();
+            }
+        }
+    </script>
+</body>
+</html>
