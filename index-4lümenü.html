@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deniz Agaoglu | Virtual Design & Metaverse Architecture Luxembourg</title>
+    
+    <!-- SEO & ANAHTAR KELİME ETİKETLERİ -->
+    <meta name="title" content="Deniz Agaoglu | Virtual Design & Metaverse Architecture Luxembourg">
+    <meta name="description" content="Official portfolio of Deniz Agaoglu. Specialized in high-end virtual design, metaverse architecture, and art direction. Pioneering digital spaces in Luxembourg.">
+    <meta name="keywords" content="Deniz Agaoglu, Metaverse Design, Virtual Architecture, Art Direction, Architecture Luxembourg, Metaverse Architect, Virtual Design, Digital Art Direction, Deniz Agaoglu Luxembourg">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="English">
+    <meta name="author" content="Deniz Agaoglu">
+    <link rel="canonical" href="https://virtuallyeverafter.work/">
+
+    <!-- SOSYAL MEDYA (INSTAGRAM/LINKEDIN) PAYLAŞIM ETİKETLERİ -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://virtuallyeverafter.work/">
+    <meta property="og:title" content="Deniz Agaoglu | Virtual Architecture & Art Direction">
+    <meta property="og:description" content="Discover the virtual realms and metaverse architecture of Deniz Agaoglu. Innovative design based in Luxembourg.">
+    <meta property="og:image" content="https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/veacrop.png">
+    <meta property="og:site_name" content="Virtually Ever After">
+
+    <!-- GOOGLE YAPILANDIRILMIŞ VERİ (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Deniz Agaoglu",
+      "jobTitle": "Metaverse Architect & Art Director",
+      "url": "https://virtuallyeverafter.work",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Luxembourg",
+        "addressCountry": "LU"
+      },
+      "description": "Expert in Virtual Design, Metaverse Architecture, and Art Direction based in Luxembourg.",
+      "sameAs": [
+        "https://www.instagram.com/virtually.ever.after/",
+        "https://virtuallyeverafter.xyz",
+        "https://de-centralize.com"
+      ]
+    }
+    </script>
+
+    <!-- GOOGLE ANALYTICS (GA4) KURULUMU -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-VM05VRLYKH"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      
+      // Çerez onayı verilene kadar veri toplamayı engelle (Consent Mode)
+      gtag('consent', 'default', {
+        'ad_storage': 'denied',
+        'analytics_storage': 'denied'
+      });
+      
+      gtag('js', new Date());
+      gtag('config', 'G-VM05VRLYKH');
+    </script>
+
+    <style>
+        /* ÖZEL FONT TANIMLAMASI */
+        @font-face {
+            font-family: 'Telegrama Render';
+            src: url('https://raw.githubusercontent.com/decentralize-dfw/font/main/vea.ttf') format('truetype');
+            font-display: block;
+        }
+
+        :root {
+            --vea-border: #000000;
+            --vea-white: #ffffff;
+            --menu-img: url('https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/menu2.jpg');
+            --header-h: 26px;
+            --vea-blue: #0061d5;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            font-family: 'Telegrama Render', sans-serif;
+            background-color: #ffffff;
+            cursor: auto;
+        }
+
+        /* NAVIGASYON KONTEYNIRI */
+        #nav-container {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            width: 100px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+        }
+
+        #logo-link {
+            width: 100px;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        #logo-img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .custom-dropdown {
+            width: 100%;
+            border: 1px solid var(--vea-border);
+            background: var(--vea-white);
+            position: relative;
+            box-sizing: border-box;
+            border-radius: 8px;
+            transition: border-radius 0.1s;
+        }
+
+        .custom-dropdown.open {
+            border-radius: 8px 8px 0 0;
+            background-image: var(--menu-img);
+            background-size: 100px auto;
+            background-position: top center;
+            background-repeat: no-repeat;
+            border-bottom: none;
+        }
+
+        .dropdown-header {
+            padding: 0 6px;
+            font-weight: bold;
+            font-size: 9px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: var(--header-h);
+            box-sizing: border-box;
+            text-transform: uppercase;
+            position: relative;
+            z-index: 2;
+        }
+
+        .custom-dropdown.open .dropdown-header {
+            color: #fff;
+            text-shadow: 1px 1px 2px #000;
+        }
+
+        .arrow-icons {
+            background-image: var(--menu-img);
+            background-size: 100px auto;
+            background-position: right top;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 6px;
+            width: 22px;
+            height: 100%;
+            border-left: 1px solid var(--vea-border);
+            position: absolute;
+            right: 0;
+            top: 0;
+            border-radius: 0 7px 7px 0;
+            text-shadow: 1px 1px 1px #000;
+        }
+
+        .custom-dropdown.open .arrow-icons {
+            border-radius: 0 7px 0 0;
+            background-position: right top;
+        }
+
+        .arrow-icons i { font-style: normal; line-height: 1; }
+
+        .dropdown-list {
+            display: none;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+            border: 1px solid var(--vea-border);
+            background-image: var(--menu-img);
+            background-size: 100px auto;
+            background-repeat: no-repeat;
+            background-position: center calc(var(--header-h) * -1); 
+            width: calc(100% + 2px);
+            position: absolute;
+            left: -1px;
+            top: calc(var(--header-h) - 1px); 
+            box-sizing: border-box;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .dropdown-list li {
+            padding: 8px 6px;
+            font-weight: bold;
+            font-size: 9px;
+            color: #000;
+            text-transform: uppercase;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            background: var(--vea-white);
+            transition: background 0.05s ease;
+            cursor: pointer;
+        }
+
+        .dropdown-list li:hover {
+            background: transparent;
+            color: #fff;
+            text-shadow: 1px 1px 3px #000;
+        }
+
+        /* İÇERİK ALANI */
+        #iframe-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #ffffff;
+        }
+
+        #content-viewer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            z-index: 1;
+        }
+
+        /* FOOTER TASARIMI */
+        #footer-info {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            color: black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            z-index: 10000;
+            white-space: nowrap;
+            letter-spacing: 0.5px;
+            pointer-events: none;
+        }
+
+        #footer-info a { pointer-events: auto; text-decoration: none; color: inherit; }
+
+        #legal-notice {
+            position: fixed;
+            bottom: 11px;
+            right: 15px;
+            font-size: 8px;
+            z-index: 10001;
+            color: black;
+            user-select: none;
+        }
+
+        #legal-notice a { text-decoration: none; color: inherit; cursor: pointer; pointer-events: auto; }
+
+        /* ÇEREZ ONAY BANDI */
+        #cookie-consent {
+            position: fixed;
+            bottom: 40px;
+            left: 10px;
+            background: var(--vea-white);
+            border: 1px solid var(--vea-border);
+            padding: 6px 10px;
+            font-size: 8px;
+            border-radius: 8px;
+            z-index: 10002;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            backdrop-filter: blur(5px);
+            background: rgba(255,255,255,0.7);
+        }
+
+        .cookie-btn {
+            background: none;
+            border: 1px solid var(--vea-border);
+            padding: 2px 6px;
+            font-family: inherit;
+            font-size: 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            text-transform: uppercase;
+            color: inherit;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .cookie-btn:hover { background: var(--vea-border) !important; color: #fff !important; }
+
+        /* MOBİL DÜZENLEMELER */
+        @media (max-width: 576px) {
+            #nav-container { width: 100px; }
+            .dropdown-header { height: var(--header-h); font-size: 9px; }
+            .arrow-icons { width: 22px; }
+            #footer-info { font-size: 9px; justify-content: flex-start; padding-left: 10px; box-sizing: border-box; }
+            .desktop-only { display: none; }
+            .full-legal { display: none; }
+            .short-legal { display: inline; }
+            #legal-notice { font-size: 7px; right: 8px; bottom: 11px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Botlar İçin Gizli SEO Başlığı -->
+    <h1 style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border: 0;">
+        Deniz Agaoglu - Virtual Design & Metaverse Architecture Luxembourg
+    </h1>
+
+    <div id="nav-container">
+        <div id="logo-link">
+            <img id="logo-img" src="https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/veacrop.png" alt="VEA Logo">
+        </div>
+
+        <div class="custom-dropdown" id="dropdown-toggle">
+            <div class="dropdown-header" id="current-selection-header">
+                HOME
+                <span class="arrow-icons">
+                    <i class="up">▲</i>
+                    <i class="down">▼</i>
+                </span>
+            </div>
+            
+            <ul class="dropdown-list" id="dropdown-list">
+                <li onclick="loadPage(event, 'HOME', 'https://virtuallyeverafter.work/home')">HOME</li>
+                <li onclick="loadPage(event, 'VEA XYZ', 'https://virtuallyeverafter.xyz')">VEA XYZ</li>
+                <li onclick="loadPage(event, 'VEA 93', 'https://decentralize-dfw.github.io/virtuallyeverafter-93/')">VEA 93</li>
+                <li onclick="loadPage(event, 'DE-CENTRALIZE', 'https://de-centralize.com')">DE-CENTRALIZE</li>
+            </ul>
+        </div>
+    </div>
+
+    <div id="iframe-wrapper">
+        <iframe id="content-viewer" src="https://virtuallyeverafter.work/home" title="Content Viewer"></iframe>
+    </div>
+
+    <div id="cookie-consent">
+        <span>WE USE COOKIES</span>
+        <div style="display:flex; gap:5px;">
+            <button class="cookie-btn yes" onclick="handleCookie(true)">YES</button>
+            <button class="cookie-btn" onclick="handleCookie(false)">NO</button>
+        </div>
+    </div>
+
+    <div id="footer-info">
+        <a href="mailto:hello@virtuallyeverafter.xyz">hello@virtuallyeverafter.xyz</a> &emsp;&emsp; Luxembourg <span class="desktop-only">&emsp;&emsp; +352 661953108</span>
+    </div>
+
+    <div id="legal-notice">
+        <a href="https://virtuallyeverafter.work/legal" target="_blank">
+            <span class="full-legal">legal notice and terms of use</span>
+            <span class="short-legal">legal / terms</span>
+        </a>
+    </div>
+
+    <script>
+        const dropdownToggle = document.getElementById('dropdown-toggle');
+        const dropdownList = document.getElementById('dropdown-list');
+        const headerText = document.getElementById('current-selection-header');
+        const iframeWrapper = document.getElementById('iframe-wrapper');
+        const cookieBanner = document.getElementById('cookie-consent');
+        const GA_MEASUREMENT_ID = 'G-VM05VRLYKH';
+
+        // Çerez onayı ve Analytics başlatma
+        window.addEventListener('load', () => {
+            const consent = localStorage.getItem('vea_cookie_consent');
+            if (consent === null) {
+                cookieBanner.style.display = 'flex';
+            } else if (consent === 'true') {
+                updateConsent(true);
+            }
+        });
+
+        function handleCookie(accepted) {
+            localStorage.setItem('vea_cookie_consent', accepted);
+            cookieBanner.style.display = 'none';
+            if (accepted) {
+                updateConsent(true);
+            }
+        }
+
+        function updateConsent(accepted) {
+            if (accepted && typeof gtag === 'function') {
+                gtag('consent', 'update', { 'analytics_storage': 'granted' });
+                console.log("Analytics izni verildi.");
+                trackPageView("INIT");
+            }
+        }
+
+        function trackPageView(pageName) {
+            if (localStorage.getItem('vea_cookie_consent') === 'true' && typeof gtag === 'function') {
+                gtag('event', 'page_view', {
+                    page_title: pageName,
+                    page_location: window.location.href,
+                    page_path: '/' + pageName.toLowerCase()
+                });
+            }
+        }
+
+        // Dropdown menü yönetimi
+        dropdownToggle.addEventListener('click', function(e) {
+            const isVisible = dropdownList.style.display === 'block';
+            if (isVisible) {
+                dropdownList.style.display = 'none';
+                dropdownToggle.classList.remove('open');
+            } else {
+                dropdownList.style.display = 'block';
+                dropdownToggle.classList.add('open');
+            }
+        });
+
+        // Sayfa yükleme fonksiyonu
+        function loadPage(event, name, url) {
+            event.stopPropagation();
+            
+            const oldViewer = document.getElementById('content-viewer');
+            if (oldViewer) {
+                oldViewer.src = "about:blank";
+                oldViewer.remove();
+            }
+
+            const newViewer = document.createElement('iframe');
+            newViewer.id = 'content-viewer';
+            newViewer.title = 'Content Viewer';
+            newViewer.src = url;
+            iframeWrapper.appendChild(newViewer);
+            
+            headerText.innerHTML = `${name} <span class="arrow-icons"><i class="up">▲</i><i class="down">▼</i></span>`;
+            dropdownList.style.display = 'none';
+            dropdownToggle.classList.remove('open');
+
+            // SEO & Takip Güncellemesi
+            document.title = `${name} | Deniz Agaoglu - Virtual Design & Metaverse Architecture`;
+            trackPageView(name);
+        }
+
+        // Dışarı tıklayınca dropdown'ı kapat
+        window.onclick = function(event) {
+            if (!event.target.closest('#nav-container')) {
+                dropdownList.style.display = 'none';
+                dropdownToggle.classList.remove('open');
+            }
+        }
+    </script>
+</body>
+</html>
