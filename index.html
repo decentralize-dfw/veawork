@@ -6,6 +6,14 @@
     <title>VEA | ARCHITECTURAL VISUALIZATION ENGINE</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- PDF.JS IMPORTS (NEW - FOR DESKTOP VIEWER) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    
+    <!-- THREE.JS IMPORTS (RESTORED) -->
     <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
     <script type="importmap">
     {
@@ -66,7 +74,6 @@
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             transition: opacity 1s cubic-bezier(0.19, 1, 0.22, 1);
         }
-        .loader-text { font-size: 14px; letter-spacing: 4px; margin-bottom: 20px; }
         .loader-bar-container { width: 200px; height: 1px; background: #eee; position: relative; overflow: hidden; }
         .loader-bar { height: 100%; background: #000; width: 0%; transition: width 0.4s ease; }
 
@@ -177,13 +184,64 @@
 
         .web-inner { width: 100%; height: 100%; position: relative; overflow: hidden; background: white; }
         
+        /* WEB PREVIEW (Scaled Down) */
         .html-preview {
             width: 200%; height: 200%; border: none; position: absolute; top: 0; left: 0;
             transform: scale(0.5); transform-origin: top left; 
             pointer-events: auto;
         }
 
+        /* GLB VIEWER CONTAINER STYLE */
         .glb-viewer { width: 100%; height: 100%; cursor: grab; background: #f4f4f4;}
+
+        /* ========== FROSTED OVERLAY STYLES ========== */
+        .overlay-backdrop {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: opacity 0.5s ease;
+        }
+
+        .click-btn {
+            background: #000;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 10px;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            pointer-events: none; 
+        }
+        
+        .overlay-text {
+            font-size: 8px;
+            margin-top: 8px;
+            opacity: 0.6;
+        }
+
+        /* ========== PDF TOOLBAR (DESKTOP) ========== */
+        .pdf-controls {
+            position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);
+            border-radius: 30px; padding: 6px 16px;
+            display: flex; gap: 15px; align-items: center;
+            z-index: 50; color: white; font-size: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            opacity: 0; transition: opacity 0.3s;
+            pointer-events: none; /* Initially hidden */
+        }
+        .web-inner:hover .pdf-controls { opacity: 1; pointer-events: auto; }
+        .pdf-btn { background: none; border: none; color: white; cursor: pointer; font-family: inherit; font-size: 10px; padding: 4px; }
+        .pdf-btn:hover { opacity: 0.7; }
+        .pdf-btn:disabled { opacity: 0.3; cursor: default; }
 
         /* TYPOGRAPHY */
         .panel-title { font-size: clamp(1.1rem, 1.8vw, 1.8rem); line-height: 1.1; margin-bottom: 5px; }
@@ -205,6 +263,16 @@
         .info-link { text-decoration: none; color: inherit; border-bottom: 1px solid rgba(0,0,0,0.1); display: block; padding: 5px 0; transition: opacity 0.2s; }
         .info-link:hover { opacity: 0.5; }
 
+        /* LOGO */
+        .fixed-logo {
+            position: fixed; top: 0; left: 0; z-index: 2000;
+            width: 150px; height: 100vh;
+            display: flex; align-items: flex-start; justify-content: flex-start;
+            padding-top: 5px; padding-left: 30px; pointer-events: none;
+        }
+        .fixed-logo img { width: 80px; height: auto; object-fit: contain; pointer-events: auto; transition: transform 0.3s ease; }
+        .fixed-logo img:hover { transform: scale(1.05); }
+
         /* MOBILE OVERRIDES */
         @media (max-width: 768px) {
             header { left: 0; padding: 20px 15px; justify-content: flex-end; top: 0; border-bottom: var(--line) solid var(--color-grey); }
@@ -214,78 +282,23 @@
             .column { height: auto; overflow-y: visible; scroll-margin-top: 100px; }
             body { overflow-y: auto; }
             .box--container { padding: 20px; gap: 20px; }
+            
+            .fixed-logo { width: auto; height: auto; padding: 0; top: 3px; left: 15px; }
+            .fixed-logo img { width: 45px; }
+            
+            .pdf-controls { display: none !important; } /* Mobile uses Google Viewer's UI */
         }
-/* ========== LOGO İÇİN MANUEL AYARLAR ========== */
-        .fixed-logo {
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 2000;
-            
-            /* --- MASAÜSTÜ (DESKTOP) AYARLARI --- */
-            width: 150px; /* Sol şeridin genişliği */
-            height: 100vh;
-            display: flex;
-            
-            /* DİKKAT: Burası logoyu yerleştirme kısmı */
-            align-items: flex-start; 
-            justify-content: flex-start; /* Ortalamayı kapattım, elle ayarla */
-            
-            /* 1. MASAÜSTÜNDE YUKARIDAN AŞAĞI İNDİRMEK İÇİN: */
-            padding-top: 5px;  /* Bu sayıyı arttırırsan logo aşağı iner */
-            
-            /* 2. MASAÜSTÜNDE SOLDAN SAĞA İTMEK İÇİN: */
-            padding-left: 30px; /* Bu sayıyı arttırırsan logo sağa kayar */
-            
-            pointer-events: none;
-        }
-
-        .fixed-logo img {
-            /* 3. MASAÜSTÜ LOGO BOYUTU */
-            width: 80px; /* Büyütmek için bu sayıyı arttır */
-            
-            height: auto;
-            object-fit: contain;
-            pointer-events: auto;
-            transition: transform 0.3s ease;
-        }
-
-        .fixed-logo img:hover {
-            transform: scale(1.05);
-        }
-
-        /* --- MOBİL (TELEFON) AYARLARI --- */
-        @media (max-width: 768px) {
-            .fixed-logo {
-                width: auto;
-                height: auto;
-                padding: 0; /* Masaüstü padding'ini sıfırlıyoruz */
-                
-                /* 4. MOBİLDE YUKARIDAN AŞAĞI İNDİRMEK İÇİN: */
-                top: 3px; /* Arttırırsan aşağı iner */
-
-                /* 5. MOBİLDE SOLDAN SAĞA İTMEK İÇİN: */
-                left: 15px; /* Arttırırsan sağa kayar */
-            }
-
-            .fixed-logo img {
-                /* 6. MOBİL LOGO BOYUTU */
-                width: 45px; /* Logoyu büyütmek istersen burayı arttır */
-            }
-        }
-
     </style>
 </head>
 <body oncontextmenu="return false;">
 
-    <!-- LOADER SCREEN -->
-   <div id="loader">
+    <div id="loader">
         <img src="https://raw.githubusercontent.com/decentralize-dfw/veawork/main/logo-anim.gif" style="width: 300px; height: 300px; object-fit: contain; margin-bottom: 20px; display: block;">
-        
         <img src="https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/veacrop.png" style="width: 250px; height: auto; margin-bottom: 20px; object-fit: contain; margin-top: -45px;">
         <div class="loader-bar-container"><div class="loader-bar" id="loader-bar"></div></div>
     </div>
-<div class="fixed-logo">
+
+    <div class="fixed-logo">
         <img src="https://raw.githubusercontent.com/decentralize-dfw/veawork/main/LOGOMAIN.png" alt="VEA Main Logo">
     </div>
 
@@ -310,14 +323,12 @@
 
     <main class="main-container">
         
-       <!-- COLUMN 1: WORK -->
-        <section class="column" id="work-section">
+       <section class="column" id="work-section">
             <div class="tag-label"><div class="dot"></div> WORK</div>
             
             <div class="box--container">
-                <div class="box-wrapper">
-                    <video src="https://video.wixstatic.com/video/bbd25a_fdfd1670bf9e4fce859deecd7d6f0917/1080p/mp4/file.mp4" autoplay muted loop playsinline></video>
-                </div>
+                <div class="media-wrapper">
+                    <video class="lazy-video" data-src="https://video.wixstatic.com/video/bbd25a_fdfd1670bf9e4fce859deecd7d6f0917/1080p/mp4/file.mp4" muted loop playsinline></video>
                 </div>
                 <div>
                     <h2 class="panel-title">STATUS CO BRAND BUILDING</h2>
@@ -326,11 +337,9 @@
                 </div>
             </div>
 
-
-
             <div class="box--container">
                 <div class="media-wrapper">
-                    <video src="https://video.wixstatic.com/video/bbd25a_0dac59951f9c42efbf6b8a3a77951e00/1080p/mp4/file.mp4" autoplay muted loop playsinline></video>
+                    <video class="lazy-video" data-src="https://video.wixstatic.com/video/bbd25a_0dac59951f9c42efbf6b8a3a77951e00/1080p/mp4/file.mp4" muted loop playsinline></video>
                 </div>
                 <div>
                     <h2 class="panel-title">DAS PIECES</h2>
@@ -341,24 +350,22 @@
 
             <div class="box--container">
                 <div class="media-wrapper">
-                    <video src="https://video.wixstatic.com/video/bbd25a_b443e8c0ed384e30bf532179d14769a8/1080p/mp4/file.mp4" autoplay muted loop playsinline></video>
+                    <video class="lazy-video" data-src="https://video.wixstatic.com/video/bbd25a_b443e8c0ed384e30bf532179d14769a8/1080p/mp4/file.mp4" muted loop playsinline></video>
                 </div>
                 <div>
                     <h2 class="panel-title">NOVANTATRE</h2>
-                     <div class="panel-meta"><span>2025</span><span>daspieces.com</span></div>
+                     <div class="panel-meta"><span>2025-2026</span><span>novantatre.lu</span></div>
                     <p class="panel-desc">Visual study of architectural fragments and memory.</p>
                 </div>
             </div>
         </section>
 
-        <!-- COLUMN 2: VIRTUAL_HOW? -->
         <section class="column" id="how-section">
             <div class="tag-label"><div class="dot"></div> VIRTUAL_HOW?</div>
 
-            <!-- 1. Worldbuilding -->
             <div class="box--container">
                 <div class="media-wrapper">
-                    <img src="https://static.wixstatic.com/media/bbd25a_3fabf155c43f44d2bd5b73577ad988ef~mv2.png">
+                    <img loading="lazy" src="https://static.wixstatic.com/media/bbd25a_3fabf155c43f44d2bd5b73577ad988ef~mv2.png">
                 </div>
                 <div>
                     <h2 class="panel-title">Worldbuilding</h2>
@@ -366,10 +373,9 @@
                 </div>
             </div>
 
-            <!-- 2. Atmospheric Spatial Interfaces -->
             <div class="box--container">
                 <div class="media-wrapper">
-                    <video src="https://video.wixstatic.com/video/bbd25a_242ed8b9e57049a993162d7d34edb645/1080p/mp4/file.mp4" autoplay muted loop playsinline></video>
+                    <video class="lazy-video" data-src="https://video.wixstatic.com/video/bbd25a_242ed8b9e57049a993162d7d34edb645/1080p/mp4/file.mp4" muted loop playsinline></video>
                 </div>
                 <div>
                     <h2 class="panel-title">Atmospheric Spatial Interfaces</h2>
@@ -377,11 +383,15 @@
                 </div>
             </div>
 
-            <!-- 3. Web-based 3D Interactivity -->
-           <div class="box--container">
-                <div class="square-wrapper">
+            <div class="box--container">
+                <div class="square-wrapper load-on-click">
+                    <div class="overlay-backdrop">
+                        <div class="click-btn">TOUCH TO START</div>
+                        <div class="overlay-text">INTERACTIVE DEMO</div>
+                    </div>
+                    
                     <div class="web-inner">
-                        <iframe class="html-preview" src="https://raw.githack.com/decentralize-dfw/finder/main/vea_retaildemo.html"></iframe>
+                        <iframe class="html-preview" data-src="https://raw.githack.com/decentralize-dfw/finder/main/vea_retaildemo.html"></iframe>
                     </div>
                 </div>
                 <div>
@@ -390,10 +400,9 @@
                 </div>
             </div>
 
-            <!-- 4. Hybrid Spatial Gallery -->
             <div class="box--container">
                 <div class="media-wrapper">
-                    <video src="https://video.wixstatic.com/video/bbd25a_1c655cbc2e58493ea6dd0f8ab6fc46e1/720p/mp4/file.mp4" autoplay muted loop playsinline></video>
+                    <video class="lazy-video" data-src="https://video.wixstatic.com/video/bbd25a_1c655cbc2e58493ea6dd0f8ab6fc46e1/720p/mp4/file.mp4" muted loop playsinline></video>
                 </div>
                 <div>
                     <h2 class="panel-title">Hybrid Spatial Gallery</h2>
@@ -401,11 +410,14 @@
                 </div>
             </div>
 
-            <!-- 5. Index as Mapping -->
             <div class="box--container">
-                <div class="square-wrapper">
+                <div class="square-wrapper load-on-click">
+                    <div class="overlay-backdrop">
+                        <div class="click-btn">TOUCH TO ENTER</div>
+                        <div class="overlay-text">SPATIAL INDEX</div>
+                    </div>
                     <div class="web-inner">
-                        <iframe class="html-preview" src="https://de-centralize.com/3d-interface-v3"></iframe>
+                        <iframe class="html-preview" data-src="https://de-centralize.com/3d-interface-v3"></iframe>
                     </div>
                 </div>
                 <div>
@@ -414,10 +426,9 @@
                 </div>
             </div>
 
-            <!-- 6. Digital Content -->
             <div class="box--container">
                 <div class="media-wrapper">
-                    <video src="https://video.wixstatic.com/video/bbd25a_6230b7e092674b0d8f32b87103b3c920/720p/mp4/file.mp4" autoplay muted loop playsinline></video>
+                    <video class="lazy-video" data-src="https://video.wixstatic.com/video/bbd25a_6230b7e092674b0d8f32b87103b3c920/720p/mp4/file.mp4" muted loop playsinline></video>
                 </div>
                 <div>
                     <h2 class="panel-title">Digital Content</h2>
@@ -425,10 +436,9 @@
                 </div>
             </div>
 
-            <!-- 7. Cinematic Reels + Videos -->
             <div class="box--container">
                 <div class="media-wrapper">
-                    <img src="https://static.wixstatic.com/media/bbd25a_22af4eb8f4e64fbba78ee1d066bc3252~mv2.png">
+                    <img loading="lazy" src="https://static.wixstatic.com/media/bbd25a_22af4eb8f4e64fbba78ee1d066bc3252~mv2.png">
                 </div>
                 <div>
                     <h2 class="panel-title">Cinematic Reels + Videos</h2>
@@ -436,10 +446,9 @@
                 </div>
             </div>
 
-            <!-- 8. Visual Storytelling -->
             <div class="box--container">
                 <div class="media-wrapper">
-                    <img src="https://static.wixstatic.com/media/bbd25a_dff1b31b2e784cd18411a74eb1dd291a~mv2.jpeg">
+                    <img loading="lazy" src="https://static.wixstatic.com/media/bbd25a_dff1b31b2e784cd18411a74eb1dd291a~mv2.jpeg">
                 </div>
                 <div>
                     <h2 class="panel-title">Visual Storytelling</h2>
@@ -447,10 +456,9 @@
                 </div>
             </div>
 
-            <!-- 9. Consistent Aesthetics -->
             <div class="box--container">
                 <div class="media-wrapper">
-                    <img src="https://static.wixstatic.com/media/bbd25a_84b8418e0969484c8f49ca82976838bc~mv2.jpeg">
+                    <img loading="lazy" src="https://static.wixstatic.com/media/bbd25a_84b8418e0969484c8f49ca82976838bc~mv2.jpeg">
                 </div>
                 <div>
                     <h2 class="panel-title">Consistent Aesthetics</h2>
@@ -458,10 +466,9 @@
                 </div>
             </div>
 
-            <!-- 10. Identity Building -->
             <div class="box--container">
                 <div class="media-wrapper">
-                    <img src="https://static.wixstatic.com/media/bbd25a_b1bf35e3b3634a9fb8583fd1d7692493~mv2.jpeg">
+                    <img loading="lazy" src="https://static.wixstatic.com/media/bbd25a_b1bf35e3b3634a9fb8583fd1d7692493~mv2.jpeg">
                 </div>
                 <div>
                     <h2 class="panel-title">Identity Building</h2>
@@ -469,10 +476,9 @@
                 </div>
             </div>
 
-            <!-- 11. Brand Identity Construction (Generated) -->
             <div class="box--container">
                 <div class="media-wrapper">
-                    <img src="https://static.wixstatic.com/media/bbd25a_ccc9a4a375b84b7894225fb2acfcebac~mv2.jpeg">
+                    <img loading="lazy" src="https://static.wixstatic.com/media/bbd25a_ccc9a4a375b84b7894225fb2acfcebac~mv2.jpeg">
                 </div>
                 <div>
                     <h2 class="panel-title">Brand Identity Construction</h2>
@@ -480,10 +486,9 @@
                 </div>
             </div>
 
-            <!-- 12. Interior Design / Exhibition Design (Generated) -->
             <div class="box--container">
                 <div class="media-wrapper">
-                    <img src="https://static.wixstatic.com/media/bbd25a_5ec2b473eb734343a6236533f06fa596~mv2.jpeg">
+                    <img loading="lazy" src="https://static.wixstatic.com/media/bbd25a_5ec2b473eb734343a6236533f06fa596~mv2.jpeg">
                 </div>
                 <div>
                     <h2 class="panel-title">Interior Design / Exhibition Design</h2>
@@ -491,11 +496,22 @@
                 </div>
             </div>
 
-            <!-- 13. Booklet Design (Generated) -->
+            <!-- PDF VIEWER CONTAINER (RESTRUCTURED FOR HYBRID) -->
             <div class="box--container">
-                <div class="square-wrapper">
-                    <div class="web-inner">
-                        <iframe class="html-preview" src="https://raw.githack.com/decentralize-dfw/c2w2/refs/heads/main/pdf.html"></iframe>
+                <div class="square-wrapper load-on-click" data-type="pdf" data-src="https://raw.githubusercontent.com/decentralize-dfw/veawork/main/PDF_v2-5mbs-c2w2.pdf">
+                    <div class="overlay-backdrop">
+                        <div class="click-btn">TOUCH TO READ</div>
+                        <div class="overlay-text">PDF VIEWER</div>
+                    </div>
+                    <div class="web-inner relative bg-gray-50 flex items-center justify-center overflow-hidden" id="booklet-inner">
+                        <!-- Desktop Controls -->
+                        <div class="pdf-controls" id="pdf-controls">
+                            <button class="pdf-btn" id="pdf-prev">PREV</button>
+                            <span id="pdf-page-num">1</span> / <span id="pdf-page-count">--</span>
+                            <button class="pdf-btn" id="pdf-next">NEXT</button>
+                        </div>
+                        <!-- Canvas for Desktop will be injected here -->
+                        <!-- Iframe for Mobile will be injected here -->
                     </div>
                 </div>
                 <div>
@@ -505,14 +521,12 @@
             </div>
         </section>
 
-        <!-- COLUMN 3: NECESSARY INFORMATION -->
         <section class="column" id="info-section">
             <div class="tag-label"><div class="dot"></div> NECESSARY INFORMATION</div>
 
-            <!-- THE PLATFORM -->
             <div class="box--container">
                 <div class="media-wrapper" style="background: transparent; box-shadow: none; border-radius: 0;">
-                    <img src="https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png" style="max-height: 80px; width: auto; object-fit: contain;">
+                    <img loading="lazy" src="https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/logovea.png" style="max-height: 80px; width: auto; object-fit: contain;">
                 </div>
                 <h2 class="panel-title">THE PLATFORM</h2>
                 <div class="panel-desc">
@@ -527,22 +541,19 @@
                 </div>
             </div>
 
-            <!-- VISION -->
             <div class="box--container" style="background: #000; color: white;">
                 <h2 class="panel-title">VISION</h2>
                 <p class="panel-desc" style="color: #fff;">VEA combines architecture and storytelling into a multidimensional universe for each individual story.</p>
             </div>
 
-            <!-- SERVICES -->
             <div class="box--container">
                 <h2 class="panel-title">SERVICES</h2>
                 <div class="panel-desc" style="font-size: 11px;">1) WORLDBUILDING<br>2) IDENTITY BUILDING<br>3) DIGITAL CONTENT</div>
             </div>
 
-            <!-- FOUNDER -->
             <div class="box--container" style="background: rgba(0,0,0,0.02);">
                 <div class="media-wrapper">
-                    <img src="https://raw.githubusercontent.com/decentralize-dfw/vea-files/refs/heads/main/ElevenLabs_image_topaz-image-upscale_2025-12-28T21_22_14.png" alt="Deniz Agaoglu">
+                    <img loading="lazy" src="https://raw.githubusercontent.com/decentralize-dfw/vea-files/refs/heads/main/ElevenLabs_image_topaz-image-upscale_2025-12-28T21_22_14.png" alt="Deniz Agaoglu">
                 </div>
                 <h2 class="panel-title">FOUNDER</h2>
                 <div class="panel-desc">
@@ -555,7 +566,6 @@
                 </div>
             </div>
 
-            <!-- INQUIRIES -->
             <div class="box--container">
                 <h2 class="panel-title">INQUIRIES</h2>
                 <div class="panel-desc" style="font-size: 11px;">
@@ -568,7 +578,6 @@
                 </div>
             </div>
 
-            <!-- CONNECT (FORMSPREE INTEGRATION UPDATED) -->
             <div class="box--container" id="subscribe-panel">
                 <h2 class="panel-title">CONNECT</h2>
                 <p style="font-size: 8px; opacity: 0.6; margin-bottom: 5px;">JOIN OUR DIGITAL ECOSYSTEM</p>
@@ -593,7 +602,7 @@
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
         import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 
-        // LOADER
+        // --- 1. LOADER LOGIC ---
         window.addEventListener('load', () => {
             const bar = document.getElementById('loader-bar');
             const loader = document.getElementById('loader');
@@ -605,61 +614,215 @@
                     clearInterval(interval);
                     setTimeout(() => {
                         loader.style.opacity = '0';
-                        setTimeout(() => loader.style.display = 'none', 1000);
-                        initGLBViewer();
+                        setTimeout(() => {
+                            loader.style.display = 'none';
+                            initLazyVideoObserver(); // Videoları şimdi izlemeye başla
+                        }, 1000);
+                        initGLBViewer(); // Restored GLB Viewer Init
                         initSubscriptionLogic();
+                        initClickToLoad(); // Tıklayınca yükle mantığını başlat
                     }, 500);
                 }
                 bar.style.width = progress + '%';
             }, 150);
         });
 
-        // FORMSPREE LOGIC
-        function initSubscriptionLogic() {
-            const form = document.getElementById('subscribe-form');
-            const btn = document.getElementById('subscribe-btn');
-            const status = document.getElementById('status-message');
-            const input = document.getElementById('subscriber-email');
+        // --- 2. CLICK TO LOAD & PDF LOGIC (HYBRID SYSTEM) ---
+        function initClickToLoad() {
+            const wrappers = document.querySelectorAll('.load-on-click');
+            
+            wrappers.forEach(wrapper => {
+                wrapper.addEventListener('click', function() {
+                    const type = this.getAttribute('data-type');
+                    const dataSrc = this.getAttribute('data-src');
+                    const overlay = this.querySelector('.overlay-backdrop');
+                    const innerContainer = this.querySelector('.web-inner');
+                    const iframe = this.querySelector('iframe'); // Existing iframe for standard embeds
 
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                
-                const data = new FormData(form);
-                btn.classList.add('sending');
-                btn.innerText = 'CONNECTING...';
+                    // Prevent double loading
+                    if (this.classList.contains('loaded')) return;
+                    this.classList.add('loaded');
 
-                fetch(form.action, {
-                    method: 'POST',
-                    body: data,
-                    headers: {
-                        'Accept': 'application/json'
+                    // --- PDF LOGIC ---
+                    if (type === 'pdf') {
+                         const isMobile = window.innerWidth <= 768;
+
+                         if (isMobile) {
+                             // MOBILE: Use Google Docs Viewer (iframe)
+                             const encodedUrl = encodeURIComponent(dataSrc);
+                             const mobileIframe = document.createElement('iframe');
+                             mobileIframe.src = `https://docs.google.com/viewer?url=${encodedUrl}&embedded=true`;
+                             mobileIframe.style.width = '100%';
+                             mobileIframe.style.height = '100%';
+                             mobileIframe.style.border = 'none';
+                             innerContainer.appendChild(mobileIframe);
+                         } else {
+                             // DESKTOP: Use PDF.js (Canvas)
+                             loadDesktopPdf(dataSrc, innerContainer);
+                         }
+                    } 
+                    // --- STANDARD IFRAME LOGIC (Websites) ---
+                    else if (iframe) {
+                        iframe.src = dataSrc;
                     }
-                }).then(response => {
-                    if (response.ok) {
-                        btn.innerText = 'SENT';
-                        btn.classList.remove('sending');
-                        btn.classList.add('success');
-                        status.style.display = 'block';
-                        form.reset();
-                        input.style.display = 'none';
-                        setTimeout(() => {
-                            btn.innerText = 'SUBSCRIBE';
-                            btn.classList.remove('success');
-                            status.style.display = 'none';
-                            input.style.display = 'block';
-                        }, 5000);
-                    } else {
-                        throw new Error('Form error');
-                    }
-                }).catch(error => {
-                    btn.innerText = 'ERROR';
-                    btn.classList.remove('sending');
-                    setTimeout(() => btn.innerText = 'SUBSCRIBE', 3000);
+
+                    // Fade out overlay
+                    overlay.style.opacity = '0';
+                    setTimeout(() => { overlay.style.display = 'none'; }, 500);
                 });
             });
         }
 
-        // GLB VIEWER
+        // --- DESKTOP PDF RENDERER (PDF.JS) ---
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+        let canvas = null;
+        let ctx = null;
+
+        function loadDesktopPdf(url, container) {
+            // Create Canvas
+            canvas = document.createElement('canvas');
+            canvas.style.maxWidth = '100%';
+            canvas.style.height = 'auto';
+            container.appendChild(canvas);
+            ctx = canvas.getContext('2d');
+
+            // Show Controls
+            const controls = document.getElementById('pdf-controls');
+            if(controls) controls.style.opacity = '1';
+
+            // Load PDF
+            pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
+                pdfDoc = pdfDoc_;
+                document.getElementById('pdf-page-count').textContent = pdfDoc.numPages;
+
+                // Initial render
+                renderPage(pageNum, container);
+
+                // Button Events
+                document.getElementById('pdf-prev').addEventListener('click', onPrevPage);
+                document.getElementById('pdf-next').addEventListener('click', onNextPage);
+            }).catch(function(error) {
+                console.error('Error loading PDF:', error);
+                container.innerHTML = '<div style="padding:20px; font-size:10px;">ERROR LOADING PDF</div>';
+            });
+
+            // Handle Resize
+            const resizeObserver = new ResizeObserver(() => {
+                 if(pdfDoc) renderPage(pageNum, container);
+            });
+            resizeObserver.observe(container);
+        }
+
+        function renderPage(num, container) {
+            pageRendering = true;
+            
+            // Fetch page
+            pdfDoc.getPage(num).then(function(page) {
+                // Determine scale based on container width
+                const containerWidth = container.clientWidth;
+                const unscaledViewport = page.getViewport({scale: 1});
+                const scale = containerWidth / unscaledViewport.width;
+                const viewport = page.getViewport({scale: scale});
+
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                // Render
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+                const renderTask = page.render(renderContext);
+
+                // Wait for render to finish
+                renderTask.promise.then(function() {
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending, container);
+                        pageNumPending = null;
+                    }
+                });
+            });
+
+            // Update page counters
+            document.getElementById('pdf-page-num').textContent = num;
+        }
+
+        function queueRenderPage(num, container) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                // Note: We need to pass container, storing it globally might be cleaner 
+                // but for this simple implementation we assume singular PDF instance
+                const container = document.getElementById('booklet-inner'); 
+                renderPage(num, container);
+            }
+        }
+
+        function onPrevPage(e) {
+            e.stopPropagation(); // Prevent container click
+            if (pageNum <= 1) return;
+            pageNum--;
+            queueRenderPage(pageNum);
+        }
+
+        function onNextPage(e) {
+            e.stopPropagation(); // Prevent container click
+            if (pageNum >= pdfDoc.numPages) return;
+            pageNum++;
+            queueRenderPage(pageNum);
+        }
+
+        // --- 3. LAZY VIDEO LOADING (INTERSECTION OBSERVER) ---
+        function initLazyVideoObserver() {
+            // IntersectionObserver supported?
+            if ('IntersectionObserver' in window) {
+                const lazyVideos = document.querySelectorAll('video.lazy-video');
+                
+                const videoObserver = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        // Eğer video ekrandaysa
+                        if (entry.isIntersecting) {
+                            const video = entry.target;
+                            
+                            // Eğer kaynak henüz atanmamışsa ata (Lazy Load)
+                            if (!video.src) {
+                                video.src = video.dataset.src;
+                                video.load(); // Yüklemeyi başlat
+                            }
+                            
+                            // Oynat (Promise hatasını önlemek için)
+                            const playPromise = video.play();
+                            if (playPromise !== undefined) {
+                                playPromise.catch(error => {
+                                    // Auto-play engellenirse (örn: güç tasarrufu modu)
+                                    console.log('Autoplay prevented');
+                                });
+                            }
+                        } else {
+                            // Ekrandan çıktıysa durdur (Performans tasarrufu)
+                            entry.target.pause();
+                        }
+                    });
+                });
+
+                lazyVideos.forEach(video => {
+                    videoObserver.observe(video);
+                });
+            } else {
+                // Eski tarayıcılar için fallback: Hepsini direk yükle
+                const lazyVideos = document.querySelectorAll('video.lazy-video');
+                lazyVideos.forEach(video => {
+                    video.src = video.dataset.src;
+                    video.play();
+                });
+            }
+        }
+
+        // --- 4. GLB VIEWER LOGIC (RESTORED) ---
         function initGLBViewer() {
             const container = document.getElementById('glb-container');
             if (!container) return;
@@ -722,6 +885,49 @@
             });
             resizeObserver.observe(container);
             animate();
+        }
+
+        // --- 5. FORM LOGIC ---
+        function initSubscriptionLogic() {
+            const form = document.getElementById('subscribe-form');
+            const btn = document.getElementById('subscribe-btn');
+            const status = document.getElementById('status-message');
+            const input = document.getElementById('subscriber-email');
+
+            if(!form) return;
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                const data = new FormData(form);
+                btn.classList.add('sending');
+                btn.innerText = 'CONNECTING...';
+
+                fetch(form.action, {
+                    method: 'POST',
+                    body: data,
+                    headers: { 'Accept': 'application/json' }
+                }).then(response => {
+                    if (response.ok) {
+                        btn.innerText = 'SENT';
+                        btn.classList.remove('sending');
+                        btn.classList.add('success');
+                        status.style.display = 'block';
+                        form.reset();
+                        input.style.display = 'none';
+                        setTimeout(() => {
+                            btn.innerText = 'SUBSCRIBE';
+                            btn.classList.remove('success');
+                            status.style.display = 'none';
+                            input.style.display = 'block';
+                        }, 5000);
+                    } else { throw new Error('Form error'); }
+                }).catch(error => {
+                    btn.innerText = 'ERROR';
+                    btn.classList.remove('sending');
+                    setTimeout(() => btn.innerText = 'SUBSCRIBE', 3000);
+                });
+            });
         }
     </script>
 </body>
