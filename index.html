@@ -100,18 +100,19 @@
         }
 
         .marquee-wrapper { flex-grow: 1; overflow: hidden; }
-        .text--loop {
-            background: white;
-            overflow: hidden;
-            white-space: nowrap;
-            display: flex;
-            align-items: center;
-            height: 28px;
-            border: var(--line) solid var(--color-grey);
-            border-radius: var(--radius-s);
-            box-shadow: 1px 1px 1px var(--color-shadow);
-            width: 100%;
-        }
+      .text--loop {
+    background: white;
+    overflow: hidden;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    height: 28px;
+    border: var(--line) solid var(--color-grey);
+    border-radius: var(--radius-s);
+    box-shadow: 1px 1px 1px var(--color-shadow);
+    width: 100%;
+    margin-left: 95px; /* Bu değer yazıyı sağa çeker, istediğin kadar artırabilirsin */
+}
         .marquee-content { display: inline-block; animation: marquee 35s linear infinite; font-size: 11px; letter-spacing: 1px; }
         @keyframes marquee { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
 
@@ -264,14 +265,39 @@
         .info-link:hover { opacity: 0.5; }
 
         /* LOGO */
-        .fixed-logo {
-            position: fixed; top: 0; left: 0; z-index: 2000;
-            width: 150px; height: 100vh;
-            display: flex; align-items: flex-start; justify-content: flex-start;
-            padding-top: 5px; padding-left: 30px; pointer-events: none;
-        }
-        .fixed-logo img { width: 80px; height: auto; object-fit: contain; pointer-events: auto; transition: transform 0.3s ease; }
-        .fixed-logo img:hover { transform: scale(1.05); }
+.fixed-logo {
+    position: fixed;
+    top: 0px;           /* 1. Bütün grubun yukarıdan mesafesi */
+    left: 0px;          /* 2. Bütün grubun soldan mesafesi */
+    z-index: 2000;
+    width: auto;        /* Sabit genişlik yerine içeriğe göre genişlemesi daha sağlıklı */
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding-left: 30px;
+    pointer-events: none;
+    gap: 15px;
+}
+
+.main-ico {
+    position: relative; /* top/left'in çalışması için bu şart */
+    top: 0px;           /* İkonu yukarı/aşağı oynatır */
+    left: -20px;          /* İkonu sağa/sola oynatır */
+    width: 60px;
+    height: auto;
+    pointer-events: auto;
+}
+
+.logo-text {
+    position: relative; /* top/left'in çalışması için bu şart */
+    top: 4px;           /* VEA yazısını yukarı/aşağı oynatır */
+    left: -30px;          /* VEA yazısını sağa/sola oynatır */
+    width: 180px;
+    height: auto;
+    pointer-events: auto;
+}
+        
 
         /* MOBILE OVERRIDES */
         @media (max-width: 768px) {
@@ -283,8 +309,27 @@
             body { overflow-y: auto; }
             .box--container { padding: 20px; gap: 20px; }
             
-            .fixed-logo { width: auto; height: auto; padding: 0; top: 3px; left: 15px; }
-            .fixed-logo img { width: 45px; }
+           .fixed-logo {
+        width: 100%; /* Tüm genişliği kapla */
+        height: 60px;
+        left: 0; 
+        display: flex;
+        align-items: center;
+        justify-content: center; /* İçindeki logo-text'i ortalar */
+        padding: 0;
+    }
+
+    .main-ico {
+        position: absolute;
+        top: 6px;
+        left: 15px; /* İlk logoyu solda sabit tutar */
+        width: 35px;
+    }
+
+    .logo-text {
+      top: 1.2px;
+        width: 80px; /* İkinci logo (yazı) ortada durur */
+    }
             
             .pdf-controls { display: none !important; } /* Mobile uses Google Viewer's UI */
         }
@@ -382,9 +427,10 @@
         <div class="loader-bar-container"><div class="loader-bar" id="loader-bar"></div></div>
     </div>
 
-    <div class="fixed-logo">
-        <img src="https://raw.githubusercontent.com/decentralize-dfw/veawork/main/LOGOMAIN.png" alt="VEA Main Logo">
-    </div>
+ <div class="fixed-logo">
+    <img src="https://raw.githubusercontent.com/decentralize-dfw/veawork/main/VEA-LOGO.png" class="main-ico" alt="VEA Main Logo">
+    <img src="https://raw.githubusercontent.com/decentralize-dfw/vea-files/main/veacrop.png" class="logo-text" alt="VEA Text">
+</div>
 
     <header>
         <div class="marquee-wrapper hidden md:block">
