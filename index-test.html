@@ -6,6 +6,23 @@
     <title>VEA | ARCHITECTURAL VISUALIZATION ENGINE</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- PDF.JS IMPORTS (NEW - FOR DESKTOP VIEWER) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    
+    <!-- THREE.JS IMPORTS (RESTORED) -->
+    <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
 
     <style>
         @font-face {
@@ -167,11 +184,15 @@
 
         .web-inner { width: 100%; height: 100%; position: relative; overflow: hidden; background: white; }
         
+        /* WEB PREVIEW (Scaled Down) */
         .html-preview {
             width: 200%; height: 200%; border: none; position: absolute; top: 0; left: 0;
             transform: scale(0.5); transform-origin: top left; 
             pointer-events: auto;
         }
+
+        /* GLB VIEWER CONTAINER STYLE */
+        .glb-viewer { width: 100%; height: 100%; cursor: grab; background: #f4f4f4;}
 
         /* ========== FROSTED OVERLAY STYLES ========== */
         .overlay-backdrop {
@@ -197,7 +218,7 @@
             font-size: 10px;
             letter-spacing: 1px;
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            pointer-events: none; /* Click geçerli olsun diye wrapper'a veriyoruz */
+            pointer-events: none; 
         }
         
         .overlay-text {
@@ -205,6 +226,22 @@
             margin-top: 8px;
             opacity: 0.6;
         }
+
+        /* ========== PDF TOOLBAR (DESKTOP) ========== */
+        .pdf-controls {
+            position: absolute; bottom: 15px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.8); backdrop-filter: blur(4px);
+            border-radius: 30px; padding: 6px 16px;
+            display: flex; gap: 15px; align-items: center;
+            z-index: 50; color: white; font-size: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            opacity: 0; transition: opacity 0.3s;
+            pointer-events: none; /* Initially hidden */
+        }
+        .web-inner:hover .pdf-controls { opacity: 1; pointer-events: auto; }
+        .pdf-btn { background: none; border: none; color: white; cursor: pointer; font-family: inherit; font-size: 10px; padding: 4px; }
+        .pdf-btn:hover { opacity: 0.7; }
+        .pdf-btn:disabled { opacity: 0.3; cursor: default; }
 
         /* TYPOGRAPHY */
         .panel-title { font-size: clamp(1.1rem, 1.8vw, 1.8rem); line-height: 1.1; margin-bottom: 5px; }
@@ -248,6 +285,8 @@
             
             .fixed-logo { width: auto; height: auto; padding: 0; top: 3px; left: 15px; }
             .fixed-logo img { width: 45px; }
+            
+            .pdf-controls { display: none !important; } /* Mobile uses Google Viewer's UI */
         }
     </style>
 </head>
@@ -315,7 +354,7 @@
                 </div>
                 <div>
                     <h2 class="panel-title">NOVANTATRE</h2>
-                     <div class="panel-meta"><span>2025</span><span>daspieces.com</span></div>
+                     <div class="panel-meta"><span>2025-2026</span><span>https://novantatre.lu/</span></div>
                     <p class="panel-desc">Visual study of architectural fragments and memory.</p>
                 </div>
             </div>
@@ -457,14 +496,22 @@
                 </div>
             </div>
 
+            <!-- PDF VIEWER CONTAINER (RESTRUCTURED FOR HYBRID) -->
             <div class="box--container">
-                <div class="square-wrapper load-on-click">
+                <div class="square-wrapper load-on-click" data-type="pdf" data-src="https://raw.githubusercontent.com/decentralize-dfw/veawork/main/PDF_v2-5mbs-c2w2.pdf">
                     <div class="overlay-backdrop">
                         <div class="click-btn">TOUCH TO READ</div>
                         <div class="overlay-text">PDF VIEWER</div>
                     </div>
-                    <div class="web-inner">
-                        <iframe class="html-preview" data-src="PDF_v2-5mbs-c2w2.pdf"></iframe>
+                    <div class="web-inner relative bg-gray-50 flex items-center justify-center overflow-hidden" id="booklet-inner">
+                        <!-- Desktop Controls -->
+                        <div class="pdf-controls" id="pdf-controls">
+                            <button class="pdf-btn" id="pdf-prev">PREV</button>
+                            <span id="pdf-page-num">1</span> / <span id="pdf-page-count">--</span>
+                            <button class="pdf-btn" id="pdf-next">NEXT</button>
+                        </div>
+                        <!-- Canvas for Desktop will be injected here -->
+                        <!-- Iframe for Mobile will be injected here -->
                     </div>
                 </div>
                 <div>
@@ -549,7 +596,12 @@
 
     </main>
 
-    <script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+
         // --- 1. LOADER LOGIC ---
         window.addEventListener('load', () => {
             const bar = document.getElementById('loader-bar');
@@ -566,6 +618,7 @@
                             loader.style.display = 'none';
                             initLazyVideoObserver(); // Videoları şimdi izlemeye başla
                         }, 1000);
+                        initGLBViewer(); // Restored GLB Viewer Init
                         initSubscriptionLogic();
                         initClickToLoad(); // Tıklayınca yükle mantığını başlat
                     }, 500);
@@ -574,31 +627,153 @@
             }, 150);
         });
 
-        // --- 2. CLICK TO LOAD (FROSTED GLASS) ---
+        // --- 2. CLICK TO LOAD & PDF LOGIC (HYBRID SYSTEM) ---
         function initClickToLoad() {
             const wrappers = document.querySelectorAll('.load-on-click');
             
             wrappers.forEach(wrapper => {
                 wrapper.addEventListener('click', function() {
-                    const iframe = this.querySelector('iframe');
+                    const type = this.getAttribute('data-type');
+                    const dataSrc = this.getAttribute('data-src');
                     const overlay = this.querySelector('.overlay-backdrop');
-                    const dataSrc = iframe.getAttribute('data-src');
+                    const innerContainer = this.querySelector('.web-inner');
+                    const iframe = this.querySelector('iframe'); // Existing iframe for standard embeds
 
-                    // If already loaded, do nothing
-                    if (iframe.getAttribute('src')) return;
+                    // Prevent double loading
+                    if (this.classList.contains('loaded')) return;
+                    this.classList.add('loaded');
 
-                    // Load URL
-                    iframe.src = dataSrc;
+                    // --- PDF LOGIC ---
+                    if (type === 'pdf') {
+                         const isMobile = window.innerWidth <= 768;
+
+                         if (isMobile) {
+                             // MOBILE: Use Google Docs Viewer (iframe)
+                             const encodedUrl = encodeURIComponent(dataSrc);
+                             const mobileIframe = document.createElement('iframe');
+                             mobileIframe.src = `https://docs.google.com/viewer?url=${encodedUrl}&embedded=true`;
+                             mobileIframe.style.width = '100%';
+                             mobileIframe.style.height = '100%';
+                             mobileIframe.style.border = 'none';
+                             innerContainer.appendChild(mobileIframe);
+                         } else {
+                             // DESKTOP: Use PDF.js (Canvas)
+                             loadDesktopPdf(dataSrc, innerContainer);
+                         }
+                    } 
+                    // --- STANDARD IFRAME LOGIC (Websites) ---
+                    else if (iframe) {
+                        iframe.src = dataSrc;
+                    }
 
                     // Fade out overlay
                     overlay.style.opacity = '0';
-                    
-                    // Remove overlay from DOM after transition to prevent blocking clicks
-                    setTimeout(() => {
-                        overlay.remove();
-                    }, 500);
+                    setTimeout(() => { overlay.style.display = 'none'; }, 500);
                 });
             });
+        }
+
+        // --- DESKTOP PDF RENDERER (PDF.JS) ---
+        let pdfDoc = null;
+        let pageNum = 1;
+        let pageRendering = false;
+        let pageNumPending = null;
+        let canvas = null;
+        let ctx = null;
+
+        function loadDesktopPdf(url, container) {
+            // Create Canvas
+            canvas = document.createElement('canvas');
+            canvas.style.maxWidth = '100%';
+            canvas.style.height = 'auto';
+            container.appendChild(canvas);
+            ctx = canvas.getContext('2d');
+
+            // Show Controls
+            const controls = document.getElementById('pdf-controls');
+            if(controls) controls.style.opacity = '1';
+
+            // Load PDF
+            pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
+                pdfDoc = pdfDoc_;
+                document.getElementById('pdf-page-count').textContent = pdfDoc.numPages;
+
+                // Initial render
+                renderPage(pageNum, container);
+
+                // Button Events
+                document.getElementById('pdf-prev').addEventListener('click', onPrevPage);
+                document.getElementById('pdf-next').addEventListener('click', onNextPage);
+            }).catch(function(error) {
+                console.error('Error loading PDF:', error);
+                container.innerHTML = '<div style="padding:20px; font-size:10px;">ERROR LOADING PDF</div>';
+            });
+
+            // Handle Resize
+            const resizeObserver = new ResizeObserver(() => {
+                 if(pdfDoc) renderPage(pageNum, container);
+            });
+            resizeObserver.observe(container);
+        }
+
+        function renderPage(num, container) {
+            pageRendering = true;
+            
+            // Fetch page
+            pdfDoc.getPage(num).then(function(page) {
+                // Determine scale based on container width
+                const containerWidth = container.clientWidth;
+                const unscaledViewport = page.getViewport({scale: 1});
+                const scale = containerWidth / unscaledViewport.width;
+                const viewport = page.getViewport({scale: scale});
+
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+
+                // Render
+                const renderContext = {
+                    canvasContext: ctx,
+                    viewport: viewport
+                };
+                const renderTask = page.render(renderContext);
+
+                // Wait for render to finish
+                renderTask.promise.then(function() {
+                    pageRendering = false;
+                    if (pageNumPending !== null) {
+                        renderPage(pageNumPending, container);
+                        pageNumPending = null;
+                    }
+                });
+            });
+
+            // Update page counters
+            document.getElementById('pdf-page-num').textContent = num;
+        }
+
+        function queueRenderPage(num, container) {
+            if (pageRendering) {
+                pageNumPending = num;
+            } else {
+                // Note: We need to pass container, storing it globally might be cleaner 
+                // but for this simple implementation we assume singular PDF instance
+                const container = document.getElementById('booklet-inner'); 
+                renderPage(num, container);
+            }
+        }
+
+        function onPrevPage(e) {
+            e.stopPropagation(); // Prevent container click
+            if (pageNum <= 1) return;
+            pageNum--;
+            queueRenderPage(pageNum);
+        }
+
+        function onNextPage(e) {
+            e.stopPropagation(); // Prevent container click
+            if (pageNum >= pdfDoc.numPages) return;
+            pageNum++;
+            queueRenderPage(pageNum);
         }
 
         // --- 3. LAZY VIDEO LOADING (INTERSECTION OBSERVER) ---
@@ -647,7 +822,72 @@
             }
         }
 
-        // --- 4. FORM LOGIC ---
+        // --- 4. GLB VIEWER LOGIC (RESTORED) ---
+        function initGLBViewer() {
+            const container = document.getElementById('glb-container');
+            if (!container) return;
+
+            const modelUrl = container.getAttribute('data-model');
+            const scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf4f4f4);
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+            container.appendChild(renderer.domElement);
+
+            const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(4, 4, 4);
+
+            const controls = new OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.autoRotate = true;
+            controls.autoRotateSpeed = 4.0;
+
+            scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+            const dirLight = new THREE.DirectionalLight(0xffffff, 2.5);
+            dirLight.position.set(5, 10, 7);
+            scene.add(dirLight);
+
+            const loader = new GLTFLoader();
+            const dracoLoader = new DRACOLoader();
+            dracoLoader.setDecoderPath('https://www.gstatic.com/draco/v1/decoders/');
+            loader.setDRACOLoader(dracoLoader);
+
+            loader.load(modelUrl, (gltf) => {
+                const model = gltf.scene;
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                model.position.sub(center);
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                camera.position.set(maxDim * 1.8, maxDim * 1.2, maxDim * 1.8);
+                camera.lookAt(0,0,0);
+                scene.add(model);
+            });
+
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();
+                renderer.render(scene, camera);
+            }
+
+            const resizeObserver = new ResizeObserver(() => {
+                const w = container.clientWidth;
+                const h = container.clientHeight;
+                if(w && h) {
+                    camera.aspect = w / h;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(w, h);
+                }
+            });
+            resizeObserver.observe(container);
+            animate();
+        }
+
+        // --- 5. FORM LOGIC ---
         function initSubscriptionLogic() {
             const form = document.getElementById('subscribe-form');
             const btn = document.getElementById('subscribe-btn');
